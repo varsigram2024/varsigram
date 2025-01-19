@@ -3,7 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
-import  backgroundimage  from "../public/BACKGROUND IMAGE.png";
+import  backgroundimage  from "../public/background img.png";
 
 interface LoginProps {
   onSignUp: () => void;

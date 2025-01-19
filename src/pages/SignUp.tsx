@@ -4,7 +4,7 @@ import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
-import backgroundimage from "../public/";
+import backgroundimage from "../public/background img.png";
 
 interface SignUpProps {
   onLogin: () => void;
