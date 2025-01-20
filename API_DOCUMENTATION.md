@@ -1,4 +1,4 @@
-# VISAGRAM API Documentation
+# VARSIGRAM API Documentation
 
 ## Authentication Endpoints
 
