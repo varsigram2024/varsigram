@@ -1,10 +1,9 @@
 import { useState, FormEvent } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
-import backgroundimage from "../public/background img.png";
 
 interface SignUpProps {
   onLogin: () => void;
@@ -77,29 +76,28 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
       await signUp(formData.email, formData.password, formData.fullName);
     } catch (error) {
       console.error("Signup failed:", error);
-      // Handle error (show error message to user)
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error("Google sign in failed:", error);
-      // Handle error
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white flex font-['Archivo']">
-      {/* Left Section */}
-      <div className="w-[740px] p-8 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col sm:flex-row font-archivo">
+      {/* Mobile Header */}
+      <div className="sm:hidden p-6 flex items-center">
+        <button
+          onClick={onLogin}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Desktop Left Section */}
+      <div className="hidden sm:flex w-[740px] p-8 flex-col">
         <Logo />
         <div className="flex-1 flex flex-col items-center justify-center">
           <img
-            src={backgroundimage} // Updated to use the new image
+            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800"
             alt="University students"
             className="w-full h-[365px] object-cover rounded-lg mb-8 transition-transform hover:scale-[1.02] duration-300"
           />
@@ -111,12 +109,16 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
         </div>
       </div>
 
-      {/* Right Section */}
-      <div className="flex-1 bg-[#E6E6E699] p-12">
-        <div className="max-w-[497px] mx-auto mt-12">
-          <h1 className="text-[45px] font-semibold mb-8 animate-fade-in">
-            Sign Up
+      {/* Right Section / Mobile Main Content */}
+      <div className="flex-1 bg-white sm:bg-[#E6E6E699] p-6 sm:p-12">
+        <div className="max-w-[398px] mx-auto sm:mt-12">
+          <h1 className="text-[36px] sm:text-[45px] font-semibold mb-2 sm:mb-8 animate-fade-in">
+            Create an Account
           </h1>
+          <p className="text-sm text-[#3A3A3A] mb-8 animate-slide-up">
+            Kindly fill in your details below
+          </p>
+
           <form onSubmit={handleSignUp} className="space-y-6">
             <div
               className="animate-slide-up"
@@ -131,6 +133,7 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
                 error={errors.fullName}
               />
             </div>
+
             <div
               className="animate-slide-up"
               style={{ animationDelay: "200ms" }}>
@@ -145,6 +148,7 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
                 error={errors.email}
               />
             </div>
+
             <div
               className="relative animate-slide-up"
               style={{ animationDelay: "300ms" }}>
@@ -157,14 +161,17 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 error={errors.password}
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="focus:outline-none">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
               />
-              <button
-                type="button"
-                className="absolute right-3 top-[38px] transition-colors hover:text-[#750015]"
-                onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
+
             <div
               className="relative animate-slide-up"
               style={{ animationDelay: "400ms" }}>
@@ -177,14 +184,21 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
                 error={errors.confirmPassword}
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="focus:outline-none">
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+                }
               />
-              <button
-                type="button"
-                className="absolute right-3 top-[38px] transition-colors hover:text-[#750015]"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
+
             <p
               className="text-sm text-[#3A3A3A] animate-slide-up"
               style={{ animationDelay: "500ms" }}>
@@ -199,18 +213,12 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
               </a>
               .
             </p>
+
             <div
               className="animate-slide-up"
               style={{ animationDelay: "600ms" }}>
-              <Button fullWidth disabled={isLoading}>
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Loading...
-                  </div>
-                ) : (
-                  "Continue"
-                )}
+              <Button fullWidth loading={isLoading}>
+                Continue
               </Button>
             </div>
 
@@ -224,8 +232,8 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
 
             <button
               type="button"
-              onClick={handleGoogleSignIn}
-              className="w-full h-[58px] flex items-center justify-center gap-6 border border-[#B0B0B0] rounded-lg bg-white transition-colors hover:bg-gray-50 animate-slide-up"
+              onClick={signInWithGoogle}
+              className="w-full h-[56px] sm:h-[58px] flex items-center justify-center gap-6 border border-[#B0B0B0] rounded-lg bg-white transition-all hover:bg-gray-50 active:scale-[0.98] animate-slide-up"
               style={{ animationDelay: "800ms" }}>
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
