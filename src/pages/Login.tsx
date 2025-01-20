@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
-import  backgroundimage  from "../public/background img.png";
+import { useAuth } from "../auth/AuthContext";
 
 interface LoginProps {
   onSignUp: () => void;
@@ -12,23 +12,41 @@ interface LoginProps {
 export const Login = ({ onSignUp }: LoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const { login, signInWithGoogle } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      await login(formData.email, formData.password);
+    } catch (error) {
+      console.error("Login failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white flex font-['Archivo']">
-      {/* Left Section */}
-      <div className="w-[740px] p-8 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col sm:flex-row font-archivo">
+      {/* Mobile Header */}
+      <div className="sm:hidden p-6 flex items-center">
+        <button
+          onClick={onSignUp}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Desktop Left Section */}
+      <div className="hidden sm:flex w-[740px] p-8 flex-col">
         <Logo />
         <div className="flex-1 flex flex-col items-center justify-center">
           <img
-            src={backgroundimage} // Updated to use the new image
+            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800"
             alt="University students"
             className="w-full h-[365px] object-cover rounded-lg mb-8 transition-transform hover:scale-[1.02] duration-300"
           />
@@ -40,12 +58,16 @@ export const Login = ({ onSignUp }: LoginProps) => {
         </div>
       </div>
 
-      {/* Right Section */}
-      <div className="flex-1 bg-[#E6E6E699] p-12">
-        <div className="max-w-[496px] mx-auto mt-12">
-          <h1 className="text-[45px] font-semibold mb-8 animate-fade-in">
+      {/* Right Section / Mobile Main Content */}
+      <div className="flex-1 bg-white sm:bg-[#E6E6E699] p-6 sm:p-12">
+        <div className="max-w-[398px] mx-auto sm:mt-12">
+          <h1 className="text-[36px] sm:text-[45px] font-semibold mb-2 sm:mb-8 animate-fade-in">
             Log In
           </h1>
+          <p className="text-sm text-[#3A3A3A] mb-8 animate-slide-up">
+            Log in to your account
+          </p>
+
           <form onSubmit={handleLogin} className="space-y-6">
             <div
               className="animate-slide-up"
@@ -54,8 +76,13 @@ export const Login = ({ onSignUp }: LoginProps) => {
                 label="Email"
                 type="email"
                 placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
               />
             </div>
+
             <div
               className="relative animate-slide-up"
               style={{ animationDelay: "200ms" }}>
@@ -63,26 +90,26 @@ export const Login = ({ onSignUp }: LoginProps) => {
                 label="Password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="focus:outline-none">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
               />
-              <button
-                type="button"
-                className="absolute right-3 top-[38px] transition-colors hover:text-[#750015]"
-                onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
+
             <div
               className="animate-slide-up"
               style={{ animationDelay: "300ms" }}>
-              <Button fullWidth disabled={isLoading}>
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Loading...
-                  </div>
-                ) : (
-                  "Continue"
-                )}
+              <Button fullWidth loading={isLoading}>
+                Log In
               </Button>
             </div>
 
@@ -96,7 +123,8 @@ export const Login = ({ onSignUp }: LoginProps) => {
 
             <button
               type="button"
-              className="w-full h-[58px] flex items-center justify-center gap-6 border border-[#B0B0B0] rounded-lg bg-white transition-colors hover:bg-gray-50 animate-slide-up"
+              onClick={signInWithGoogle}
+              className="w-full h-[56px] sm:h-[58px] flex items-center justify-center gap-6 border border-[#B0B0B0] rounded-lg bg-white transition-all hover:bg-gray-50 active:scale-[0.98] animate-slide-up"
               style={{ animationDelay: "500ms" }}>
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -111,7 +139,7 @@ export const Login = ({ onSignUp }: LoginProps) => {
             <p
               className="text-center animate-slide-up"
               style={{ animationDelay: "600ms" }}>
-              Already a VARSIGRAM user?{" "}
+              Don't have an account yet?{" "}
               <button
                 type="button"
                 onClick={onSignUp}
