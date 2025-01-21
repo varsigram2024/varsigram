@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 
-export const EmailVerification = () => {
+export const EmailVerification = ({ onNext }) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -48,6 +48,7 @@ export const EmailVerification = () => {
     try {
       // Add verification logic here
       await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate API call
+      onNext(); // Navigate to the next page after successful verification
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
+import { Input } from "../components/Input";
 
 const countryCodes = [
   { code: "+234", flag: "🇳🇬", name: "Nigeria" },
@@ -10,7 +11,7 @@ const countryCodes = [
   { code: "+254", flag: "🇰🇪", name: "Kenya" },
 ];
 
-export const PhoneVerification = () => {
+export const PhoneVerification = ({ onNext }) => {
   const [countryCode, setCountryCode] = useState(countryCodes[0]);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showCountryList, setShowCountryList] = useState(false);
@@ -21,6 +22,7 @@ export const PhoneVerification = () => {
     try {
       // Add phone verification logic here
       await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate API call
+      onNext(); // Navigate to the next page after successful verification
     } finally {
       setIsLoading(false);
     }
@@ -45,20 +47,20 @@ export const PhoneVerification = () => {
           Input your phone number to stay connected and secure your account.
         </p>
 
-        <div className="flex gap-3 mb-6 animate-slide-up">
+        <div className="relative z-50 flex gap-3 mb-6 animate-slide-up">
           <div className="relative">
             <button
               onClick={() => setShowCountryList(!showCountryList)}
               className="w-[132px] h-14 px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
               <span className="flex items-center gap-2">
-                <span className="w-6 h-6">{countryCode.flag}</span>
+                <span className="text-xl">{countryCode.flag}</span>
                 <span>{countryCode.code}</span>
               </span>
               <ChevronDown className="w-5 h-5" />
             </button>
 
             {showCountryList && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 w-[200px] mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
                 {countryCodes.map((country) => (
                   <button
                     key={country.code}
@@ -67,31 +69,32 @@ export const PhoneVerification = () => {
                       setShowCountryList(false);
                     }}
                     className="w-full px-4 py-3 flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                    <span className="w-6 h-6">{country.flag}</span>
-                    <span>{country.code}</span>
+                    <span className="text-xl">{country.flag}</span>
+                    <span className="text-sm">{country.name}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <input
+          <Input
             type="tel"
             placeholder="Phone number"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            className="flex-1 h-14 px-4 border border-[#B0B0B0] rounded-lg focus:outline-none focus:border-[#750015] focus:ring-1 focus:ring-[#750015]"
+            className="flex-1"
           />
         </div>
 
-        <Button
-          fullWidth
-          onClick={handleContinue}
-          loading={isLoading}
-          disabled={!phoneNumber}
-          className="animate-slide-up">
-          Continue
-        </Button>
+        <div className="relative z-0">
+          <Button
+            fullWidth
+            onClick={handleContinue}
+            loading={isLoading}
+            disabled={!phoneNumber}>
+            Continue
+          </Button>
+        </div>
       </div>
     </div>
   );

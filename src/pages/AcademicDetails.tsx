@@ -57,16 +57,21 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
         </p>
 
         <div className="space-y-6">
-          <div className="relative animate-slide-up">
+          <div className="relative z-20 animate-slide-up">
             <button
-              onClick={() => setShowFacultyDropdown(!showFacultyDropdown)}
+              onClick={() => {
+                setShowFacultyDropdown(!showFacultyDropdown);
+                setShowDepartmentDropdown(false);
+              }}
               className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-              <span className="text-base">{selectedFaculty || "Faculty"}</span>
+              <span className="text-base">
+                {selectedFaculty || "Select Faculty"}
+              </span>
               <ChevronDown className="w-5 h-5" />
             </button>
 
             {showFacultyDropdown && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
                 {faculties.map((faculty) => (
                   <button
                     key={faculty.name}
@@ -84,20 +89,25 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
           </div>
 
           <div
-            className="relative animate-slide-up"
+            className="relative z-10 animate-slide-up"
             style={{ animationDelay: "100ms" }}>
             <button
-              onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
+              onClick={() => {
+                if (selectedFaculty) {
+                  setShowDepartmentDropdown(!showDepartmentDropdown);
+                  setShowFacultyDropdown(false);
+                }
+              }}
               disabled={!selectedFaculty}
               className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               <span className="text-base">
-                {selectedDepartment || "Department"}
+                {selectedDepartment || "Select Department"}
               </span>
               <ChevronDown className="w-5 h-5" />
             </button>
 
             {showDepartmentDropdown && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
                 {departments.map((department) => (
                   <button
                     key={department}
@@ -113,14 +123,16 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
             )}
           </div>
 
-          <Button
-            fullWidth
-            onClick={handleContinue}
-            disabled={!selectedFaculty || !selectedDepartment}
-            className="animate-slide-up h-[56px]"
-            style={{ animationDelay: "200ms" }}>
-            Continue
-          </Button>
+          <div className="relative z-0">
+            <Button
+              fullWidth
+              onClick={handleContinue}
+              disabled={!selectedFaculty || !selectedDepartment}
+              className="animate-slide-up h-[56px]"
+              style={{ animationDelay: "200ms" }}>
+              Continue
+            </Button>
+          </div>
         </div>
       </div>
     </div>
