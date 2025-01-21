@@ -5,10 +5,10 @@ import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 
 const countryCodes = [
-  { code: "+234", flag: "🇳🇬", name: "Nigeria" },
-  { code: "+233", flag: "🇬🇭", name: "Ghana" },
-  { code: "+27", flag: "🇿🇦", name: "South Africa" },
-  { code: "+254", flag: "🇰🇪", name: "Kenya" },
+  { code: "+234", flag: "https://flagcdn.com/w40/ng.png", name: "Nigeria" },
+  { code: "+233", flag: "https://flagcdn.com/w40/gh.png", name: "Ghana" },
+  { code: "+27", flag: "https://flagcdn.com/w40/za.png", name: "South Africa" },
+  { code: "+254", flag: "https://flagcdn.com/w40/ke.png", name: "Kenya" },
 ];
 
 export const PhoneVerification = ({ onNext }) => {
@@ -53,7 +53,11 @@ export const PhoneVerification = ({ onNext }) => {
               onClick={() => setShowCountryList(!showCountryList)}
               className="w-[132px] h-14 px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
               <span className="flex items-center gap-2">
-                <span className="text-xl">{countryCode.flag}</span>
+                <img
+                  src={countryCode.flag}
+                  alt={countryCode.name}
+                  className="w-6 h-4 object-cover"
+                />
                 <span>{countryCode.code}</span>
               </span>
               <ChevronDown className="w-5 h-5" />
@@ -69,8 +73,12 @@ export const PhoneVerification = ({ onNext }) => {
                       setShowCountryList(false);
                     }}
                     className="w-full px-4 py-3 flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                    <span className="text-xl">{country.flag}</span>
-                    <span className="text-sm">{country.name}</span>
+                    <img
+                      src={country.flag}
+                      alt={country.name}
+                      className="w-6 h-4 object-cover"
+                    />
+                    <span className="text-sm">{country.code}</span>
                   </button>
                 ))}
               </div>

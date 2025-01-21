@@ -51,6 +51,10 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
     }
   };
 
+  const handleDropdownClick = (dropdownName: string) => {
+    setShowDropdown(showDropdown === dropdownName ? null : dropdownName);
+  };
+
   return (
     <div className="min-h-screen bg-white font-archivo">
       <header className="p-6 flex items-center justify-between">
@@ -78,18 +82,16 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
         </p>
 
         <div className="space-y-6">
-          <div className="relative animate-slide-up">
+          <div className="relative z-[60] animate-slide-up">
             <button
-              onClick={() =>
-                setShowDropdown(showDropdown === "gender" ? null : "gender")
-              }
+              onClick={() => handleDropdownClick("gender")}
               className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
               <span className="text-base">{gender || "Gender"}</span>
               <ChevronDown className="w-5 h-5" />
             </button>
 
             {showDropdown === "gender" && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
                 {genders.map((item) => (
                   <button
                     key={item}
@@ -106,19 +108,17 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
           </div>
 
           <div
-            className="relative animate-slide-up"
+            className="relative z-[50] animate-slide-up"
             style={{ animationDelay: "100ms" }}>
             <button
-              onClick={() =>
-                setShowDropdown(showDropdown === "religion" ? null : "religion")
-              }
+              onClick={() => handleDropdownClick("religion")}
               className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
               <span className="text-base">{religion || "Religion"}</span>
               <ChevronDown className="w-5 h-5" />
             </button>
 
             {showDropdown === "religion" && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
                 {religions.map((item) => (
                   <button
                     key={item}
@@ -135,20 +135,18 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
           </div>
 
           <div
-            className="flex gap-4 animate-slide-up"
+            className="flex gap-4 animate-slide-up relative z-[40]"
             style={{ animationDelay: "200ms" }}>
             <div className="relative flex-1">
               <button
-                onClick={() =>
-                  setShowDropdown(showDropdown === "day" ? null : "day")
-                }
+                onClick={() => handleDropdownClick("day")}
                 className="w-full h-[40px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
                 <span className="text-base">{day || "Day"}</span>
                 <ChevronDown className="w-5 h-5" />
               </button>
 
               {showDropdown === "day" && (
-                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {days.map((item) => (
                     <button
                       key={item}
@@ -166,16 +164,14 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
 
             <div className="relative flex-1">
               <button
-                onClick={() =>
-                  setShowDropdown(showDropdown === "month" ? null : "month")
-                }
+                onClick={() => handleDropdownClick("month")}
                 className="w-full h-[40px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
                 <span className="text-base">{month || "Month"}</span>
                 <ChevronDown className="w-5 h-5" />
               </button>
 
               {showDropdown === "month" && (
-                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {months.map((item) => (
                     <button
                       key={item}
@@ -193,16 +189,14 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
 
             <div className="relative flex-1">
               <button
-                onClick={() =>
-                  setShowDropdown(showDropdown === "year" ? null : "year")
-                }
+                onClick={() => handleDropdownClick("year")}
                 className="w-full h-[40px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
                 <span className="text-base">{year || "Year"}</span>
                 <ChevronDown className="w-5 h-5" />
               </button>
 
               {showDropdown === "year" && (
-                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {years.map((item) => (
                     <button
                       key={item}
@@ -219,14 +213,16 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
             </div>
           </div>
 
-          <Button
-            fullWidth
-            onClick={handleContinue}
-            disabled={!gender || !religion || !day || !month || !year}
-            className="animate-slide-up h-[56px]"
-            style={{ animationDelay: "300ms" }}>
-            Continue
-          </Button>
+          <div className="relative z-0">
+            <Button
+              fullWidth
+              onClick={handleContinue}
+              disabled={!gender || !religion || !day || !month || !year}
+              className="animate-slide-up h-[56px]"
+              style={{ animationDelay: "300ms" }}>
+              Continue
+            </Button>
+          </div>
         </div>
       </div>
     </div>
