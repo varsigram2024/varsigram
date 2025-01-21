@@ -1,4 +1,5 @@
 import { useState } from "react";
+import background from "../public/background img.png";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
@@ -46,7 +47,7 @@ export const Login = ({ onSignUp }: LoginProps) => {
         <Logo />
         <div className="flex-1 flex flex-col items-center justify-center">
           <img
-            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800"
+            src={background}
             alt="University students"
             className="w-full h-[365px] object-cover rounded-lg mb-8 transition-transform hover:scale-[1.02] duration-300"
           />
