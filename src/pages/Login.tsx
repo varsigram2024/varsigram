@@ -109,7 +109,9 @@ export const Login = ({ onSignUp }: LoginProps) => {
             <div
               className="animate-slide-up"
               style={{ animationDelay: "300ms" }}>
-              <Button fullWidth loading={isLoading}>
+              <Button fullWidth onClick={
+                window.open("dashboard")
+              }>
                 Log In
               </Button>
             </div>

@@ -9,9 +9,10 @@ import { AboutYourself } from './pages/AboutYourself';
 import { AcademicLevel } from './pages/AcademicLevel';
 import { AuthProvider } from './auth/AuthContext';
 import './styles/animations.css';
+import Dashboard from './pages/dashboard/dashboard';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('welcome');
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   const renderPage = () => {
     switch (currentPage) {
@@ -31,8 +32,10 @@ function App() {
         return <AboutYourself onNext={() => setCurrentPage('academic-level')} />;
       case 'academic-level':
         return <AcademicLevel onComplete={() => setCurrentPage('dashboard')} />;
+      case 'dashboard':
+        return <Dashboard />
       default:
-        return <Welcome onLogin={() => setCurrentPage('login')} onSignUp={() => setCurrentPage('signup')} />;
+        return <div content='Not Found' />;
     }
   };
 

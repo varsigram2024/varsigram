@@ -26,7 +26,8 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
 
   const handleContinue = () => {
     if (selectedFaculty && selectedDepartment) {
-      onNext();
+      // onNext();
+      window.open("/dashboardi")
     }
   };
 
