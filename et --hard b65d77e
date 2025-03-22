@@ -1,0 +1,18 @@
+[33m724f1a0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m ...
+[33mc4597e7[m Merge pull request #1 from Ayyubiy90/feat/dashboard
+[33m408963b[m[33m ([m[1;31morigin/feat/dashboard[m[33m)[m basic for the dashboard
+[33mb65d77e[m Replaced emoji flags with actual flag images from flagcdn.com Added proper <img> tags with appropriate sizing and alt text Added object-cover to ensure flags display correctly Removed the need for local flag images in the public folder Kept the same layout and functionality, just with real flag images instead of emojis
+[33mfcf4338[m 1.PhoneVerification: - Added fixed width to country code selector with w-[132px] - Set consistent height of 56px for all inputs and buttons - Improved spacing and alignment
+[33m43f8889[m Replaced Unsplash images with local background image in Login and SignUp pages
+[33m71ebceb[m 1.Academic Details Page: - Faculty and Department selection with dropdowns - Skip button in header - Back navigation arrow - Proper mobile layout and spacing - Smooth animations - Disabled states for department when no faculty is selected
+[33mc9abc71[m Changed name 'VARSIGRAM'
+[33me0bf839[m Added proper mobile layouts with specified dimensions Implemented back navigation arrows Updated typography and spacing for mobile Added smooth animations and transitions Improved form validation and error handling Added loading states and animations Updated the OTP input to use 6 boxes instead of 4 Added country code selection with flags Improved button and input styles for mobile
+[33mb97c168[m Added proper mobile layouts with specified dimensions Implemented back navigation arrows Updated typography and spacing for mobile Added smooth animations and transitions Improved button and input styles for mobile Added proper hover and active states
+[33m196c277[m Adding mobile-specific animations and transitions Updating the Logo component for mobile Enhancing the Button component with mobile styles Improving the Input component for mobile Adding proper breakpoints in Tailwind config
+[33mbd131d6[m Import new image with different style of format export
+[33m47e2baa[m Added new background img
+[33m5e5b723[m Updated the login.tsx & sign up.tsx file to chnage the image source to the new background image
+[33ma845a6f[m Added logo and background image to public folder imported logo into files
+[33me245e55[m Removed the exclusion of lucide react from the vite.config.ts file
+[33md7ad70a[m Add untracked files to the repository\n\n- Added configuration files, documentation, and other relevant files to version control.
+[33m1222a24[m Initial commit
