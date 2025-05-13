@@ -4,9 +4,10 @@ import { Button } from "../components/Button";
 interface WelcomeProps {
   onLogin: () => void;
   onSignUp: () => void;
+  onUserProfile: () => void;
 }
 
-export const Welcome = ({ onLogin, onSignUp }: WelcomeProps) => {
+export const Welcome = ({ onLogin, onSignUp, onUserProfile }: WelcomeProps) => {
   return (
     <div className="min-h-screen bg-[#750015] flex flex-col font-archivo">
       <header className="p-6 sm:p-8">
@@ -16,8 +17,22 @@ export const Welcome = ({ onLogin, onSignUp }: WelcomeProps) => {
       </header>
       <div className="flex-1 flex items-center justify-center p-5">
         <div className="text-center space-y-6 animate-fade-in max-w-[391px] w-full">
-          <h1 className="text-4xl font-bold text-white mobile-slide-up">
+          <h1 className="text-4xl font-bold text-white mobile-slide-up"> <br />
             Welcome to VARSIGRAM
+          
+
+            <Button
+                variant="secondary"
+                onClick={() => {
+                  console.log("go to profile clicked");
+                  onUserProfile();
+                }}
+                fullWidth
+                className="sm:w-auto hover:bg-white hover:text-[#750015] transition-all duration-300"
+              >
+                Go to Profile
+              </Button>
+
           </h1>
           <div
             className="space-y-4 sm:space-y-0 sm:space-x-4 mobile-slide-up"
