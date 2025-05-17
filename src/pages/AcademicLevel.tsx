@@ -6,15 +6,18 @@ import { useAuth } from "../auth/AuthContext";
 
 const levels = ["100", "200", "300", "400", "500"];
 
-export const AcademicLevel = () => {
+interface AcademicLevelProps {
+  onNext: () => void;
+}
+
+export const AcademicLevel = ({ onNext }: AcademicLevelProps) => {
   const [selectedLevel, setSelectedLevel] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const { setCurrentPage } = useAuth();
 
   const handleContinue = () => {
     if (selectedLevel) {
-      // Navigate to the next page in your registration flow
-      setCurrentPage("profile-setup"); // Or whatever your next page is called
+      onNext();
     }
   };
 

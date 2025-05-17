@@ -4,10 +4,10 @@ import { Button } from "../components/Button";
 interface WelcomeProps {
   onLogin: () => void;
   onSignUp: () => void;
-  onUserProfile: () => void;
+  onHome: () => void;
 }
 
-export const Welcome = ({ onLogin, onSignUp, onUserProfile }: WelcomeProps) => {
+export const Welcome = ({ onLogin, onSignUp, onHome }: WelcomeProps) => {
   return (
     <div className="min-h-screen bg-[#750015] flex flex-col font-archivo">
       <header className="p-6 sm:p-8">
@@ -25,7 +25,7 @@ export const Welcome = ({ onLogin, onSignUp, onUserProfile }: WelcomeProps) => {
                 variant="secondary"
                 onClick={() => {
                   console.log("go to profile clicked");
-                  onUserProfile();
+                  onHome();
                 }}
                 fullWidth
                 className="sm:w-auto hover:bg-white hover:text-[#750015] transition-all duration-300"
