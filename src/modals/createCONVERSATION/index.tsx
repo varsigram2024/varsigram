@@ -1,6 +1,4 @@
-// CLEANED AND FIXED: components/CreateConversationModal.tsx
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import { Heading, Img, Text, Button } from "../../components";
 
@@ -8,49 +6,109 @@ interface Props {
   className?: string;
   isOpen: boolean;
   onRequestClose: () => void;
+  initialText?: string;
+  onTextChange?: (text: string) => void;
 }
 
-export default function CreateConversation({ isOpen, onRequestClose, className = "" }: Props) {
+export default function CreateConversation({ 
+  isOpen, 
+  onRequestClose, 
+  className = "",
+  initialText = "",
+  onTextChange
+}: Props) {
+  const [text, setText] = useState(initialText);
+  const maxLength = 1500;
+
+  useEffect(() => {
+    setText(initialText);
+  }, [initialText]);
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    if (newText.length <= maxLength) {
+      setText(newText);
+      onTextChange?.(newText);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={onRequestClose}
       appElement={document.getElementById("root")!}
-      className={`min-w-[924px] outline-none ${className}`}
-      overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      className={`outline-none ${className}`}
+      overlayClassName="fixed z-10 inset-0 bg-black bg-opacity-50 flex items-center justify-center"
     >
-      <div className="w-full min-w-[924px] rounded-[32px] bg-white p-8 sm:p-5">
-        <div className="ml-1 flex items-center justify-between gap-5 sm:ml-0">
-          <button onClick={onRequestClose}>
-            <img src="images/img_x.svg" alt="Close" className="h-[36px]" />
+      {/* Mobile Full Screen Modal */}
+      <div className="w-full h-full lg:min-w-[964px] lg:rounded-[32px] bg-white p-4 sm:p-5 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+          <button onClick={onRequestClose} className="p-2">
+            <img src="images/vectors/x.svg" alt="Close" className="h-[24px] w-[24px]" />
           </button>
-          <Button className="flex h-[42px] min-w-[116px] flex-row items-center justify-center rounded-[20px] bg-[#750015] px-8 text-center text-[24px] font-medium text-white sm:px-5 sm:text-[20px]">
+          <Button 
+            className="flex h-[36px] min-w-[80px] flex-row items-center justify-center rounded-[20px] bg-[#750015] px-6 text-center text-[16px] font-medium text-white"
+            onClick={() => {
+              // Handle post submission here
+              onRequestClose();
+            }}
+          >
             Post
           </Button>
         </div>
 
-        <div className="mx-1 mt-[54px] flex items-center sm:mx-0">
-          <div className="h-[24px] w-px bg-[#3a3a3a66]" />
-          <Text
-            size="body_large_regular"
-            as="p"
-            className="ml-4 self-end text-[20px] font-normal text-[#3a3a3a99] sm:text-[17px]"
-          >
-            What's good?
-          </Text>
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col mt-4">
+          <div className="flex items-start gap-4">
+            {/* User Avatar */}
+            <div className="w-[48px] h-[48px] rounded-full bg-gray-200 flex-shrink-0">
+              <img 
+                src="images/user-image.png" 
+                alt="User Avatar" 
+                className="w-full h-full rounded-full object-cover"
+              />
+            </div>
+            
+            {/* Text Input Area */}
+            <div className="flex-1">
+              <textarea
+                value={text}
+                onChange={handleTextChange}
+                placeholder="What's good?"
+                className="w-full text-[16px] font-normal text-[#3a3a3a] resize-none outline-none border-none bg-transparent min-h-[120px]"
+                rows={4}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="ml-1 mr-5 mt-[266px] flex items-center justify-between opacity-60 sm:mx-0">
-          <div className="flex items-center">
-            <Img src="images/img_image_gray_800.svg" alt="Image" className="h-[36px] w-[36px]" />
-            <div className="ml-6 mt-1.5 h-[20px] w-px self-start bg-[#adacb2]" />
-            <img src="images/img_camera_gray_800.svg" alt="Camera" className="ml-[22px] h-[36px] w-[36px]" />
-            <div className="ml-6 mt-1.5 h-[20px] w-px self-start bg-[#adacb2]" />
-            <Img src="images/img_upload_gray_800.svg" alt="Upload" className="ml-[22px] h-[36px] w-[36px]" />
+        {/* Footer */}
+        <div className="mt-auto pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Img 
+                src="images/vectors/image.svg" 
+                alt="Image" 
+                className="h-[24px] w-[24px] cursor-pointer" 
+              />
+              <div className="h-[20px] w-px bg-[#adacb2]" />
+              <img 
+                src="images/vectors/camera.svg" 
+                alt="Camera" 
+                className="h-[24px] w-[24px] cursor-pointer" 
+              />
+              <div className="h-[20px] w-px bg-[#adacb2]" />
+              <Img 
+                src="images/vectors/video.svg"
+                alt="Upload" 
+                className="h-[24px] w-[24px] cursor-pointer" 
+              />
+            </div>
+            <Text className="text-[14px] font-light text-[#3a3a3a]">
+              {maxLength - text.length} characters remaining
+            </Text>
           </div>
-          <Heading size="headingsm" as="h1" className="text-[20px] font-light text-[#3a3a3a] sm:text-[17px]">
-            1500 characters remaining
-          </Heading>
         </div>
       </div>
     </Modal>

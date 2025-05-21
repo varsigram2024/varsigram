@@ -8,8 +8,15 @@ import { CloseSVG } from "../../components/Input/close.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import UserProfile1 from "../../components/UserProfile1/index.tsx";
 import ProfileOrganizationSection from "./ProfilepageOrganizationSection.tsx";
+import BottomNav from "../../components/BottomNav/index.tsx";
 
-export default function ProfilepageOrganizationPage() {
+// Add interface for props
+interface ProfilepageOrganizationProps {
+  onComplete: (page: string) => void;
+}
+
+// Update component to accept props
+export default function ProfilepageOrganizationPage({ onComplete }: ProfilepageOrganizationProps) {
   const [searchBarValue, setSearchBarValue] = useState("");
 
   const handleClearSearch = () => setSearchBarValue("");
@@ -88,7 +95,7 @@ export default function ProfilepageOrganizationPage() {
                 </div>
 
                 <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                The University management has decided to improve and renovate it’s hostels, ensuring comfortability of all students. The University has decided to improve and renovate it’s hostels, ensuring comfortability of all students.
+                The University management has decided to improve and renovate it's hostels, ensuring comfortability of all students. The University has decided to improve and renovate it's hostels, ensuring comfortability of all students.
                 </Text>
 
                 <div className="h-px bg-[#d9d9d9]" />
@@ -144,7 +151,7 @@ export default function ProfilepageOrganizationPage() {
                 </div>
 
                 <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                The University management has decided to improve and renovate it’s hostels, ensuring comfortability of all students. The University has decided to improve and renovate it’s hostels, ensuring comfortability of all students.
+                The University management has decided to improve and renovate it's hostels, ensuring comfortability of all students. The University has decided to improve and renovate it's hostels, ensuring comfortability of all students.
                 </Text>
 
                 <div className="h-px bg-[#d9d9d9]" />
@@ -201,66 +208,7 @@ export default function ProfilepageOrganizationPage() {
                 </div>
 
                 <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                The University management has decided to improve and renovate it’s hostels, ensuring comfortability of all students. The University has decided to improve and renovate it’s hostels, ensuring comfortability of all students.
-                </Text>
-
-                <div className="h-px bg-[#d9d9d9]" />
-
-                <div className="flex flex-col gap-3.5">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Img src="images/vectors/like.svg" alt="Likes" className="h-[32px] w-[32px]" />
-                      <Text as="p" className="text-[14px] font-normal">14.6K</Text>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Img src="images/vectors/vers.svg" alt="Search" className="h-[32px] w-[32px]" />
-                      <Text as="p" className="text-[14px] font-normal">2.1K</Text>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Img src="images/vectors/revers.svg" alt="Repost" className="h-[32px] w-[32px]" />
-                      <Text as="p" className="text-[14px] font-normal">3K</Text>
-                    </div>
-                    <Img src="images/vectors/share.svg" alt="Share" className="h-[32px] w-[32px]" />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-
-
-
-
-
-            {/* Post Section 1*/}
-            <div className="flex w-[90%] flex-col items-center md:w-full mb-6">
-              <div className="flex flex-col gap-7">
-                <div className="flex flex-col gap-6">
-                
-                  <div className="flex items-start justify-between gap-5 md:flex-col">
-                    <div className="flex items-center">
-                      <div className="w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
-                        <Img src="images/unilag-logo.png" alt="Unilag Logo" className="h-[48px] w-full object-cover" />
-                      </div>
-                      <div className="flex flex-1 flex-col items-start px-4">
-                        <span className="flex items-center gap-1.5 self-stretch w-auto">
-                        <Text as="p" className="text-[24px] font-medium md:text-[22px]">University of Lagos</Text>
-                        <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
-                        </span>
-                        <Text as="p" className="mt-[-2px] text-[16px] font-normal text-[#adacb2]">Just now</Text>
-                      </div>
-                    </div>
-                    {/* <div className="flex items-start">
-                      {[1, 2, 3].map((_, i) => (
-                        <Img key={i} src="images/vectors/verified.svg" alt="Vector" className="h-[3px] w-[3px] ml-[-2px]" />
-                      ))}
-                    </div> */}
-                  </div>
-                  <div className="h-px bg-[#d9d9d9]" />
-                </div>
-
-                <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                The University management has decided to improve and renovate it’s hostels, ensuring comfortability of all students. The University has decided to improve and renovate it’s hostels, ensuring comfortability of all students.
+                The University management has decided to improve and renovate it's hostels, ensuring comfortability of all students. The University has decided to improve and renovate it's hostels, ensuring comfortability of all students.
                 </Text>
 
                 <div className="h-px bg-[#d9d9d9]" />
@@ -319,7 +267,66 @@ export default function ProfilepageOrganizationPage() {
                 </div>
 
                 <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                The University management has decided to improve and renovate it’s hostels, ensuring comfortability of all students. The University has decided to improve and renovate it’s hostels, ensuring comfortability of all students.
+                The University management has decided to improve and renovate it's hostels, ensuring comfortability of all students. The University has decided to improve and renovate it's hostels, ensuring comfortability of all students.
+                </Text>
+
+                <div className="h-px bg-[#d9d9d9]" />
+
+                <div className="flex flex-col gap-3.5">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Img src="images/vectors/like.svg" alt="Likes" className="h-[32px] w-[32px]" />
+                      <Text as="p" className="text-[14px] font-normal">14.6K</Text>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Img src="images/vectors/vers.svg" alt="Search" className="h-[32px] w-[32px]" />
+                      <Text as="p" className="text-[14px] font-normal">2.1K</Text>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Img src="images/vectors/revers.svg" alt="Repost" className="h-[32px] w-[32px]" />
+                      <Text as="p" className="text-[14px] font-normal">3K</Text>
+                    </div>
+                    <Img src="images/vectors/share.svg" alt="Share" className="h-[32px] w-[32px]" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+
+
+
+
+
+            {/* Post Section 1*/}
+            <div className="flex w-[90%] flex-col items-center md:w-full mb-6">
+              <div className="flex flex-col gap-7">
+                <div className="flex flex-col gap-6">
+                
+                  <div className="flex items-start justify-between gap-5 md:flex-col">
+                    <div className="flex items-center">
+                      <div className="w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
+                        <Img src="images/unilag-logo.png" alt="Unilag Logo" className="h-[48px] w-full object-cover" />
+                      </div>
+                      <div className="flex flex-1 flex-col items-start px-4">
+                        <span className="flex items-center gap-1.5 self-stretch w-auto">
+                        <Text as="p" className="text-[24px] font-medium md:text-[22px]">University of Lagos</Text>
+                        <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
+                        </span>
+                        <Text as="p" className="mt-[-2px] text-[16px] font-normal text-[#adacb2]">Just now</Text>
+                      </div>
+                    </div>
+                    {/* <div className="flex items-start">
+                      {[1, 2, 3].map((_, i) => (
+                        <Img key={i} src="images/vectors/verified.svg" alt="Vector" className="h-[3px] w-[3px] ml-[-2px]" />
+                      ))}
+                    </div> */}
+                  </div>
+                  <div className="h-px bg-[#d9d9d9]" />
+                </div>
+
+                <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
+                The University management has decided to improve and renovate it's hostels, ensuring comfortability of all students. The University has decided to improve and renovate it's hostels, ensuring comfortability of all students.
                 </Text>
 
                 <div className="h-px bg-[#d9d9d9]" />
@@ -467,6 +474,8 @@ export default function ProfilepageOrganizationPage() {
                 </div>
             </div>
         </div>
+
+        <BottomNav onComplete={onComplete} />
       </div>
   );
 }
