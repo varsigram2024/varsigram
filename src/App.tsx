@@ -18,6 +18,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('welcome');
 
   const renderPage = () => {
+    console.log('Rendering page:', currentPage);
     switch (currentPage) {
       case 'welcome':
         return <Welcome onLogin={() => setCurrentPage('login')} onSignUp={() => setCurrentPage('signup')} onHome={() => setCurrentPage('home')} />;
@@ -36,9 +37,12 @@ function App() {
       case 'academic-level':
         return <AcademicLevel onNext={() => setCurrentPage('home')} />;
       case 'home':
-        return <Homepage onComplete={(page) => setCurrentPage(page)} />;
+        return <Homepage onComplete={(page) => {
+          console.log('Homepage onComplete called with:', page);
+          setCurrentPage(page);
+        }} />;
       case 'user-profile':
-        return <ProfilepageOrganizationPage />;
+        return <ProfilepageOrganizationPage onComplete={(page) => setCurrentPage(page)} />;
       default:
         return <Welcome onLogin={() => setCurrentPage('login')} onSignUp={() => setCurrentPage('signup')} />;
     }

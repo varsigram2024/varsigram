@@ -25,7 +25,7 @@ export default function ProfilepageOrganizationPage({ onComplete }: ProfilepageO
    
 
       <div className="flex w-full items-start justify-center bg-white">
-        <Sidebar1 />
+        <Sidebar1 onComplete={onComplete} currentPage="user-profile" />
 
         <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row">
           <div className="lg:mt-[72px] w-full flex lg:flex-1 flex-col lg:h-[100vh] max-h-full items-center lg:items-end md:gap-[70px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-0 md:px-5 gap-[35px]">
@@ -475,7 +475,7 @@ export default function ProfilepageOrganizationPage({ onComplete }: ProfilepageO
             </div>
         </div>
 
-        <BottomNav onComplete={onComplete} />
+        <BottomNav onComplete={onComplete} currentPage="user-profile" />
       </div>
   );
 }

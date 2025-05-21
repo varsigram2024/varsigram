@@ -50,7 +50,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      <Sidebar1 />
+      <Sidebar1 onComplete={onComplete} currentPage="home" />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row">
         <div className="mt-[38px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch"> 
@@ -108,13 +108,13 @@ export default function Homepage({ onComplete }: HomepageProps) {
               </div>
             </div>
 
-            <div className="relative">
+            <div className="relative w-full">
               <div 
                 className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full absolute'}`}
               >
                 {activeTab === 'forYou' && (
                   <>
-                    <div className="flex w-[90%] flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                    <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
                       <div className="flex flex-col gap-7">
                         <div className="flex flex-col gap-6">
                           <div className="flex items-start justify-between gap-5 md:flex-col">
@@ -160,7 +160,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
                       </div>
                     </div>
 
-                    <div className="flex w-[90%] flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                    <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
                       <div className="flex flex-col gap-7">
                         <div className="flex flex-col gap-6">
                           <div className="flex items-start justify-between gap-5 md:flex-col">
@@ -213,7 +213,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
                 className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'}`}
               >
                 {activeTab === 'following' && (
-                  <div className="flex w-[90%] flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                  <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
                     <div className="flex flex-col gap-7">
                       <div className="flex flex-col gap-6">
                         <div className="flex items-start justify-between gap-5 md:flex-col">
@@ -385,7 +385,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
         onRequestClose={() => setIsCreateConversationOpen(false)}
       />
 
-      <BottomNav onComplete={onComplete} />
+      <BottomNav onComplete={onComplete} currentPage="home" />
     </div>
   );
 }
