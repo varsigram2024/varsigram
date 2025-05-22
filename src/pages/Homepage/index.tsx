@@ -18,22 +18,6 @@ interface DataItem {
   p138kfollowers: string;
 }
 
-const data: DataItem[] = [
-  { deanof: "Dean of Students Affairs", p138kfollowers: "13.8K followers" },
-  { deanof: "Mass Communication Student Association", p138kfollowers: "13.8K followers" },
-  { deanof: "The Project Managers Guild", p138kfollowers: "13.8K followers" },
-  { deanof: "The Investment Society", p138kfollowers: "13.8K followers" },
-  { deanof: "AIESEC In Lagos", p138kfollowers: "13.8K followers" },
-];
-
-const data1: DataItem[] = [
-  { deanof: "Dean of Students Affairs", p138kfollowers: "13.8K followers" },
-  { deanof: "Nigerian Economics Student Association", p138kfollowers: "13.8K followers" },
-  { deanof: "Mass Communication Student Association", p138kfollowers: "13.8K followers" },
-  { deanof: "The Project Managers Guild", p138kfollowers: "13.8K followers" },
-  { deanof: "The Investment Society", p138kfollowers: "13.8K followers" },
-];
-
 interface HomepageProps {
   onComplete: (page: string) => void;
 }
@@ -49,11 +33,11 @@ export default function Homepage({ onComplete }: HomepageProps) {
   const handleClearSearch = () => setSearchBarValue("");
 
   return (
-    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
+    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
       <Sidebar1 onComplete={onComplete} currentPage="home" />
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row">
-        <div className="mt-[38px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch"> 
+      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
+        <div className="mt-[38px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch h-[100vh] overflow-scroll scrollbar-hide"> 
           <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
             <div className="flex items-center gap-2.5">
               <div 
@@ -71,7 +55,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
                 className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
                 onClick={() => setActiveTab('forYou')}
               >
-                <Text as="p" className={`text-[24px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
+                <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
                   For you
                 </Text>
               </div>
@@ -79,7 +63,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
                 className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'following' ? 'border-[#750015]' : 'border-transparent'}`}
                 onClick={() => setActiveTab('following')}
               >
-                <Text as="p" className={`text-[24px] font-medium md:text-[22px] ${activeTab === 'following' ? '' : '!text-[#adacb2]'}`}>
+                <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'following' ? '' : '!text-[#adacb2]'}`}>
                   Following
                 </Text>
               </div>
@@ -101,10 +85,10 @@ export default function Homepage({ onComplete }: HomepageProps) {
                 }}
                 readOnly // Make it read-only since we'll use the modal for input
               />
-              <div className="flex flex-1 justify-end gap-6 px-1.5">
-                <Img src="images/vectors/image.svg" alt="Image" className="h-[24px] w-[24px] cursor-pointer" />
-                <Img src="images/vectors/camera.svg" alt="Camera" className="h-[24px] w-[24px] cursor-pointer" />
-                <Img src="images/vectors/video.svg" alt="Upload" className="h-[24px] w-[24px] cursor-pointer" />
+              <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
+                <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px] cursor-pointer" />
+                <Img src="images/vectors/camera.svg" alt="Camera" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px] cursor-pointer" />
+                <Img src="images/vectors/video.svg" alt="Upload" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px] cursor-pointer" />
               </div>
             </div>
 
@@ -119,42 +103,42 @@ export default function Homepage({ onComplete }: HomepageProps) {
                         <div className="flex flex-col gap-6">
                           <div className="flex items-start justify-between gap-5 md:flex-col">
                             <div className="flex items-center">
-                              <div className="w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
-                                <Img src="images/unilag-logo.png" alt="Unilag Logo" className="h-[48px] w-full object-cover" />
+                              <div className="w-[32px] lg:w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
+                                <Img src="images/unilag-logo.png" alt="Unilag Logo" className="h-auto lg:h-[48px] w-full object-cover" />
                               </div>
                               <div className="flex flex-1 flex-col items-start px-4">
                                 <span className="flex items-center gap-1.5 self-stretch w-auto">
-                                  <Text as="p" className="text-[24px] font-medium md:text-[22px]">Following Post</Text>
+                                  <Text as="p" className="text-[14px] font-extrabold md:text-[22px]">For You Post 1</Text>
                                   <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
                                 </span>
-                                <Text as="p" className="mt-[-2px] text-[16px] font-normal text-[#adacb2]">Just now</Text>
+                                <Text as="p" className="mt-[-2px] text-[14px] font-normal text-[#adacb2]">Just now</Text>
                               </div>
                             </div>
                           </div>
                           <div className="h-px bg-[#d9d9d9]" />
                         </div>
 
-                        <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                          This is a post from someone you follow. You can customize this content based on your needs.
+                        <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+                          This is a post from someone the algorithm. You can customize this content based on your needs.
                         </Text>
 
                         <div className="h-px bg-[#d9d9d9]" />
 
                         <div className="flex flex-col gap-3.5">
                           <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <Img src="images/vectors/like.svg" alt="Likes" className="h-[32px] w-[32px]" />
-                              <Text as="p" className="text-[14px] font-normal">1.2K</Text>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/like.svg" alt="Likes" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">1.2K</Text>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Img src="images/vectors/vers.svg" alt="Search" className="h-[32px] w-[32px]" />
-                              <Text as="p" className="text-[14px] font-normal">500</Text>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/vers.svg" alt="Search" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">500</Text>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Img src="images/vectors/revers.svg" alt="Repost" className="h-[32px] w-[32px]" />
-                              <Text as="p" className="text-[14px] font-normal">300</Text>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/revers.svg" alt="Repost" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">300</Text>
                             </div>
-                            <Img src="images/vectors/share.svg" alt="Share" className="h-[32px] w-[32px]" />
+                            <Img src="images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
                           </div>
                         </div>
                       </div>
@@ -165,46 +149,97 @@ export default function Homepage({ onComplete }: HomepageProps) {
                         <div className="flex flex-col gap-6">
                           <div className="flex items-start justify-between gap-5 md:flex-col">
                             <div className="flex items-center">
-                              <div className="w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
-                                <Img src="images/unilag-logo.png" alt="Unilag Logo" className="h-[48px] w-full object-cover" />
+                              <div className="w-[32px] lg:w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
+                                <Img src="images/prompts/mssn.png" alt="Unilag Logo" className="h-auto lg:h-[48px] w-full object-cover" />
                               </div>
                               <div className="flex flex-1 flex-col items-start px-4">
                                 <span className="flex items-center gap-1.5 self-stretch w-auto">
-                                  <Text as="p" className="text-[24px] font-medium md:text-[22px]">Following Post</Text>
+                                  <Text as="p" className="text-[14px] font-extrabold md:text-[22px]">For You Post 2</Text>
                                   <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
                                 </span>
-                                <Text as="p" className="mt-[-2px] text-[16px] font-normal text-[#adacb2]">Just now</Text>
+                                <Text as="p" className="mt-[-2px] text-[14px] font-normal text-[#adacb2]">5m</Text>
                               </div>
                             </div>
                           </div>
                           <div className="h-px bg-[#d9d9d9]" />
                         </div>
 
-                        <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                          This is a post from someone you follow. You can customize this content based on your needs.
+                        <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+                          This is a post from someone the algorithm. You can customize this content based on your needs.
                         </Text>
 
                         <div className="h-px bg-[#d9d9d9]" />
 
                         <div className="flex flex-col gap-3.5">
                           <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <Img src="images/vectors/like.svg" alt="Likes" className="h-[32px] w-[32px]" />
-                              <Text as="p" className="text-[14px] font-normal">1.2K</Text>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/like.svg" alt="Likes" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">1.2K</Text>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Img src="images/vectors/vers.svg" alt="Search" className="h-[32px] w-[32px]" />
-                              <Text as="p" className="text-[14px] font-normal">500</Text>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/vers.svg" alt="Search" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">500</Text>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Img src="images/vectors/revers.svg" alt="Repost" className="h-[32px] w-[32px]" />
-                              <Text as="p" className="text-[14px] font-normal">300</Text>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/revers.svg" alt="Repost" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">300</Text>
                             </div>
-                            <Img src="images/vectors/share.svg" alt="Share" className="h-[32px] w-[32px]" />
+                            <Img src="images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                      <div className="flex flex-col gap-7">
+                        <div className="flex flex-col gap-6">
+                          <div className="flex items-start justify-between gap-5 md:flex-col">
+                            <div className="flex items-center">
+                              <div className="w-[32px] lg:w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
+                                <Img src="images/prompts/nesa.png" alt="Unilag Logo" className="h-auto lg:h-[48px] w-full object-cover" />
+                              </div>
+                              <div className="flex flex-1 flex-col items-start px-4">
+                                <span className="flex items-center gap-1.5 self-stretch w-auto">
+                                  <Text as="p" className="text-[14px] font-extrabold md:text-[22px]">For You Post 3</Text>
+                                  <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
+                                </span>
+                                <Text as="p" className="mt-[-2px] text-[14px] font-normal text-[#adacb2]">2h</Text>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="h-px bg-[#d9d9d9]" />
+                        </div>
+
+                        <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+                          This is a post from someone the algorithm. You can customize this content based on your needs.
+                        </Text>
+
+                        <div className="flex w-full bg-[#adacb2] h-[320px] rounded-2xl mx-2">
+
+                        </div>
+
+                        <div className="h-px bg-[#d9d9d9]" />
+
+                        <div className="flex flex-col gap-3.5">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/like.svg" alt="Likes" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">1.2K</Text>
+                            </div>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/vers.svg" alt="Search" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">500</Text>
+                            </div>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/revers.svg" alt="Repost" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">300</Text>
+                            </div>
+                            <Img src="images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                   </>
                 )}
               </div>
@@ -214,46 +249,52 @@ export default function Homepage({ onComplete }: HomepageProps) {
               >
                 {activeTab === 'following' && (
                   <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-                    <div className="flex flex-col gap-7">
-                      <div className="flex flex-col gap-6">
-                        <div className="flex items-start justify-between gap-5 md:flex-col">
-                          <div className="flex items-center">
-                            <div className="w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
-                              <Img src="images/unilag-logo.png" alt="Unilag Logo" className="h-[48px] w-full object-cover" />
-                            </div>
-                            <div className="flex flex-1 flex-col items-start px-4">
-                              <span className="flex items-center gap-1.5 self-stretch w-auto">
-                                <Text as="p" className="text-[24px] font-medium md:text-[22px]">Following Post</Text>
-                                <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
-                              </span>
-                              <Text as="p" className="mt-[-2px] text-[16px] font-normal text-[#adacb2]">Just now</Text>
+                    <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                      <div className="flex flex-col gap-7">
+                        <div className="flex flex-col gap-6">
+                          <div className="flex items-start justify-between gap-5 md:flex-col">
+                            <div className="flex items-center">
+                              <div className="w-[32px] lg:w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
+                                <Img src="images/prompts/nesa.png" alt="Unilag Logo" className="h-auto lg:h-[48px] w-full object-cover" />
+                              </div>
+                              <div className="flex flex-1 flex-col items-start px-4">
+                                <span className="flex items-center gap-1.5 self-stretch w-auto">
+                                  <Text as="p" className="text-[14px] font-extrabold md:text-[22px]">Following Post 1</Text>
+                                  <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
+                                </span>
+                                <Text as="p" className="mt-[-2px] text-[14px] font-normal text-[#adacb2]">2h</Text>
+                              </div>
                             </div>
                           </div>
+                          <div className="h-px bg-[#d9d9d9]" />
                         </div>
+
+                        <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+                          This is a post from someone the you follow. You can customize this content based on your needs.
+                        </Text>
+
+                        <div className="flex w-full bg-[#adacb2] h-[320px] rounded-2xl mx-1">
+
+                        </div>
+
                         <div className="h-px bg-[#d9d9d9]" />
-                      </div>
 
-                      <Text size="body_large_regular" as="p" className="text-[20px] font-normal leading-[30px]">
-                        This is a post from someone you follow. You can customize this content based on your needs.
-                      </Text>
-
-                      <div className="h-px bg-[#d9d9d9]" />
-
-                      <div className="flex flex-col gap-3.5">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Img src="images/vectors/like.svg" alt="Likes" className="h-[32px] w-[32px]" />
-                            <Text as="p" className="text-[14px] font-normal">1.2K</Text>
+                        <div className="flex flex-col gap-3.5">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/like.svg" alt="Likes" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">1.2K</Text>
+                            </div>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/vers.svg" alt="Search" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">500</Text>
+                            </div>
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <Img src="images/vectors/revers.svg" alt="Repost" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
+                              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">300</Text>
+                            </div>
+                            <Img src="images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px]" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Img src="images/vectors/vers.svg" alt="Search" className="h-[32px] w-[32px]" />
-                            <Text as="p" className="text-[14px] font-normal">500</Text>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Img src="images/vectors/revers.svg" alt="Repost" className="h-[32px] w-[32px]" />
-                            <Text as="p" className="text-[14px] font-normal">300</Text>
-                          </div>
-                          <Img src="images/vectors/share.svg" alt="Share" className="h-[32px] w-[32px]" />
                         </div>
                       </div>
                     </div>
@@ -264,12 +305,13 @@ export default function Homepage({ onComplete }: HomepageProps) {
           </div>
         </div>
 
-        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8">
+        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
           <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
             <ProfileOrganizationSection />
           </div>
           
-          <div className="rounded-[32px] border border-solid overflow-hidden h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+            <div className="overflow-hidden h-full">
             <Input
               name="search_seven"
               placeholder="Search Varsigram"
@@ -375,6 +417,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
                   Follow
                 </Text>
               </div>
+            </div>
             </div>
           </div>
         </div>

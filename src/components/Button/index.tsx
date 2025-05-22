@@ -53,7 +53,7 @@ const Button = <T extends VariantType = "outline">({
 
   return (
     <button
-      className={`flex flex-row items-center justify-center text-center cursor-pointer whitespace-nowrap ${shapeClass} ${sizeClass} ${variantClass} ${className}`.trim()}
+      className={`flex flex-row items-center justify-center text-center cursor-pointer whitespace-nowrap font-archivo ${shapeClass} ${sizeClass} ${variantClass} ${className}`.trim()}
       {...restProps}
     >
       {!!leftIcon && leftIcon}

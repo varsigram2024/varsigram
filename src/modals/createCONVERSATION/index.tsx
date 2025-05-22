@@ -90,22 +90,22 @@ export default function CreateConversation({
               <Img 
                 src="images/vectors/image.svg" 
                 alt="Image" 
-                className="h-[24px] w-[24px] cursor-pointer" 
+                className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px] cursor-pointer" 
               />
               <div className="h-[20px] w-px bg-[#adacb2]" />
               <img 
                 src="images/vectors/camera.svg" 
                 alt="Camera" 
-                className="h-[24px] w-[24px] cursor-pointer" 
+                className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px] cursor-pointer" 
               />
               <div className="h-[20px] w-px bg-[#adacb2]" />
               <Img 
                 src="images/vectors/video.svg"
                 alt="Upload" 
-                className="h-[24px] w-[24px] cursor-pointer" 
+                className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px] cursor-pointer" 
               />
             </div>
-            <Text className="text-[14px] font-light text-[#3a3a3a]">
+            <Text className="ml-2 text-[9px] lg:text-[14px] font-light text-[#3a3a3a]">
               {maxLength - text.length} characters remaining
             </Text>
           </div>

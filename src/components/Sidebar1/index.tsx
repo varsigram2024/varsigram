@@ -50,15 +50,33 @@ export default function Sidebar1({ onComplete, currentPage, className = "" }: Pr
           )}
         </div>
 
+
+
         <div className="flex self-stretch gap-5 px-5 py-[18px] items-center">
           <Img src="images/connections-icon.svg" alt="Contrast" className="h-[24px] w-[24px]" />
           {!collapsed && <Text as="p" className="text-[16px] font-semibold">Connections</Text>}
         </div>
 
-        <div className="flex self-stretch gap-5 px-5 py-[18px] items-center">
-          <Img src="images/chat-icon.svg" alt="Contrast" className="h-[24px] w-[24px]" />
-          {!collapsed && <Text as="p" className="text-[16px] font-semibold">Chats</Text>}
+
+
+        <div 
+        onClick={() => {
+          console.log('Chat clicked, calling onComplete with "home"');
+          onComplete?.('chat');
+        }}
+        className="flex self-stretch gap-5 px-5 py-4 items-center">
+         <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}>
+          <path d="M22 12.1526C22 17.4358 17.5222 21.7193 12 21.7193C11.3507 21.7202 10.7032 21.6601 10.0654 21.5404C9.60633 21.4541 9.37678 21.411 9.21653 21.4355C9.05627 21.46 8.82918 21.5807 8.37499 21.8223C7.09014 22.5056 5.59195 22.7469 4.15111 22.4789C4.69874 21.8053 5.07275 20.9971 5.23778 20.1307C5.33778 19.6007 5.09 19.0859 4.71889 18.709C3.03333 16.9974 2 14.691 2 12.1526C2 6.86951 6.47778 2.58594 12 2.58594C17.5222 2.58594 22 6.86951 22 12.1526Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+
+          {!collapsed && <Heading as="p" className={currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}>
+              Chats
+            </Heading>}
         </div>
+
+
+
+
 
         <div className="flex self-stretch gap-5 px-5 py-[18px] items-center">
           <Img src="images/resources-icon.svg" alt="Library" className="h-[24px] w-[24px]" />

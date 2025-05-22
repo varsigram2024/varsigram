@@ -13,7 +13,7 @@ import { AboutYourself } from './pages/AboutYourself';
 import { AcademicLevel } from './pages/AcademicLevel';
 import { AuthProvider } from './auth/AuthContext';
 import './styles/animations.css';
-
+import Chatpage from './pages/Chatpage';
 function App() {
   const [currentPage, setCurrentPage] = useState('welcome');
 
@@ -39,6 +39,11 @@ function App() {
       case 'home':
         return <Homepage onComplete={(page) => {
           console.log('Homepage onComplete called with:', page);
+          setCurrentPage(page);
+        }} />;
+      case 'chat':
+        return <Chatpage onComplete={(page) => {
+          console.log('Chatpage onComplete called with:', page);
           setCurrentPage(page);
         }} />;
       case 'user-profile':
