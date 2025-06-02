@@ -52,12 +52,12 @@ export default function BottomNav({ onComplete, currentPage }: BottomNavProps) {
         
         <a href="#" className="flex flex-col items-center">
           <Img src="images/resources-icon.svg" alt="Notifications" className="h-[24px] w-[24px]" />
-          <Text as="p" className="text-[12px] mt-1">Notifications</Text>
+          <Text as="p" className="text-[12px] mt-1">Resources</Text>
         </a>
         
         <a href="#" className="flex flex-col items-center">
           <Img src="images/marketplace-icon.svg" alt="Market" className="h-[24px] w-[24px]" />
-          <Text as="p" className="text-[12px] mt-1">Unishop</Text>
+          <Text as="p" className="text-[12px] mt-1">Marketplace</Text>
         </a>
 
       </div>
