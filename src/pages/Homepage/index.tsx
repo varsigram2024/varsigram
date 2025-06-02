@@ -39,7 +39,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
         <div className="mt-[38px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch h-[100vh] overflow-scroll scrollbar-hide"> 
           <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
-            <div className="flex items-center gap-2.5">
+            <div className="hidden lg:flex items-center gap-2.5">
               <div 
                 onClick={() => onComplete('user-profile')} 
                 className="hover:opacity-80 transition-opacity cursor-pointer"
@@ -50,7 +50,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
               </div>
               {/* <img src="images/vectors/verified.svg" alt="User" className="h-[20px] w-[20px]" /> */}
             </div>
-            <div className="mt-12 lg:mt-5 flex justify-between">
+            <div className="lg:mt-5 flex justify-between">
               <div 
                 className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
                 onClick={() => setActiveTab('forYou')}
@@ -69,8 +69,29 @@ export default function Homepage({ onComplete }: HomepageProps) {
               </div>
             </div>
           
+
+
+            <div className="mt-5 lg:hidden flex flex-row justify-between">
+              <div>
+                <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
+              </div>
+
+              <div>
+                <Text className="font-semibold">Varsigram</Text>
+              </div>
+
+              <div>
+                <Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />
+              </div>
+
+            </div>
+
+            <div className="relative h-[2px] w-full bg-black" />
+
+            
+
             <div 
-              className="mt-8 lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => setIsCreateConversationOpen(true)}
             >
               <input
