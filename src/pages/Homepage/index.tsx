@@ -77,7 +77,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
               </div>
 
               <div>
-                <Text className="font-semibold">Varsigram</Text>
+                <Text className="font-semibold text-xl">Varsigram</Text>
               </div>
 
               <div>
