@@ -72,7 +72,10 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
 
             <div className="mt-5 lg:hidden flex flex-row justify-between">
-              <div>
+              <div 
+                  onClick={() => onComplete('user-profile')} 
+                  className="hover:opacity-80 transition-opacity cursor-pointer"
+              >
                 <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
               </div>
 
@@ -85,8 +88,6 @@ export default function Homepage({ onComplete }: HomepageProps) {
               </div>
 
             </div>
-
-            <div className="relative h-[2px] w-full bg-black" />
 
             
 

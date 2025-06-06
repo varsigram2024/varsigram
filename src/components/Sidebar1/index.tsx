@@ -20,7 +20,7 @@ export default function Sidebar1({ onComplete, currentPage, className = "" }: Pr
       collapsed={collapsed}
       width="250px"
       collapsedWidth="90px"
-      className={`${className} hidden lg:flex h-[100vh] flex-col overflow-auto border-solid border-[#adacb2] bg-white pt-1 !sticky top-0`}
+      className={`${className} hidden lg:flex h-auto flex-col overflow-auto border-solid border-[#adacb2] bg-white pt-1 !sticky top-0`}
     >
       <div className="flex h-full flex-col px-0 items-center">
         <div className="mt-[5px] flex self-stretch gap-5 px-1 py-[18px] items-center">
@@ -52,10 +52,26 @@ export default function Sidebar1({ onComplete, currentPage, className = "" }: Pr
 
 
 
-        <div className="flex self-stretch gap-5 px-5 py-[18px] items-center">
-          <Img src="images/connections-icon.svg" alt="Contrast" className="h-[24px] w-[24px]" />
-          {!collapsed && <Text as="p" className="text-[16px] font-semibold">Connections</Text>}
+        <div 
+        onClick={() => {
+          console.log('Chat clicked, calling onComplete with "Connections"');
+          onComplete?.('connections');
+        }}
+        className="flex self-stretch gap-5 px-5 py-4 items-center">
+         <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'connections' ? 'text-[#750015]' : 'text-gray-600'}>
+          <path d="M16.0352 8.20703C16.0352 10.0192 14.5661 11.4883 12.7539 11.4883C10.9417 11.4883 9.47266 10.0192 9.47266 8.20703C9.47266 6.39485 10.9417 4.92578 12.7539 4.92578C14.5661 4.92578 16.0352 6.39485 16.0352 8.20703Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M17.1289 3.83203C18.941 3.83203 20.4102 5.3011 20.4102 7.11328C20.4102 8.45104 19.6095 9.60181 18.4614 10.1127" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M14.6289 14.7695H10.8789C8.29007 14.7695 6.19141 16.8682 6.19141 19.457C6.19141 20.4926 7.03087 21.332 8.0664 21.332H17.4414C18.477 21.332 19.3164 20.4926 19.3164 19.457C19.3164 16.8682 17.2177 14.7695 14.6289 14.7695Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M19.0039 13.6758C21.5927 13.6758 23.6914 15.7745 23.6914 18.3633C23.6914 19.3988 22.8519 20.2383 21.8164 20.2383" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8.37891 3.83203C6.56673 3.83203 5.09766 5.3011 5.09766 7.11328C5.09766 8.45104 5.8982 9.60181 7.04637 10.1127" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3.69141 20.2383C2.65587 20.2383 1.81641 19.3988 1.81641 18.3633C1.81641 15.7745 3.91507 13.6758 6.5039 13.6758" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+          {!collapsed && <Heading as="p" className={currentPage === 'connections' ? 'text-[#750015]' : 'text-gray-600'}>
+              Connectons
+            </Heading>}
         </div>
+
 
 
 

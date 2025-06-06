@@ -1,10 +1,8 @@
 import { useState } from 'react';
-
 import { Welcome } from './pages/Welcome';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
 import ProfilepageOrganizationPage from './pages/ProfilepageOrganization';
-import HomepageFollowingPage from './pages/Homepage/HomepageFollowing';
 import Homepage from './pages/Homepage';
 import { EmailVerification } from './pages/EmailVerification';
 import { PhoneVerification } from './pages/PhoneVerification';
@@ -14,6 +12,7 @@ import { AcademicLevel } from './pages/AcademicLevel';
 import { AuthProvider } from './auth/AuthContext';
 import './styles/animations.css';
 import Chatpage from './pages/Chatpage';
+import Connectionspage from './pages/ConnectionsPage';
 function App() {
   const [currentPage, setCurrentPage] = useState('welcome');
 
@@ -46,6 +45,11 @@ function App() {
           console.log('Chatpage onComplete called with:', page);
           setCurrentPage(page);
         }} />;
+      case 'connections':
+          return <Connectionspage onComplete={(page) => {
+            console.log('connections onComplete called with:', page);
+            setCurrentPage(page);
+          }} />;
       case 'user-profile':
         return <ProfilepageOrganizationPage onComplete={(page) => setCurrentPage(page)} />;
       default:
