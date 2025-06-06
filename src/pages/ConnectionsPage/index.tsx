@@ -65,7 +65,77 @@ const dummyUsers: User[] = [
     userImage: "images/prompts/mssn.png",
     isVerified: false,
     bio: "MSSN, UNILAG"
-  }
+  },
+  {
+    id: 1,
+    userName: "UNILAG",
+    userImage: "images/unilag-logo.png",
+    isVerified: true,
+    bio: "The University of Lagos"
+  },
+  {
+    id: 2,
+    userName: "DSA, Unilag",
+    userImage: "images/unilag-logo.png",
+    isVerified: false,
+    bio: "Deen Student Affairs, UNILAG"
+  },
+  {
+    id: 3,
+    userName: "Medical Center",
+    userImage: "images/prompts/medical.png",
+    isVerified: true,
+    bio: "Healthly Body and Mind"
+  },
+  {
+    id: 4,
+    userName: "NESA",
+    userImage: "images/prompts/nesa.png",
+    isVerified: true,
+    bio: "NESA, UNILAG"
+  },
+  {
+    id: 5,
+    userName: "MSSN",
+    userImage: "images/prompts/mssn.png",
+    isVerified: false,
+    bio: "MSSN, UNILAG"
+  },
+  {
+    id: 1,
+    userName: "UNILAG",
+    userImage: "images/unilag-logo.png",
+    isVerified: true,
+    bio: "The University of Lagos"
+  },
+  {
+    id: 2,
+    userName: "DSA, Unilag",
+    userImage: "images/unilag-logo.png",
+    isVerified: false,
+    bio: "Deen Student Affairs, UNILAG"
+  },
+  {
+    id: 3,
+    userName: "Medical Center",
+    userImage: "images/prompts/medical.png",
+    isVerified: true,
+    bio: "Healthly Body and Mind"
+  },
+  {
+    id: 4,
+    userName: "NESA",
+    userImage: "images/prompts/nesa.png",
+    isVerified: true,
+    bio: "NESA, UNILAG"
+  },
+  {
+    id: 5,
+    userName: "MSSN",
+    userImage: "images/prompts/mssn.png",
+    isVerified: false,
+    bio: "MSSN, UNILAG"
+  },
 ];
 
 export default function Connectionspage({ onComplete }: ConnectionspageProps) {
