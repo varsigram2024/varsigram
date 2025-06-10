@@ -4,17 +4,23 @@ import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
 import ProfilepageOrganizationPage from './pages/ProfilepageOrganization';
 import Homepage from './pages/Homepage';
-import { EmailVerification } from './pages/EmailVerification';
 import { PhoneVerification } from './pages/PhoneVerification';
 import { AcademicDetails } from './pages/AcademicDetails';
 import { AboutYourself } from './pages/AboutYourself';
 import { AcademicLevel } from './pages/AcademicLevel';
-import { AuthProvider } from './auth/AuthContext';
+import { AuthProvider, useAuth } from './auth/AuthContext';
 import './styles/animations.css';
 import Chatpage from './pages/Chatpage';
 import Connectionspage from './pages/ConnectionsPage';
-function App() {
-  const [currentPage, setCurrentPage] = useState('welcome');
+import { SignUpProvider } from './auth/SignUpContext';
+import { MultiStepSignUp } from './pages/MultiStepSignUp';
+
+function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setCurrentPage: (page: string) => void }) {
+  const { signUp: originalSignUp } = useAuth();
+  
+  const adaptedSignUp = async (data: SignUpData) => {
+    await originalSignUp(data.email, data.password, data.fullName, data);
+  };
 
   const renderPage = () => {
     console.log('Rendering page:', currentPage);
@@ -24,9 +30,7 @@ function App() {
       case 'login':
         return <Login onSignUp={() => setCurrentPage('signup')} />;
       case 'signup':
-        return <SignUp onLogin={() => setCurrentPage('login')} />;
-      case 'email-verification':
-        return <EmailVerification onNext={() => setCurrentPage('phone-verification')} />;
+        return <MultiStepSignUp onLogin={() => setCurrentPage('login')} />;
       case 'phone-verification':
         return <PhoneVerification onNext={() => setCurrentPage('academic-details')} />;
       case 'academic-details':
@@ -58,10 +62,18 @@ function App() {
   };
   console.log('Current page is:', currentPage);
   
-
+  return (
+    <SignUpProvider signUp={adaptedSignUp}>
+      {renderPage()}
+    </SignUpProvider>
+  );
+}
+ 
+function App() {
+  const [currentPage, setCurrentPage] = useState('welcome');
   return (
     <AuthProvider setCurrentPage={setCurrentPage}>
-      {renderPage()}
+      <AppContent currentPage={currentPage} setCurrentPage={setCurrentPage} />
     </AuthProvider>
   );
 }

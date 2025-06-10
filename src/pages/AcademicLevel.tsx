@@ -3,22 +3,37 @@ import { ChevronDown } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
+import { useSignUp } from "../auth/SignUpContext";
 
 const levels = ["100", "200", "300", "400", "500"];
 
 interface AcademicLevelProps {
   onNext: () => void;
+  onBack: () => void;
 }
 
-export const AcademicLevel = ({ onNext }: AcademicLevelProps) => {
-  const [selectedLevel, setSelectedLevel] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const { setCurrentPage } = useAuth();
+export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
+  const { updateSignUpData } = useSignUp();
+  const [formData, setFormData] = useState({
+    year: "",
+  });
 
-  const handleContinue = () => {
-    if (selectedLevel) {
-      onNext();
-    }
+  const academicYears = [
+    "100 Level",
+    "200 Level",
+    "300 Level",
+    "400 Level",
+    "500 Level",
+    "600 Level"
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSignUpData({
+      year: formData.year,
+    });
+    console.log('Academic level stored:', formData);
+    onNext();
   };
 
   return (
@@ -32,41 +47,44 @@ export const AcademicLevel = ({ onNext }: AcademicLevelProps) => {
         </h1>
         <p className="text-base text-[#4D4D4D] mb-[52px]">Select your level</p>
 
-        <div className="space-y-6">
-          <div className="relative z-50">
-            <button
-              className="w-full h-14 px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors"
-              onClick={() => setShowDropdown(!showDropdown)}>
-              <span className="text-base">{selectedLevel || "Level"}</span>
-              <ChevronDown className="w-5 h-5" />
-            </button>
-
-            {showDropdown && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
-                {levels.map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => {
-                      setSelectedLevel(level);
-                      setShowDropdown(false);
-                    }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                    {level}
-                  </button>
-                ))}
-              </div>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Academic Level
+            </label>
+            <select
+              value={formData.year}
+              onChange={(e) =>
+                setFormData({ ...formData, year: e.target.value })
+              }
+              className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+            >
+              <option value="">Select your level</option>
+              {academicYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="relative z-0">
+          <div className="flex gap-4">
             <Button
-              fullWidth
-              onClick={handleContinue}
-              disabled={!selectedLevel}>
-              Continue
+              type="button"
+              onClick={onBack}
+              variant="outline"
+              className="flex-1"
+            >
+              Back
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+            >
+              Complete Sign Up
             </Button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

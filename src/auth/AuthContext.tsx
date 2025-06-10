@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { useSignUp } from '../auth/SignUpContext';
 
 interface User {
   id: string;
@@ -9,7 +10,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, signUpData: any) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -59,38 +60,56 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
     checkAuth();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  
+  const signUp = async (email: string, password: string, fullName: string, signUpData: any) => {
     try {
-      setIsLoading(true);
-      const response = await API.post('/register/', {
+      console.log('Received signup data:', signUpData); // Debug log
+      const requestData = {
         email,
         password,
-        bio: "",
+        bio: signUpData?.bio || '',
         student: {
           name: fullName,
-          faculty: "",
-          department: "",
-          year: "",
-          religion: "",
-          phone_number: "",
-          sex: "",
-          university: "",
-          date_of_birth: null
+          faculty: signUpData?.faculty || '',
+          department: signUpData?.department || '',
+          year: signUpData?.year || '',
+          religion: signUpData?.religion || '',
+          phone_number: signUpData?.phoneNumber || '',
+          sex: signUpData?.sex || '',
+          university: signUpData?.university || '',
+          date_of_birth: signUpData?.dateOfBirth || null
         },
         organization: {
-          organization_name: ""
+          organization_name: ''
         }
-      });
+      };
 
-      const { token, user } = response.data;
-      localStorage.setItem('auth_token', token);
-      setUser({ id: user.id, email: user.email, fullName: user.full_name });
-      setCurrentPage('email-verification');
+      console.log('Full Signup Request Data:', requestData);
+      console.log('Phone Number in Request:', requestData.student.phone_number);
+
+      const response = await axios.post(
+        'https://api.varsigram.com/api/v1/register/',
+        requestData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      console.log('Signup Response:', response.data);
+
+      if (response.data) {
+        const token = response.data.token;
+        if (token) {
+          localStorage.setItem('auth_token', token);
+        }
+        return response.data;
+      }
     } catch (error) {
       console.error('Signup failed:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 

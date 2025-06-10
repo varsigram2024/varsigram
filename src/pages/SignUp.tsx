@@ -5,37 +5,33 @@ import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
+import { useSignUp } from "../auth/SignUpContext";
 
 interface SignUpProps {
   onLogin: () => void;
 }
 
 export const SignUp = ({ onLogin }: SignUpProps) => {
-  const [apiError, setApiError] = useState("");
+  const { updateSignUpData, setCurrentStep } = useSignUp();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-  const [errors, setErrors] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signInWithGoogle } = useAuth();
 
   const validateForm = () => {
-    const newErrors = {
-      fullName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    };
+    const newErrors: typeof errors = {};
     let isValid = true;
 
     if (!formData.fullName.trim()) {
@@ -70,21 +66,26 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
-    setApiError("");
-  
     if (!validateForm()) return;
-  
+
     setIsLoading(true);
     try {
-      await signUp(formData.email, formData.password, formData.fullName);
-    } catch (error: any) {
-      const message = error?.response?.data?.message || "Signup failed. Please try again.";
-      setApiError(message);
+      // Update context with form data
+      updateSignUpData({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
+      // Move to next step (phone verification)
+      setCurrentStep(2);
+    } catch (error) {
+      console.error("Error updating signup data:", error);
+      alert("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-white flex flex-col sm:flex-row font-archivo">
@@ -125,86 +126,115 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
           </p>
 
           <form onSubmit={handleSignUp} className="space-y-6">
-  <div style={{ animationDelay: "100ms" }} className="animate-slide-up">
-    <Input
-      label="Full name"
-      placeholder="Enter your full name"
-      value={formData.fullName}
-      onChange={(e) =>
-        setFormData({ ...formData, fullName: e.target.value })
-      }
-      error={errors.fullName}
-    />
-  </div>
+            <div className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+              <Input
+                label="Full name"
+                placeholder="Enter your full name"
+                value={formData.fullName}
+                onChange={(e) =>
+                  setFormData({ ...formData, fullName: e.target.value })
+                }
+                error={errors.fullName}
+              />
+            </div>
 
-  <div style={{ animationDelay: "200ms" }} className="animate-slide-up">
-    <Input
-      label="Email"
-      type="email"
-      placeholder="Enter your email"
-      value={formData.email}
-      onChange={(e) =>
-        setFormData({ ...formData, email: e.target.value })
-      }
-      error={errors.email}
-    />
-  </div>
+            <div className="animate-slide-up" style={{ animationDelay: "200ms" }}>
+              <Input
+                label="Email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                error={errors.email}
+              />
+            </div>
 
-  <div className="relative animate-slide-up" style={{ animationDelay: "300ms" }}>
-    <Input
-      label="Password"
-      type={showPassword ? "text" : "password"}
-      placeholder="Enter your password"
-      value={formData.password}
-      onChange={(e) =>
-        setFormData({ ...formData, password: e.target.value })
-      }
-      error={errors.password}
-      icon={
-        <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none">
-          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-        </button>
-      }
-    />
-  </div>
+            <div className="relative animate-slide-up" style={{ animationDelay: "300ms" }}>
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                error={errors.password}
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="focus:outline-none">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+              />
+            </div>
 
-  <div className="relative animate-slide-up" style={{ animationDelay: "400ms" }}>
-    <Input
-      label="Confirm Password"
-      type={showConfirmPassword ? "text" : "password"}
-      placeholder="Confirm your password"
-      value={formData.confirmPassword}
-      onChange={(e) =>
-        setFormData({ ...formData, confirmPassword: e.target.value })
-      }
-      error={errors.confirmPassword}
-      icon={
-        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="focus:outline-none">
-          {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-        </button>
-      }
-    />
-  </div>
+            <div className="relative animate-slide-up" style={{ animationDelay: "400ms" }}>
+              <Input
+                label="Confirm Password"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  setFormData({ ...formData, confirmPassword: e.target.value })
+                }
+                error={errors.confirmPassword}
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="focus:outline-none">
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+              />
+            </div>
 
-  {!!apiError && (
-    <p className="text-sm text-red-600 animate-slide-up" style={{ animationDelay: "500ms" }}>
-      {apiError}
-    </p>
-  )}
+            <p className="text-sm text-[#3A3A3A] animate-slide-up" style={{ animationDelay: "500ms" }}>
+              By clicking continue, you are setting up a VARSIGRAM account and agree to our{" "}
+              <a href="#" className="text-[#750015] hover:underline">User Agreement</a>{" "}
+              and{" "}
+              <a href="#" className="text-[#750015] hover:underline">Privacy Policy</a>.
+            </p>
 
-  <p className="text-sm text-[#3A3A3A] animate-slide-up" style={{ animationDelay: "520ms" }}>
-    By clicking continue, you are setting up a VARSIGRAM account and agree to our{" "}
-    <a href="#" className="text-[#750015] hover:underline">User Agreement</a> and{" "}
-    <a href="#" className="text-[#750015] hover:underline">Privacy Policy</a>.
-  </p>
+            <div className="animate-slide-up" style={{ animationDelay: "600ms" }}>
+              <Button fullWidth loading={isLoading} type="submit">
+                Continue
+              </Button>
+            </div>
 
-  <div className="animate-slide-up" style={{ animationDelay: "600ms" }}>
-    <Button fullWidth loading={isLoading}>
-      Continue
-    </Button>
-  </div>
-</form>
+            <div className="flex items-center gap-4 animate-slide-up" style={{ animationDelay: "700ms" }}>
+              <div className="flex-1 h-[1px] bg-[#BFBFBF]"></div>
+              <span className="text-base">OR</span>
+              <div className="flex-1 h-[1px] bg-[#BFBFBF]"></div>
+            </div>
 
+            <button
+              type="button"
+              onClick={signInWithGoogle}
+              className="w-full h-[56px] sm:h-[58px] flex items-center justify-center gap-6 border border-[#B0B0B0] rounded-lg bg-white transition-all hover:bg-gray-50 active:scale-[0.98] animate-slide-up"
+              style={{ animationDelay: "800ms" }}>
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                className="w-6 h-6"
+              />
+              <span className="text-base font-medium">Continue with Google</span>
+            </button>
+
+            <p className="text-center animate-slide-up" style={{ animationDelay: "900ms" }}>
+              Already a VARSIGRAM user?{" "}
+              <button
+                type="button"
+                onClick={onLogin}
+                className="text-[#750015] hover:underline transition-all">
+                Log In
+              </button>
+            </p>
+          </form>
         </div>
       </div>
     </div>

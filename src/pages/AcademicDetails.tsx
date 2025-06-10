@@ -1,9 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft, ChevronDown } from "lucide-react";
-import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
-import { faculties } from "../types";
-import { useAuth } from "../auth/AuthContext";
+import { useSignUp } from "../auth/SignUpContext";
 
 interface AcademicDetailsProps {
   onNext: () => void;
@@ -11,130 +8,148 @@ interface AcademicDetailsProps {
 }
 
 export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
-  const [selectedFaculty, setSelectedFaculty] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [showFacultyDropdown, setShowFacultyDropdown] = useState(false);
-  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
-  const { setCurrentPage } = useAuth();
+  const { updateSignUpData } = useSignUp();
+  const [formData, setFormData] = useState({
+    university: "",
+    faculty: "",
+    department: "",
+  });
 
-  const departments =
-    faculties.find((f) => f.name === selectedFaculty)?.departments || [];
+  const universities = [
+    "University of Lagos"
+  ];
 
-  const handleSkip = () => {
-    setCurrentPage("about-yourself");
-  };
+  const faculties = [
+    "Faculty of Engineering",
+    "Faculty of Science",
+    "Faculty of Arts",
+    "Faculty of Social Sciences",
+    "Faculty of Law",
+    "Faculty of Medicine",
+    "Faculty of Education",
+    "Faculty of Agriculture",
+    "Faculty of Business Administration",
+    "Faculty of Environmental Sciences"
+  ];
 
-  const handleContinue = () => {
-    if (selectedFaculty && selectedDepartment) {
-      onNext();
-    }
+  const departments = [
+    "Computer Science",
+    "Electrical Engineering",
+    "Mechanical Engineering",
+    "Civil Engineering",
+    "Chemical Engineering",
+    "Mathematics",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Business Administration",
+    "Economics",
+    "Psychology",
+    "Sociology",
+    "Political Science",
+    "History",
+    "English",
+    "Philosophy"
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSignUpData({
+      university: formData.university,
+      faculty: formData.faculty,
+      department: formData.department,
+    });
+    console.log('Academic details stored:', formData);
+    onNext();
   };
 
   return (
-    <div className="min-h-screen bg-white font-archivo">
-      <header className="p-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
+    <div className="max-w-[398px] mx-auto">
+      <h1 className="text-[36px] sm:text-[45px] font-semibold mb-2 sm:mb-8">
+        Academic Details
+      </h1>
+      <p className="text-sm text-[#3A3A3A] mb-8">
+        Tell us about your academic background
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            University
+          </label>
+          <select
+            value={formData.university}
+            onChange={(e) =>
+              setFormData({ ...formData, university: e.target.value })
+            }
+            className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+          >
+            <option value="">Select your university</option>
+            {universities.map((uni) => (
+              <option key={uni} value={uni}>
+                {uni}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Faculty
+          </label>
+          <select
+            value={formData.faculty}
+            onChange={(e) =>
+              setFormData({ ...formData, faculty: e.target.value })
+            }
+            className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+          >
+            <option value="">Select your faculty</option>
+            {faculties.map((fac) => (
+              <option key={fac} value={fac}>
+                {fac}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Department
+          </label>
+          <select
+            value={formData.department}
+            onChange={(e) =>
+              setFormData({ ...formData, department: e.target.value })
+            }
+            className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+          >
+            <option value="">Select your department</option>
+            {departments.map((dept) => (
+              <option key={dept} value={dept}>
+                {dept}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex gap-4">
+          <Button
+            type="button"
             onClick={onBack}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <Logo />
+            variant="outline"
+            className="flex-1"
+          >
+            Back
+          </Button>
+          <Button
+            type="submit"
+            className="flex-1"
+          >
+            Continue
+          </Button>
         </div>
-        <button
-          onClick={handleSkip}
-          className="text-[#750015] text-sm font-archivo">
-          Skip
-        </button>
-      </header>
-
-      <div className="max-w-[398px] mx-auto px-6 mt-12">
-        <h1 className="text-[28px] font-medium mb-2 text-[#3A3A3A] animate-fade-in">
-          Register your account
-        </h1>
-        <p className="text-sm text-[#3A3A3A] mb-8 animate-slide-up">
-          Register your account on VARSIGRAM to continue
-        </p>
-
-        <div className="space-y-6">
-          <div className="relative z-20 animate-slide-up">
-            <button
-              onClick={() => {
-                setShowFacultyDropdown(!showFacultyDropdown);
-                setShowDepartmentDropdown(false);
-              }}
-              className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-              <span className="text-base">
-                {selectedFaculty || "Select Faculty"}
-              </span>
-              <ChevronDown className="w-5 h-5" />
-            </button>
-
-            {showFacultyDropdown && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
-                {faculties.map((faculty) => (
-                  <button
-                    key={faculty.name}
-                    onClick={() => {
-                      setSelectedFaculty(faculty.name);
-                      setSelectedDepartment("");
-                      setShowFacultyDropdown(false);
-                    }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                    {faculty.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div
-            className="relative z-10 animate-slide-up"
-            style={{ animationDelay: "100ms" }}>
-            <button
-              onClick={() => {
-                if (selectedFaculty) {
-                  setShowDepartmentDropdown(!showDepartmentDropdown);
-                  setShowFacultyDropdown(false);
-                }
-              }}
-              disabled={!selectedFaculty}
-              className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              <span className="text-base">
-                {selectedDepartment || "Select Department"}
-              </span>
-              <ChevronDown className="w-5 h-5" />
-            </button>
-
-            {showDepartmentDropdown && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
-                {departments.map((department) => (
-                  <button
-                    key={department}
-                    onClick={() => {
-                      setSelectedDepartment(department);
-                      setShowDepartmentDropdown(false);
-                    }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                    {department}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="relative z-0">
-            <Button
-              fullWidth
-              onClick={handleContinue}
-              disabled={!selectedFaculty || !selectedDepartment}
-              className="animate-slide-up h-[56px]"
-              style={{ animationDelay: "200ms" }}>
-              Continue
-            </Button>
-          </div>
-        </div>
-      </div>
+      </form>
     </div>
   );
 };

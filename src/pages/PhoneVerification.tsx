@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
+import { useSignUp } from "../auth/SignUpContext";
 
 const countryCodes = [
   { code: "+234", flag: "https://flagcdn.com/w40/ng.png", name: "Nigeria" },
@@ -11,21 +12,22 @@ const countryCodes = [
   { code: "+254", flag: "https://flagcdn.com/w40/ke.png", name: "Kenya" },
 ];
 
-export const PhoneVerification = ({ onNext }) => {
+interface PhoneVerificationProps {
+  onNext: () => void;
+}
+
+export const PhoneVerification = ({ onNext }: PhoneVerificationProps) => {
+  const { updateSignUpData } = useSignUp();
   const [countryCode, setCountryCode] = useState(countryCodes[0]);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showCountryList, setShowCountryList] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = async () => {
-    setIsLoading(true);
-    try {
-      // Add phone verification logic here
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate API call
-      onNext(); // Navigate to the next page after successful verification
-    } finally {
-      setIsLoading(false);
-    }
+  const handleContinue = () => {
+    // Simply store the phone number and move to next step
+    updateSignUpData({ phoneNumber });
+    console.log('Stored phone number:', phoneNumber); // Debug log
+    onNext();
   };
 
   return (
@@ -40,69 +42,69 @@ export const PhoneVerification = ({ onNext }) => {
       </header>
 
       <div className="max-w-[398px] mx-auto px-6 mt-12">
-        <h1 className="text-[24px] sm:text-[32px] font-bold mb-2 animate-fade-in">
-          Enter your Phone number
+        <h1 className="text-[36px] sm:text-[45px] font-semibold mb-2 sm:mb-8">
+          Phone Number
         </h1>
-        <p className="text-base text-[#4D4D4D] mb-8 animate-slide-up">
-          Input your phone number to stay connected and secure your account.
+        <p className="text-sm text-[#3A3A3A] mb-8">
+          Enter your phone number
         </p>
 
-        <div className="relative z-50 flex gap-3 mb-6 animate-slide-up">
-          <div className="relative">
-            <button
-              onClick={() => setShowCountryList(!showCountryList)}
-              className="w-[132px] h-14 px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-              <span className="flex items-center gap-2">
-                <img
-                  src={countryCode.flag}
-                  alt={countryCode.name}
-                  className="w-6 h-4 object-cover"
-                />
-                <span>{countryCode.code}</span>
-              </span>
-              <ChevronDown className="w-5 h-5" />
-            </button>
+        <form onSubmit={(e) => { e.preventDefault(); handleContinue(); }} className="space-y-6">
+          <div className="relative z-50 flex gap-3 mb-6 animate-slide-up">
+            <div className="relative">
+              <button
+                onClick={() => setShowCountryList(!showCountryList)}
+                className="w-[132px] h-14 px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
+                <span className="flex items-center gap-2">
+                  <img
+                    src={countryCode.flag}
+                    alt={countryCode.name}
+                    className="w-6 h-4 object-cover"
+                  />
+                  <span>{countryCode.code}</span>
+                </span>
+                <ChevronDown className="w-5 h-5" />
+              </button>
 
-            {showCountryList && (
-              <div className="absolute top-full left-0 w-[200px] mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
-                {countryCodes.map((country) => (
-                  <button
-                    key={country.code}
-                    onClick={() => {
-                      setCountryCode(country);
-                      setShowCountryList(false);
-                    }}
-                    className="w-full px-4 py-3 flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                    <img
-                      src={country.flag}
-                      alt={country.name}
-                      className="w-6 h-4 object-cover"
-                    />
-                    <span className="text-sm">{country.code}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+              {showCountryList && (
+                <div className="absolute top-full left-0 w-[200px] mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
+                  {countryCodes.map((country) => (
+                    <button
+                      key={country.code}
+                      onClick={() => {
+                        setCountryCode(country);
+                        setShowCountryList(false);
+                      }}
+                      className="w-full px-4 py-3 flex items-center gap-2 hover:bg-gray-50 transition-colors">
+                      <img
+                        src={country.flag}
+                        alt={country.name}
+                        className="w-6 h-4 object-cover"
+                      />
+                      <span className="text-sm">{country.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Input
+              type="tel"
+              placeholder="Phone number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="flex-1"
+            />
           </div>
 
-          <Input
-            type="tel"
-            placeholder="Phone number"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            className="flex-1"
-          />
-        </div>
-
-        <div className="relative z-0">
           <Button
+            type="submit"
             fullWidth
-            onClick={handleContinue}
-            loading={isLoading}
-            disabled={!phoneNumber}>
+            disabled={!phoneNumber}
+          >
             Continue
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   );

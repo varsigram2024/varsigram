@@ -3,14 +3,15 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
+import { useSignUp } from "../auth/SignUpContext";
 
 interface AboutYourselfProps {
   onNext: () => void;
   onBack: () => void;
 }
 
-const genders = ["Male", "Female"];
-const religions = ["Christianity", "Islam"];
+const genders = ["Male", "Female", "Other"];
+const religions = ["Christianity", "Islam", "Traditional", "Other"];
 const days = Array.from({ length: 31 }, (_, i) =>
   String(i + 1).padStart(2, "0")
 );
@@ -33,26 +34,33 @@ const years = Array.from({ length: 50 }, (_, i) =>
 );
 
 export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
-  const [gender, setGender] = useState("");
-  const [religion, setReligion] = useState("");
-  const [day, setDay] = useState("");
-  const [month, setMonth] = useState("");
-  const [year, setYear] = useState("");
-  const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const { updateSignUpData } = useSignUp();
+  const [formData, setFormData] = useState({
+    sex: "",
+    religion: "",
+    dateOfBirth: "",
+  });
   const { setCurrentPage } = useAuth();
 
   const handleSkip = () => {
     setCurrentPage("academic-level");
   };
 
-  const handleContinue = () => {
-    if (gender && religion && day && month && year) {
-      onNext();
-    }
-  };
-
-  const handleDropdownClick = (dropdownName: string) => {
-    setShowDropdown(showDropdown === dropdownName ? null : dropdownName);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Format date to YYYY-MM-DD for backend
+    const formattedDate = formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : null;
+    
+    updateSignUpData({
+      sex: formData.sex,
+      religion: formData.religion,
+      dateOfBirth: formattedDate,
+    });
+    console.log('About yourself details stored:', {
+      ...formData,
+      dateOfBirth: formattedDate
+    });
+    onNext();
   };
 
   return (
@@ -81,149 +89,71 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
           Register your account on VARSIGRAM to continue
         </p>
 
-        <div className="space-y-6">
-          <div className="relative z-[60] animate-slide-up">
-            <button
-              onClick={() => handleDropdownClick("gender")}
-              className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-              <span className="text-base">{gender || "Gender"}</span>
-              <ChevronDown className="w-5 h-5" />
-            </button>
-
-            {showDropdown === "gender" && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
-                {genders.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      setGender(item.toLowerCase());
-                      setShowDropdown(null);
-                    }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                    {item}
-                  </button>
-                ))}
-              </div>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Gender
+            </label>
+            <select
+              value={formData.sex}
+              onChange={(e) =>
+                setFormData({ ...formData, sex: e.target.value })
+              }
+              className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+            >
+              <option value="">Select your gender</option>
+              {genders.map((gender) => (
+                <option key={gender} value={gender}>
+                  {gender}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div
-            className="relative z-[50] animate-slide-up"
-            style={{ animationDelay: "100ms" }}>
-            <button
-              onClick={() => handleDropdownClick("religion")}
-              className="w-full h-[56px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-              <span className="text-base">{religion || "Religion"}</span>
-              <ChevronDown className="w-5 h-5" />
-            </button>
-
-            {showDropdown === "religion" && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg">
-                {religions.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      setReligion(item.toLowerCase());
-                      setShowDropdown(null);
-                    }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                    {item}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Religion
+            </label>
+            <select
+              value={formData.religion}
+              onChange={(e) =>
+                setFormData({ ...formData, religion: e.target.value })
+              }
+              className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+            >
+              <option value="">Select your religion</option>
+              {religions.map((religion) => (
+                <option key={religion} value={religion}>
+                  {religion}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div
-            className="flex gap-4 animate-slide-up relative z-[40]"
-            style={{ animationDelay: "200ms" }}>
-            <div className="relative flex-1">
-              <button
-                onClick={() => handleDropdownClick("day")}
-                className="w-full h-[40px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-                <span className="text-base">{day || "Day"}</span>
-                <ChevronDown className="w-5 h-5" />
-              </button>
-
-              {showDropdown === "day" && (
-                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {days.map((item) => (
-                    <button
-                      key={item}
-                      onClick={() => {
-                        setDay(item);
-                        setShowDropdown(null);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors">
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="relative flex-1">
-              <button
-                onClick={() => handleDropdownClick("month")}
-                className="w-full h-[40px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-                <span className="text-base">{month || "Month"}</span>
-                <ChevronDown className="w-5 h-5" />
-              </button>
-
-              {showDropdown === "month" && (
-                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {months.map((item) => (
-                    <button
-                      key={item}
-                      onClick={() => {
-                        setMonth(item);
-                        setShowDropdown(null);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors">
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="relative flex-1">
-              <button
-                onClick={() => handleDropdownClick("year")}
-                className="w-full h-[40px] px-4 flex items-center justify-between border border-[#B0B0B0] rounded-lg bg-white hover:border-[#750015] transition-colors">
-                <span className="text-base">{year || "Year"}</span>
-                <ChevronDown className="w-5 h-5" />
-              </button>
-
-              {showDropdown === "year" && (
-                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#B0B0B0] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {years.map((item) => (
-                    <button
-                      key={item}
-                      onClick={() => {
-                        setYear(item);
-                        setShowDropdown(null);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors">
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              value={formData.dateOfBirth}
+              onChange={(e) =>
+                setFormData({ ...formData, dateOfBirth: e.target.value })
+              }
+              className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
+              max={new Date().toISOString().split('T')[0]} // Prevents future dates
+            />
           </div>
 
-          <div className="relative z-0">
+          <div className="flex gap-4">
             <Button
-              fullWidth
-              onClick={handleContinue}
-              disabled={!gender || !religion || !day || !month || !year}
-              className="animate-slide-up h-[56px]"
-              style={{ animationDelay: "300ms" }}>
+              type="submit"
+              className="flex-1"
+            >
               Continue
             </Button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
