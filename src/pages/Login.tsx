@@ -5,6 +5,7 @@ import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
+import API from "../services/API";
 
 interface LoginProps {
   onSignUp: () => void;
@@ -24,8 +25,9 @@ export const Login = ({ onSignUp }: LoginProps) => {
     setIsLoading(true);
     try {
       await login(formData.email, formData.password);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }

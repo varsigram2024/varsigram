@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface User {
   id: string;
@@ -18,57 +19,72 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API = axios.create({
+  baseURL: '/api/v1/',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+API.interceptors.request.use(config => {
+  const token = localStorage.getItem('auth_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 export const AuthProvider = ({ children, setCurrentPage }: { children: React.ReactNode; setCurrentPage: (page: string) => void }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // For development/demo purposes until backend is ready
-  const mockAuthCall = async (userData: any) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return {
-      userId: 'mock-user-id',
-      email: userData.email,
-      fullName: userData.fullName || 'Mock User',
-      token: 'mock-token'
-    };
-  };
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('auth_token');
         if (token) {
-          // For development, simulate a successful auth check
-          const mockUser = {
-            id: 'mock-user-id',
-            email: 'user@example.com',
-            fullName: 'Mock User'
-          };
-          setUser(mockUser);
+          const response = await API.get('/profile/', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = response.data;
+          setUser({ 
+            id: data.id, 
+            email: data.email, 
+            fullName: data.full_name || data.name 
+          });
         }
         setIsLoading(false);
       } catch (error) {
         console.error('Auth check failed:', error);
+        localStorage.removeItem('auth_token'); // Clear invalid token
         setIsLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       setIsLoading(true);
-      // Mock API call until backend is ready
-      const data = await mockAuthCall({ email, fullName });
-      
-      localStorage.setItem('auth_token', data.token);
-      setUser({
-        id: data.userId,
-        email: data.email,
-        fullName: data.fullName
+      const response = await API.post('/register/', {
+        email,
+        password,
+        bio: "",
+        student: {
+          name: fullName,
+          faculty: "",
+          department: "",
+          year: "",
+          religion: "",
+          phone_number: "",
+          sex: "",
+          university: "",
+          date_of_birth: null
+        },
+        organization: {
+          organization_name: ""
+        }
       });
-      
+
+      const { token, user } = response.data;
+      localStorage.setItem('auth_token', token);
+      setUser({ id: user.id, email: user.email, fullName: user.full_name });
       setCurrentPage('email-verification');
     } catch (error) {
       console.error('Signup failed:', error);
@@ -79,100 +95,59 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
   };
 
   const signInWithGoogle = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Initialize Google Sign-In
-      const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
-      const clientId = 'YOUR_GOOGLE_CLIENT_ID'; // You'll need to replace this with your actual client ID
-      const redirectUri = `${window.location.origin}/auth/google/callback`;
-      
-      const params = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        response_type: 'code',
-        scope: 'email profile',
-        prompt: 'select_account'
-      });
-
-      const width = 500;
-      const height = 600;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-
-      const popup = window.open(
-        `${googleAuthUrl}?${params.toString()}`,
-        'Google Sign In',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
-
-      if (!popup) {
-        throw new Error('Failed to open popup');
-      }
-
-      const result = await new Promise((resolve, reject) => {
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            reject(new Error('Popup closed by user'));
-          }
-        }, 1000);
-
-        window.addEventListener('message', (event) => {
-          if (event.origin !== window.location.origin) return;
-          
-          if (event.data.type === 'google_auth') {
-            clearInterval(checkClosed);
-            popup.close();
-            
-            if (event.data.success) {
-              resolve(event.data.user);
-            } else {
-              reject(new Error('Google sign in failed'));
-            }
-          }
-        });
-      });
-
-      // Mock successful authentication
-      const mockData = await mockAuthCall({ 
-        email: 'google-user@example.com',
-        fullName: 'Google User'
-      });
-
-      localStorage.setItem('auth_token', mockData.token);
-      setUser({
-        id: mockData.userId,
-        email: mockData.email,
-        fullName: mockData.fullName
-      });
-      
-      setCurrentPage('email-verification');
-    } catch (error) {
-      console.error('Google sign in failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    console.warn('signInWithGoogle: Not implemented');
   };
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Mock API call until backend is ready
-      const data = await mockAuthCall({ email });
       
-      localStorage.setItem('auth_token', data.token);
-      setUser({
-        id: data.userId,
-        email: data.email,
-        fullName: data.fullName
+      // First, get the token from login
+      const loginResponse = await API.post('/login/', {
+        email,
+        password
       });
+
+      const { token } = loginResponse.data;
       
+      if (!token) {
+        throw new Error('No authentication token received');
+      }
+
+      // Store the token
+      localStorage.setItem('auth_token', token);
+
+      // Set the token in the API headers for subsequent requests
+      API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // Then fetch the user profile
+      const profileResponse = await API.get('/profile/');
+      const userData = profileResponse.data;
+
+      // Set the user data
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        fullName: userData.full_name || userData.name
+      });
+
+      // Redirect to dashboard
       setCurrentPage('dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Login failed:', error.response?.data || error.message);
+      
+      if (error.response?.data?.non_field_errors) {
+        throw new Error(error.response.data.non_field_errors[0]);
+      } else if (error.response?.status === 401) {
+        throw new Error('Invalid email or password');
+      } else if (error.response?.status === 400) {
+        const errorMessage = error.response.data.message || 
+                            error.response.data.detail || 
+                            'Invalid login credentials';
+        throw new Error(errorMessage);
+      } else {
+        throw new Error('Login failed. Please try again later.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -190,15 +165,17 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      signUp, 
-      signInWithGoogle,
-      login, 
-      logout, 
-      isLoading,
-      setCurrentPage 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        signUp,
+        signInWithGoogle,
+        login,
+        logout,
+        isLoading,
+        setCurrentPage,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
