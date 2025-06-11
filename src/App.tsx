@@ -19,6 +19,7 @@ function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setC
   const { signUp: originalSignUp } = useAuth();
   
   const adaptedSignUp = async (data: SignUpData) => {
+    console.log('App received signup data:', data); // Debug log
     await originalSignUp(data.email, data.password, data.fullName, data);
   };
 

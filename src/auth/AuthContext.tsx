@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSignUp } from '../auth/SignUpContext';
+import { toast } from 'react-hot-toast';
 
 interface User {
   id: string;
@@ -63,7 +64,9 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
   
   const signUp = async (email: string, password: string, fullName: string, signUpData: any) => {
     try {
-      console.log('Received signup data:', signUpData); // Debug log
+      setIsLoading(true);
+      console.log('Full signup data received:', signUpData); // Debug log
+
       const requestData = {
         email,
         password,
@@ -84,8 +87,7 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         }
       };
 
-      console.log('Full Signup Request Data:', requestData);
-      console.log('Phone Number in Request:', requestData.student.phone_number);
+      console.log('Request data being sent:', requestData); // Debug log
 
       const response = await axios.post(
         'https://api.varsigram.com/api/v1/register/',
@@ -98,18 +100,23 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         }
       );
 
-      console.log('Signup Response:', response.data);
+      console.log('API Response:', response.data); // Debug log
 
       if (response.data) {
         const token = response.data.token;
         if (token) {
           localStorage.setItem('auth_token', token);
+          toast.success('Sign up successful! Welcome to Varsigram');
+          setCurrentPage('home');
         }
         return response.data;
       }
-    } catch (error) {
-      console.error('Signup failed:', error);
+    } catch (error: any) {
+      console.error('Signup failed:', error.response?.data || error); // More detailed error logging
+      toast.error(error.response?.data?.message || 'Signup failed. Please try again.');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

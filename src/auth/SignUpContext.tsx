@@ -59,10 +59,15 @@ export const SignUpProvider = ({ children, signUp }: { children: React.ReactNode
 
   const submitSignUp = async () => {
     try {
+      setIsSubmitting(true);
+      console.log('Submitting final signup data:', signUpData); // Debug log
       await signUp(signUpData);
+      console.log('Signup completed successfully'); // Debug log
     } catch (error) {
       console.error('Signup failed:', error);
       throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -70,7 +75,8 @@ export const SignUpProvider = ({ children, signUp }: { children: React.ReactNode
     <SignUpContext.Provider value={{ 
       signUpData, 
       updateSignUpData,
-      submitSignUp 
+      submitSignUp,
+      isSubmitting 
     }}>
       {children}
     </SignUpContext.Provider>
