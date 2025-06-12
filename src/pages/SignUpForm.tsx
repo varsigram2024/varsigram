@@ -11,7 +11,7 @@ interface SignUpFormProps {
 }
 
 export const SignUpForm = ({ onNext, onLogin }: SignUpFormProps) => {
-  const { updateSignUpData } = useSignUp();
+  const { updateSignUpData, signUpData } = useSignUp();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -70,10 +70,12 @@ export const SignUpForm = ({ onNext, onLogin }: SignUpFormProps) => {
     try {
       // Update context with form data
       updateSignUpData({
-        fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
-        confirmPassword: formData.confirmPassword,
+        student: {
+          ...signUpData.student,
+          name: formData.fullName
+        }
       });
       onNext();
     } catch (error) {

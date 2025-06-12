@@ -1,20 +1,26 @@
 // src/auth/SignUpContext.tsx
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
+import { toast } from "react-hot-toast";
+import axios from "axios";
+
+const API_URL = "https://api.varsigram.com/api/v1";
 
 interface SignUpData {
   email: string;
   password: string;
-  fullName: string;
-  phoneNumber: string;
-  university: string;
-  department: string;
-  faculty: string;
-  year: string;
-  religion: string;
-  sex: string;
-  dateOfBirth: string | null;
   bio: string;
+  student: {
+    name: string;
+    faculty: string;
+    department: string;
+    year: string;
+    religion: string;
+    phone_number: string;
+    sex: string;
+    university: string;
+    date_of_birth: string | null;
+  }
 }
 
 interface SignUpContextType {
@@ -29,16 +35,18 @@ interface SignUpContextType {
 const defaultData: SignUpData = {
   email: '',
   password: '',
-  fullName: '',
-  phoneNumber: '',
-  university: '',
-  department: '',
-  faculty: '',
-  year: '',
-  religion: '',
-  sex: '',
-  dateOfBirth: null,
-  bio: ''
+  bio: '',
+  student: {
+    name: '',
+    faculty: '',
+    department: '',
+    year: '',
+    religion: '',
+    phone_number: '',
+    sex: '',
+    university: '',
+    date_of_birth: null
+  }
 };
 
 const SignUpContext = createContext<SignUpContextType | undefined>(undefined);
@@ -49,25 +57,54 @@ export const SignUpProvider = ({ children, signUp }: { children: React.ReactNode
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateSignUpData = (data: Partial<SignUpData>) => {
-    console.log('Updating signup data with:', data); // Debug log
-    setSignUpData(prev => {
-      const newData = { ...prev, ...data };
-      console.log('New signup data:', newData); // Debug log
+    setSignUpData((prev) => {
+      const newData = { ...prev };
+      
+      // Handle root level fields
+      if (data.email !== undefined) newData.email = data.email;
+      if (data.password !== undefined) newData.password = data.password;
+      if (data.bio !== undefined) newData.bio = data.bio;
+      
+      // Handle student fields
+      if (data.student) {
+        newData.student = {
+          ...newData.student,
+          ...data.student
+        };
+      }
+      
       return newData;
     });
   };
 
   const submitSignUp = async () => {
+    let requestData;
     try {
-      setIsSubmitting(true);
-      console.log('Submitting final signup data:', signUpData); // Debug log
-      await signUp(signUpData);
-      console.log('Signup completed successfully'); // Debug log
-    } catch (error) {
-      console.error('Signup failed:', error);
+      // Transform the data to match the API's expected structure
+      requestData = {
+        email: signUpData.email,
+        password: signUpData.password,
+        student: signUpData.student
+      };
+
+      console.log('Current signUpData:', signUpData);
+      console.log('Request data being sent:', requestData);
+
+      const response = await axios.post(
+        `${API_URL}/register/`,
+        requestData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Registration error:', error.response?.data || error.message);
+      console.error('Request data that caused error:', requestData);
       throw error;
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -76,7 +113,9 @@ export const SignUpProvider = ({ children, signUp }: { children: React.ReactNode
       signUpData, 
       updateSignUpData,
       submitSignUp,
-      isSubmitting 
+      isSubmitting,
+      currentStep,
+      setCurrentStep
     }}>
       {children}
     </SignUpContext.Provider>

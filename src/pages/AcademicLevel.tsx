@@ -15,7 +15,7 @@ interface AcademicLevelProps {
 
 
 export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
-  const { updateSignUpData, submitSignUp } = useSignUp();
+  const { updateSignUpData, submitSignUp, signUpData } = useSignUp();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     year: "",
@@ -25,16 +25,39 @@ export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
   const handleYearSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedYear = e.target.value;
     setFormData({ ...formData, year: selectedYear });
-    updateSignUpData({ year: selectedYear });
+    updateSignUpData({
+      student: {
+        ...signUpData.student,
+        year: selectedYear,
+      }
+    });
     setIsYearSelected(true);
     console.log('Year selected and stored:', selectedYear);
   };
 
-  const handleComplete = async () => {
-    if (!isYearSelected) return;
-    
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.year) {
+      toast.error('Please select your academic level');
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Log the exact year value being sent
+      console.log('Year value before update:', formData.year);
+      
+      // Update the context with the year
+      updateSignUpData({
+        student: {
+          ...signUpData.student,
+          year: formData.year,
+        }
+      });
+      
+      // Log the full context data
+      console.log('Full context data before submission:', signUpData);
+      
       await submitSignUp();
       console.log('Signup completed successfully');
       onNext();
@@ -85,7 +108,7 @@ export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
           </Button>
           <Button
             type="button"
-            onClick={handleComplete}
+            onClick={handleSubmit}
             className="flex-1"
             loading={isLoading}
             disabled={!isYearSelected}

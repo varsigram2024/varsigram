@@ -52,9 +52,11 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
     const formattedDate = formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : null;
     
     updateSignUpData({
-      sex: formData.sex,
-      religion: formData.religion,
-      dateOfBirth: formattedDate,
+      student: {
+        sex: formData.sex,
+        religion: formData.religion,
+        date_of_birth: formattedDate,
+      }
     });
     console.log('About yourself details stored:', {
       ...formData,

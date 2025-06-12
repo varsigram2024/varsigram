@@ -17,16 +17,21 @@ interface PhoneVerificationProps {
 }
 
 export const PhoneVerification = ({ onNext }: PhoneVerificationProps) => {
-  const { updateSignUpData } = useSignUp();
+  const { updateSignUpData, signUpData } = useSignUp();
   const [countryCode, setCountryCode] = useState(countryCodes[0]);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showCountryList, setShowCountryList] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleContinue = () => {
-    // Simply store the phone number and move to next step
-    updateSignUpData({ phoneNumber });
-    console.log('Stored phone number:', phoneNumber); // Debug log
+    // Store the phone number under student object
+    updateSignUpData({
+      student: {
+        ...signUpData.student,
+        phone_number: phoneNumber
+      }
+    });
+    console.log('Stored phone number:', phoneNumber);
     onNext();
   };
 

@@ -14,6 +14,7 @@ import Chatpage from './pages/Chatpage';
 import Connectionspage from './pages/ConnectionsPage';
 import { SignUpProvider } from './auth/SignUpContext';
 import { MultiStepSignUp } from './pages/MultiStepSignUp';
+import { Toaster } from 'react-hot-toast';
 
 function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setCurrentPage: (page: string) => void }) {
   const { signUp: originalSignUp } = useAuth();
@@ -65,6 +66,16 @@ function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setC
   
   return (
     <SignUpProvider signUp={adaptedSignUp}>
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        }}
+      />
       {renderPage()}
     </SignUpProvider>
   );

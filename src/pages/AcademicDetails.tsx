@@ -55,9 +55,11 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateSignUpData({
-      university: formData.university,
-      faculty: formData.faculty,
-      department: formData.department,
+      student: {
+        university: formData.university,
+        faculty: formData.faculty,
+        department: formData.department,
+      }
     });
     console.log('Academic details stored:', formData);
     onNext();
