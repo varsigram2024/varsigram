@@ -112,9 +112,10 @@ export default function Sidebar1({ onComplete, currentPage, className = "" }: Pr
 
         
         <div    
+        onClick={() => onComplete?.('settings')}  
         className="flex self-stretch gap-5 px-5 py-[18px] mt-[20vh] items-center">
           <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
-          {!collapsed && <Text as="p" className="text-[16px] font-semibold">Settings</Text>}
+          {!collapsed && <Text as="p" className={currentPage === 'settings' ? 'text-[#750015]' : 'text-black'}>Settings</Text>}
         </div>
 
         <div 

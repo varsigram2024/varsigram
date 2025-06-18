@@ -16,6 +16,7 @@ import { SignUpProvider } from './auth/SignUpContext';
 import { MultiStepSignUp } from './pages/MultiStepSignUp';
 import { Toaster } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
+import Settings from './pages/Settings';
 
 function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setCurrentPage: (page: string) => void }) {
   const { signUp: originalSignUp } = useAuth();
@@ -53,10 +54,15 @@ function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setC
           setCurrentPage(page);
         }} />;
       case 'connections':
-          return <Connectionspage onComplete={(page) => {
-            console.log('connections onComplete called with:', page);
-            setCurrentPage(page);
-          }} />;
+        return <Connectionspage onComplete={(page) => {
+          console.log('connections onComplete called with:', page);
+          setCurrentPage(page);
+        }} />;
+      case 'settings':
+        return <Settings onComplete={(page) => {
+          console.log('Settings onComplete called with:', page);
+          setCurrentPage(page);
+        }} />;
       case 'user-profile':
         return <ProfilepageOrganizationPage onComplete={(page) => setCurrentPage(page)} />;
       default:

@@ -1,0 +1,144 @@
+import React, { Suspense, ChangeEvent, useState } from "react";
+import { Link } from "react-router-dom";
+import { SearchInput } from "../../components/Input/SearchInput.tsx";
+import { Text } from "../../components/Text/index.tsx";
+import { Img } from "../../components/Img/index.tsx";
+import { Input } from "../../components/Input/index.tsx";
+import { Heading } from "../../components/Heading/index.tsx";
+import { CloseSVG } from "../../components/Input/close.tsx";
+import Sidebar1 from "../../components/Sidebar1/index.tsx";
+import UserProfile1 from "../../components/UserProfile1/index.tsx";
+import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
+import { Button } from "../../components/Button/index";
+import UserProfile2 from "../../components/UserProfile2";
+import BottomNav from "../../components/BottomNav";
+import { useAuth } from '../../auth/AuthContext';
+import { toast } from 'react-toastify';
+import { LogOut, Bell, Lock, User, Shield, HelpCircle } from 'lucide-react';
+
+interface SettingsProps {
+  onComplete: (page: string) => void;
+}
+
+export default function Settings({ onComplete }: SettingsProps) {
+  const { logout } = useAuth();
+  const [notifications, setNotifications] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+  };
+
+  const toggleNotifications = () => {
+    setNotifications(!notifications);
+    toast.success(`Notifications ${!notifications ? 'enabled' : 'disabled'}`);
+  };
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    toast.success(`Dark mode ${!darkMode ? 'enabled' : 'disabled'}`);
+  };
+
+  return (
+    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
+      <Sidebar1 onComplete={onComplete} currentPage="settings" />
+
+      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
+        <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
+          {/* Mobile Header */}
+          <div className="mt-5 lg:hidden flex flex-row justify-between">
+            <div onClick={() => onComplete('user-profile')} className="hover:opacity-80 transition-opacity cursor-pointer">
+              <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
+            </div>
+            <div>
+              <Text className="font-semibold text-xl">Settings</Text>
+            </div>
+            <div>
+              <Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />
+            </div>
+          </div>
+
+          {/* Settings Content */}
+          <div className="flex flex-col gap-6">
+            <Text className="text-2xl font-bold">Settings</Text>
+
+            {/* Account Settings */}
+            <div className="bg-white rounded-xl p-6">
+              <Text className="text-xl font-semibold mb-4">Account</Text>
+              <div className="space-y-4">
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <User size={20} />
+                  <Text>Edit Profile</Text>
+                </button>
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Lock size={20} />
+                  <Text>Change Password</Text>
+                </button>
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Shield size={20} />
+                  <Text>Privacy Settings</Text>
+                </button>
+              </div>
+            </div>
+
+            {/* Preferences */}
+            <div className="bg-white rounded-xl p-6">
+              <Text className="text-xl font-semibold mb-4">Preferences</Text>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-3">
+                    <Bell size={20} />
+                    <Text>Notifications</Text>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={notifications} onChange={toggleNotifications} />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#750015] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015]"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-3">
+                    <Img src="images/vectors/moon.svg" alt="Dark Mode" className="h-[20px] w-[20px]" />
+                    <Text>Dark Mode</Text>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={darkMode} onChange={toggleDarkMode} />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#750015] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015]"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Support */}
+            <div className="bg-white rounded-xl p-6">
+              <Text className="text-xl font-semibold mb-4">Support</Text>
+              <div className="space-y-4">
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <HelpCircle size={20} />
+                  <Text>Help Center</Text>
+                </button>
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Text>Terms of Service</Text>
+                </button>
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Text>Privacy Policy</Text>
+                </button>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <LogOut size={20} />
+              <Text>Logout</Text>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <BottomNav onComplete={onComplete} currentPage="settings" />
+    </div>
+  );
+}

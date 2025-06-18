@@ -305,12 +305,23 @@ export default function Homepage({ onComplete }: HomepageProps) {
                 <Text className="font-semibold text-xl">Varsigram</Text>
               </div>
 
-              <button
-                onClick={logout}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <LogOut size={20} />
-              </button>
+        
+
+              <div className='flex flex-row justify-between'>
+                  <div 
+                    onClick={() => onComplete('settings')} 
+                    className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
+                  >
+                   <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
+                  </div>
+                
+                <button
+                  onClick={logout}
+                  className="text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
             </div>
 
             
