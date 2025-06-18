@@ -8,7 +8,7 @@ import { Heading } from "../../components/Heading/index.tsx";
 import { CloseSVG } from "../../components/Input/close.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import UserProfile1 from "../../components/UserProfile1/index.tsx";
-import ProfileOrganizationSection from "../ProfilepageOrganization/ProfilepageOrganizationSection.tsx";
+import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
 import { Button } from "../../components/Button/index";
 import UserProfile2 from "../../components/UserProfile2";
 import BottomNav from "../../components/BottomNav";

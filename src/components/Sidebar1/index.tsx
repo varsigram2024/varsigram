@@ -5,6 +5,7 @@ import { Menu, Sidebar, sidebarClasses } from "react-pro-sidebar";
 import { Img } from "../Img";
 import { Heading } from "../Heading";
 import { Text } from "../Text";
+import { useAuth } from "../../auth/AuthContext";
 
 interface Props {
   onComplete?: (page: string) => void;
@@ -14,6 +15,7 @@ interface Props {
 
 export default function Sidebar1({ onComplete, currentPage, className = "" }: Props) {
   const [collapsed, setCollapsed] = useState(true);
+  const { user } = useAuth();
 
   return (
     <Sidebar
@@ -117,9 +119,26 @@ export default function Sidebar1({ onComplete, currentPage, className = "" }: Pr
 
         <div 
         onClick={() => onComplete?.('user-profile')}     
-        className="flex self-stretch gap-5 px-5 py-[18px] items-center ">
-          <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
-          {!collapsed && <Text as="p" className={currentPage === 'user-profile' ? 'text-[#750015]' : 'text-black'}>Meiyaku</Text>}
+        className="flex self-stretch gap-5 px-5 py-[18px] items-center">
+          <Img 
+            src={user?.profile_pic_url || "images/user.png"} 
+            alt="Profile" 
+            className="h-[32px] w-[32px] rounded-[50%]" 
+          />
+          {!collapsed && (
+            <div className="flex items-center gap-1">
+              <Text as="p" className={currentPage === 'user-profile' ? 'text-[#750015]' : 'text-black'}>
+                {user?.username || user?.fullName || 'User'}
+              </Text>
+              {user?.is_verified && (
+                <Img 
+                  src="images/vectors/verified.svg" 
+                  alt="Verified" 
+                  className="h-[16px] w-[16px]" 
+                />
+              )}
+            </div>
+          )}
         </div>
 
       </div>

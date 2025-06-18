@@ -8,7 +8,7 @@ interface AcademicDetailsProps {
 }
 
 export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
-  const { updateSignUpData } = useSignUp();
+  const { updateSignUpData, signUpData } = useSignUp();
   const [formData, setFormData] = useState({
     university: "",
     faculty: "",
@@ -56,6 +56,7 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
     e.preventDefault();
     updateSignUpData({
       student: {
+        ...signUpData.student,
         university: formData.university,
         faculty: formData.faculty,
         department: formData.department,

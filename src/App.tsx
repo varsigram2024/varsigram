@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Welcome } from './pages/Welcome';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
-import ProfilepageOrganizationPage from './pages/ProfilepageOrganization';
+import ProfilepageOrganizationPage from './pages/Profilepage';
 import Homepage from './pages/Homepage';
 import { PhoneVerification } from './pages/PhoneVerification';
 import { AcademicDetails } from './pages/AcademicDetails';
@@ -15,6 +15,7 @@ import Connectionspage from './pages/ConnectionsPage';
 import { SignUpProvider } from './auth/SignUpContext';
 import { MultiStepSignUp } from './pages/MultiStepSignUp';
 import { Toaster } from 'react-hot-toast';
+import 'react-toastify/dist/ReactToastify.css';
 
 function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setCurrentPage: (page: string) => void }) {
   const { signUp: originalSignUp } = useAuth();

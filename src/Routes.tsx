@@ -1,6 +1,6 @@
 import React from "react";
 import { useRoutes, Navigate } from "react-router-dom";
-import ProfilepageOrganizationPage from "./pages/ProfilepageOrganization";
+import ProfilepageOrganizationPage from "./pages/Profilepage";
 import Homepage from "./pages/Homepage";
 
 const ProjectRoutes = () => {

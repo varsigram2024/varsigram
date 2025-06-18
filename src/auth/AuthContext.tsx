@@ -4,9 +4,16 @@ import { useSignUp } from '../auth/SignUpContext';
 import { toast } from 'react-hot-toast';
 
 interface User {
-  id: string;
+   id: string;
   email: string;
   fullName: string;
+  profile_pic_url?: string;
+  username?: string;
+  is_verified?: boolean;
+  bio?: string;
+  account_type: 'student' | 'organization';  // Add this
+  following_count?: number;  // Add this
+  followers_count?: number;  // Add this
 }
 
 interface AuthContextType {
@@ -18,18 +25,34 @@ interface AuthContextType {
   isLoading: boolean;
   setCurrentPage: (page: string) => void;
   token: string | null;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API = axios.create({
-  baseURL: '/api/v1/',
+  baseURL: 'https://api.varsigram.com/api/v1/',
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Add response interceptor to handle token expiration
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403 || error.response?.status === 401) {
+      // Clear invalid token
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login'; // Redirect to login page
+    }
+    return Promise.reject(error);
+  }
+);
+
 API.interceptors.request.use(config => {
   const token = localStorage.getItem('auth_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -41,27 +64,50 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          const response = await API.get('/profile/', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = response.data;
-          setUser({ 
-            id: data.id, 
-            email: data.email, 
-            fullName: data.full_name || data.name 
-          });
+        const storedToken = localStorage.getItem('auth_token');
+        if (storedToken) {
+          setToken(storedToken);
+          API.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+          
+          try {
+            const response = await API.get('/profile/');
+            const data = response.data;
+            setUser({ 
+              id: data.id, 
+              email: data.email, 
+              fullName: data.full_name || data.name,
+              profile_pic_url: data.profile_pic_url,
+              username: data.username,
+              is_verified: data.is_verified,
+              bio: data.bio,
+              account_type: data.account_type,
+              following_count: data.following_count,
+              followers_count: data.followers_count
+            });
+          } catch (profileError: any) {
+            console.error('Profile fetch failed:', profileError);
+            if (profileError.response?.status === 403 || profileError.response?.status === 401) {
+              localStorage.removeItem('auth_token');
+              setToken(null);
+              setUser(null);
+              setCurrentPage('login');
+            }
+          }
         }
-        setIsLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('auth_token'); // Clear invalid token
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          localStorage.removeItem('auth_token');
+          setToken(null);
+          setUser(null);
+          setCurrentPage('login');
+        }
+      } finally {
         setIsLoading(false);
       }
     };
     checkAuth();
-  }, []);
+  }, [setCurrentPage]);
 
   
   const signUp = async (email: string, password: string, fullName: string, signUpData: any) => {
@@ -150,10 +196,14 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
     try {
       setIsLoading(true);
       
+      console.log('Attempting login with:', { email });
+      
       const loginResponse = await API.post('/login/', {
         email,
         password
       });
+
+      console.log('Login response:', loginResponse.data);
 
       const { token } = loginResponse.data;
       
@@ -161,37 +211,59 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         throw new Error('No authentication token received');
       }
 
+      // Clear any existing token first
+      localStorage.removeItem('auth_token');
+      
+      // Store new token
       localStorage.setItem('auth_token', token);
       setToken(token);
       API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      const profileResponse = await API.get('/profile/');
-      const userData = profileResponse.data;
+      try {
+        const profileResponse = await API.get('/profile/');
+        console.log('Profile response:', profileResponse.data);
+        
+        const userData = profileResponse.data;
+        setUser({
+          id: userData.id,
+          email: userData.email,
+          fullName: userData.full_name || userData.name,
+          profile_pic_url: userData.profile_pic_url,
+          username: userData.username,
+          is_verified: userData.is_verified,
+          bio: userData.bio,
+          account_type: userData.account_type,
+          following_count: userData.following_count,
+          followers_count: userData.followers_count
+        });
 
-      setUser({
-        id: userData.id,
-        email: userData.email,
-        fullName: userData.full_name || userData.name
-      });
-
-      toast.success('Login successful! Welcome back', {
-        duration: 3000,
-        style: {
-          background: '#4CAF50',
-          color: '#fff',
-          fontSize: '16px',
-          padding: '16px',
-        },
-      });
-      
-      setCurrentPage('home');
+        toast.success('Login successful! Welcome back');
+        setCurrentPage('home');
+      } catch (profileError: any) {
+        console.error('Profile fetch failed:', profileError);
+        if (profileError.response?.status === 403 || profileError.response?.status === 401) {
+          localStorage.removeItem('auth_token');
+          setToken(null);
+          setUser(null);
+          throw new Error('Failed to fetch user profile');
+        }
+      }
     } catch (error: any) {
-      console.error('Login failed:', error.response?.data || error.message);
+      console.error('Login failed:', error.response?.data || error);
+      
+      // Clear any invalid token
+      localStorage.removeItem('auth_token');
+      setToken(null);
+      setUser(null);
       
       if (error.response?.data?.non_field_errors) {
         toast.error(error.response.data.non_field_errors[0]);
       } else if (error.response?.status === 401) {
         toast.error('Invalid email or password');
+      } else if (error.response?.status === 403) {
+        toast.error('Access denied. Please try logging in again.');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
       } else {
         toast.error('Login failed. Please try again later.');
       }
@@ -213,6 +285,10 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
     }
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -224,6 +300,7 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         isLoading,
         setCurrentPage,
         token,
+        updateUser,
       }}
     >
       {children}

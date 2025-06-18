@@ -34,13 +34,13 @@ const years = Array.from({ length: 50 }, (_, i) =>
 );
 
 export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
-  const { updateSignUpData } = useSignUp();
+  const { updateSignUpData, signUpData } = useSignUp();
+  const { setCurrentPage } = useAuth();
   const [formData, setFormData] = useState({
     sex: "",
     religion: "",
     dateOfBirth: "",
   });
-  const { setCurrentPage } = useAuth();
 
   const handleSkip = () => {
     setCurrentPage("academic-level");
@@ -53,6 +53,7 @@ export const AboutYourself = ({ onNext, onBack }: AboutYourselfProps) => {
     
     updateSignUpData({
       student: {
+        ...signUpData.student,
         sex: formData.sex,
         religion: formData.religion,
         date_of_birth: formattedDate,

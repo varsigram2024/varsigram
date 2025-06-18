@@ -4,6 +4,7 @@ import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { useSignUp } from "../auth/SignUpContext";
+import { useAuth } from "../auth/AuthContext";
 
 const countryCodes = [
   { code: "+234", flag: "https://flagcdn.com/w40/ng.png", name: "Nigeria" },
@@ -18,6 +19,7 @@ interface PhoneVerificationProps {
 
 export const PhoneVerification = ({ onNext }: PhoneVerificationProps) => {
   const { updateSignUpData, signUpData } = useSignUp();
+  const { setCurrentPage } = useAuth();
   const [countryCode, setCountryCode] = useState(countryCodes[0]);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showCountryList, setShowCountryList] = useState(false);
@@ -35,11 +37,17 @@ export const PhoneVerification = ({ onNext }: PhoneVerificationProps) => {
     onNext();
   };
 
+  const handleBack = () => {
+    setCurrentPage('signup');
+  };
+
   return (
     <div className="min-h-screen bg-white font-archivo">
       <header className="p-6">
         <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button 
+            onClick={handleBack}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </button>
           <Logo />
