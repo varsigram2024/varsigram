@@ -72,7 +72,9 @@ export const SignUp = ({ onLogin }: SignUpProps) => {
     try {
       // Update context with form data
       updateSignUpData({
-        fullName: formData.fullName,
+        student: {
+          name: formData.fullName,
+        },
         email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,

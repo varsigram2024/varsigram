@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSignUp } from '../auth/SignUpContext';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
    id: string;
@@ -23,7 +24,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
-  setCurrentPage: (page: string) => void;
   token: string | null;
   updateUser: (user: User) => void;
 }
@@ -56,10 +56,11 @@ API.interceptors.request.use(config => {
   return config;
 });
 
-export const AuthProvider = ({ children, setCurrentPage }: { children: React.ReactNode; setCurrentPage: (page: string) => void }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -71,18 +72,22 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
           
           try {
             const response = await API.get('/profile/');
+            console.log('Profile API response:', response.data);
             const data = response.data;
-            setUser({ 
-              id: data.id, 
-              email: data.email, 
-              fullName: data.full_name || data.name,
-              profile_pic_url: data.profile_pic_url,
-              username: data.username,
-              is_verified: data.is_verified,
-              bio: data.bio,
-              account_type: data.account_type,
-              following_count: data.following_count,
-              followers_count: data.followers_count
+            const profile = data.profile || {};
+            const user = profile.user || {};
+
+            setUser({
+              id: user.id,
+              email: user.email,
+              fullName: user.display_name || profile.name || user.name || user.email,
+              profile_pic_url: user.profile_pic_url,
+              username: user.username,
+              is_verified: user.is_verified,
+              bio: user.bio,
+              account_type: data.profile_type,
+              following_count: user.following_count,
+              followers_count: user.followers_count
             });
           } catch (profileError: any) {
             console.error('Profile fetch failed:', profileError);
@@ -90,7 +95,6 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
               localStorage.removeItem('auth_token');
               setToken(null);
               setUser(null);
-              setCurrentPage('login');
             }
           }
         }
@@ -100,14 +104,13 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
           localStorage.removeItem('auth_token');
           setToken(null);
           setUser(null);
-          setCurrentPage('login');
         }
       } finally {
         setIsLoading(false);
       }
     };
     checkAuth();
-  }, [setCurrentPage]);
+  }, []);
 
   
   const signUp = async (email: string, password: string, fullName: string, signUpData: any) => {
@@ -158,7 +161,7 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         if (token) {
           localStorage.setItem('auth_token', token);
           toast.success('Sign up successful! Welcome to Varsigram');
-          setCurrentPage('home');
+          navigate('/home');
         }
         return response.data;
       }
@@ -224,21 +227,24 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         console.log('Profile response:', profileResponse.data);
         
         const userData = profileResponse.data;
+        const profile = userData.profile || {};
+        const user = profile.user || {};
+
         setUser({
-          id: userData.id,
-          email: userData.email,
-          fullName: userData.full_name || userData.name,
-          profile_pic_url: userData.profile_pic_url,
-          username: userData.username,
-          is_verified: userData.is_verified,
-          bio: userData.bio,
-          account_type: userData.account_type,
-          following_count: userData.following_count,
-          followers_count: userData.followers_count
+          id: user.id,
+          email: user.email,
+          fullName: user.display_name || profile.name || user.name || user.email,
+          profile_pic_url: user.profile_pic_url,
+          username: user.username,
+          is_verified: user.is_verified,
+          bio: user.bio,
+          account_type: userData.profile_type,
+          following_count: user.following_count,
+          followers_count: user.followers_count
         });
 
         toast.success('Login successful! Welcome back');
-        setCurrentPage('home');
+        navigate('/home');
       } catch (profileError: any) {
         console.error('Profile fetch failed:', profileError);
         if (profileError.response?.status === 403 || profileError.response?.status === 401) {
@@ -278,7 +284,7 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
       localStorage.removeItem('auth_token');
       setToken(null);
       setUser(null);
-      setCurrentPage('welcome');
+      navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
@@ -298,7 +304,6 @@ export const AuthProvider = ({ children, setCurrentPage }: { children: React.Rea
         login,
         logout,
         isLoading,
-        setCurrentPage,
         token,
         updateUser,
       }}

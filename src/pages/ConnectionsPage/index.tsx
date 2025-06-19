@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -15,6 +15,7 @@ import BottomNav from "../../components/BottomNav/index.tsx";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../auth/AuthContext';
+import { ClickableUser } from "../../components/ClickableUser";
 
 interface User {
   email: string;
@@ -24,17 +25,15 @@ interface User {
   faculty?: string;
   is_verified: boolean;
   is_following: boolean;
+  profile_pic_url?: string;
 }
 
-interface ConnectionspageProps {
-  onComplete: (page: string) => void;
-}
-
-export default function Connectionspage({ onComplete }: ConnectionspageProps) {
+export default function Connectionspage() {
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
 
   const fetchUsers = async () => {
     let usersResponse;
@@ -148,13 +147,22 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
     }
   };
 
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
+
+  const handleUserClick = (email: string) => {
+    const username = email.split('@')[0];
+    navigate(`/profile/${username}`);
+  };
+
   const filteredUsers = activeTab === 'following' 
     ? users.filter(user => user.is_following)
     : users;
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
-      <Sidebar1 onComplete={onComplete} currentPage="connections" />
+      <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
         <div className="mt-[0px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch overflow-scroll scrollbar-hide"> 
@@ -163,10 +171,14 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
 
           <div className="mt-5 lg:hidden flex flex-row justify-between">
               <div 
-                  onClick={() => onComplete('user-profile')} 
+                  onClick={() => handleNavigation('user-profile')} 
                   className="hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
+                <Img 
+                  src={user?.profile_pic_url || "images/user.png"} 
+                  alt="Profile" 
+                  className="h-[32px] w-[32px] rounded-[50%]" 
+                />
               </div>
 
               <div>
@@ -216,7 +228,10 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
                 <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
                   {filteredUsers.map((user) => (
                     <div key={user.email} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleUserClick(user.email)}
+                      >
                         <Img
                           src="images/user.png"
                           alt={user.name || user.organization_name || user.email}
@@ -224,7 +239,9 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
                         />
                         <div className="flex flex-col">
                           <div className="flex items-center gap-1">
-                            <Text className="font-semibold">{user.name || user.organization_name || user.email}</Text>
+                            <Text className="font-semibold hover:underline">
+                              {user.name || user.organization_name || user.email}
+                            </Text>
                             <Img
                               src="images/vectors/verified.svg"
                               alt="verified"
@@ -242,7 +259,10 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
                         </div>
                       </div>
                       <button
-                        onClick={() => user.is_following ? handleUnfollow(user.email) : handleFollow(user.email)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering the user click when clicking follow button
+                          user.is_following ? handleUnfollow(user.email) : handleFollow(user.email);
+                        }}
                         className={`px-4 py-2 rounded-full transition-colors ${
                           user.is_following 
                             ? 'bg-gray-400 text-gray-600 hover:bg-gray-200' 
@@ -265,7 +285,7 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
       </div>
 
 
-      <BottomNav onComplete={onComplete} currentPage="connections" />
+      <BottomNav />
     </div>
   );
 }

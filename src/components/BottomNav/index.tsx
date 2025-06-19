@@ -1,24 +1,24 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Text } from "../Text";
 import { Img } from "../Img";
 
-interface BottomNavProps {
-  onComplete?: (page: string) => void;
-  currentPage?: string;
-}
+export default function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPage = location.pathname.replace('/', '');
 
-export default function BottomNav({ onComplete, currentPage }: BottomNavProps) {
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
+
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
       <div className="flex justify-between items-center">
 
         
         <div 
-          onClick={() => {
-            console.log('Home clicked, calling onComplete with "home"');
-            onComplete?.('home');
-          }}
+          onClick={() => handleNavigation('home')}
           className={`flex flex-col items-center ${currentPage === 'home' ? 'text-[#750015]' : 'text-gray-600'}`}
         >
           <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'home' ? 'text-[#750015]' : 'text-gray-600'}>
@@ -30,10 +30,7 @@ export default function BottomNav({ onComplete, currentPage }: BottomNavProps) {
 
 
         <div 
-          onClick={() => {
-            console.log('Connection clicked, calling onComplete with "connection"');
-            onComplete?.('connections');
-          }}
+          onClick={() => handleNavigation('connections')}
           className={`flex flex-col items-center ${currentPage === 'connections' ? 'text-[#750015]' : 'text-gray-600'}`}
         >
           <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'connections' ? 'text-[#750015]' : 'text-gray-600'}>
@@ -53,10 +50,7 @@ export default function BottomNav({ onComplete, currentPage }: BottomNavProps) {
 
         
         <div 
-          onClick={() => {
-            console.log('chat clicked, calling onComplete with "chat"');
-            onComplete?.('chat');
-          }}
+          onClick={() => handleNavigation('chat')}
           className={`flex flex-col items-center ${currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}`}
         >
           <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}>

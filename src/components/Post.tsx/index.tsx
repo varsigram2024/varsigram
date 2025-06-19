@@ -7,6 +7,8 @@ import { storage } from '../../firebase/config'; // Adjust the path to your Fire
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { ClickableUser } from '../ClickableUser';
+import { useNavigate } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -38,12 +40,13 @@ export const Post: React.FC<PostProps> = ({
   onPostUpdate, 
   onPostDelete, 
   onPostEdit,
-  currentUserEmail 
+  currentUserEmail
 }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(post.like_count);
   const [localHasLiked, setLocalHasLiked] = useState(post.has_liked);
   const [showOptions, setShowOptions] = useState(false);
+  const navigate = useNavigate();
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -151,24 +154,23 @@ export const Post: React.FC<PostProps> = ({
 
   const isAuthor = currentUserEmail === post.author_username;
 
+  const handleUserClick = (username: string) => {
+    navigate(`/profile/${username}`);
+  };
+
   return (
     <div className="flex w-full flex-col items-center md:w-full lg:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
       <div className="flex flex-col gap-7 self-stretch">
         <div className="flex flex-col gap-6">
           <div className="flex items-start justify-between gap-5">
             <div className="flex items-center">
-              <div className="w-[32px] lg:w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
-                <Img src={post.author_profile_pic_url || "images/user.png"} alt="User Avatar" className="h-auto lg:h-[48px] w-full object-cover" />
-              </div>
-              <div className="flex flex-1 flex-col items-start px-4">
-                <span className="flex items-center gap-1.5 self-stretch w-auto">
-                  <Text as="p" className="text-[14px] font-extrabold md:text-[22px]">{post.author_username}</Text>
-                  <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
-                </span>
-                <Text as="p" className="mt-[-2px] text-[14px] font-normal text-[#adacb2]">
-                  {formatTimestamp(post.timestamp)}
-                </Text>
-              </div>
+              <ClickableUser
+                username={post.author_username}
+                profilePicUrl={post.author_profile_pic_url}
+                displayName={post.author_username}
+                onUserClick={handleUserClick}
+                size="medium"
+              />
             </div>
             
             {isAuthor && (

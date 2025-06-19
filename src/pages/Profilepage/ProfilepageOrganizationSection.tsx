@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { Text } from "../../components/Text";
 import { Img } from "../../components/Img";
 import { Button } from "../../components/Button/index";
@@ -7,49 +7,8 @@ import { CloseSVG } from "../../components/Input/close";
 import UserProfile from "../../components/UserProfile";
 import UserProfile2 from "../../components/UserProfile2";
 import "../../styles/style.css"
-
-const deanFollowerList = [
-  {
-    userTitle: "Dean of Students Affairs",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "Nigerian Economics Student Association",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "Mass Communication Student Association",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "The Project Managers Guild",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "The Investment Society",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "Dean of Students Affairs",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "Nigerian Economics Student Association",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-  {
-    userTitle: "Mass Communication Student Association",
-    verified: "images/vectors/verified.svg",
-    userFollowers: "13.8K followers",
-  },
-];
+import { useAuth } from "../../auth/AuthContext";
+import axios from "axios";
 
 const userProfileList = [
   {
@@ -99,6 +58,25 @@ const userProfileList = [
 
 export default function ProfileOrganizationSection() {
   const [searchBarValue1, setSearchBarValue1] = useState("");
+  const [following, setFollowing] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchFollowing = async () => {
+      try {
+        const response = await axios.get("https://api.varsigram.com/api/v1/following/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFollowing(response.data);
+      } catch (error) {
+        setFollowing([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (token) fetchFollowing();
+  }, [token]);
 
   return (
     <div className="mt-5 py-5 sm:px-5">
@@ -149,9 +127,24 @@ export default function ProfileOrganizationSection() {
         <div className="mb-2 self-stretch h-[30vh]">
           <div className="mr-[30px] flex flex-col gap-4 h-full md:mr-0 overflow-auto scrollbar-hide">
             <Suspense fallback={<div>Loading feed...</div>}>
-              {deanFollowerList.map((d, index) => (
-                <UserProfile {...d} key={`listdeanof_${index}`} />
-              ))}
+              {isLoading ? (
+                <Text>Loading...</Text>
+              ) : following.length === 0 ? (
+                <Text>No accounts followed yet.</Text>
+              ) : (
+                following.map((org, index) => (
+                  <UserProfile
+                    key={org.id || index}
+                    userTitle={org.organization_name || org.name}
+                    verified={org.is_verified ? "images/vectors/verified.svg" : undefined}
+                    userFollowers={
+                      org.followers_count
+                        ? `${org.followers_count} followers`
+                        : undefined
+                    }
+                  />
+                ))
+              )}
             </Suspense>
           </div>
         </div>

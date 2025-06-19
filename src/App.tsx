@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Welcome } from './pages/Welcome';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
@@ -17,60 +17,28 @@ import { MultiStepSignUp } from './pages/MultiStepSignUp';
 import { Toaster } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 
-function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setCurrentPage: (page: string) => void }) {
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { token } = useAuth();
+  return token ? <>{children}</> : <Navigate to="/welcome" replace />;
+};
+
+// Public Route Component (redirects to home if already logged in)
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { token } = useAuth();
+  return token ? <Navigate to="/home" replace /> : <>{children}</>;
+};
+
+function AppContent() {
   const { signUp: originalSignUp } = useAuth();
   
   const adaptedSignUp = async (data: SignUpData) => {
-    console.log('App received signup data:', data); // Debug log
+    console.log('App received signup data:', data);
     await originalSignUp(data.email, data.password, data.fullName, data);
   };
 
-  const renderPage = () => {
-    console.log('Rendering page:', currentPage);
-    switch (currentPage) {
-      case 'welcome':
-        return <Welcome onLogin={() => setCurrentPage('login')} onSignUp={() => setCurrentPage('signup')} onHome={() => setCurrentPage('home')} />;
-      case 'login':
-        return <Login onSignUp={() => setCurrentPage('signup')} />;
-      case 'signup':
-        return <MultiStepSignUp onLogin={() => setCurrentPage('login')} />;
-      case 'phone-verification':
-        return <PhoneVerification onNext={() => setCurrentPage('academic-details')} />;
-      case 'academic-details':
-        return <AcademicDetails onNext={() => setCurrentPage('about-yourself')} />;
-      case 'about-yourself':
-        return <AboutYourself onNext={() => setCurrentPage('academic-level')} />;
-      case 'academic-level':
-        return <AcademicLevel onNext={() => setCurrentPage('home')} />;
-      case 'home':
-        return <Homepage onComplete={(page) => {
-          console.log('Homepage onComplete called with:', page);
-          setCurrentPage(page);
-        }} />;
-      case 'chat':
-        return <Chatpage onComplete={(page) => {
-          console.log('Chatpage onComplete called with:', page);
-          setCurrentPage(page);
-        }} />;
-      case 'connections':
-        return <Connectionspage onComplete={(page) => {
-          console.log('connections onComplete called with:', page);
-          setCurrentPage(page);
-        }} />;
-      case 'settings':
-        return <Settings onComplete={(page) => {
-          console.log('Settings onComplete called with:', page);
-          setCurrentPage(page);
-        }} />;
-      case 'user-profile':
-        return <ProfilepageOrganizationPage onComplete={(page) => setCurrentPage(page)} />;
-      default:
-        return <Welcome onLogin={() => setCurrentPage('login')} onSignUp={() => setCurrentPage('signup')} />;
-    }
-  };
-  console.log('Current page is:', currentPage);
-  
   return (
     <SignUpProvider signUp={adaptedSignUp}>
       <Toaster 
@@ -83,17 +51,41 @@ function AppContent({ currentPage, setCurrentPage }: { currentPage: string; setC
           },
         }}
       />
-      {renderPage()}
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
+        <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
+        <Route path="/academic-details" element={<PublicRoute><AcademicDetails /></PublicRoute>} />
+        <Route path="/about-yourself" element={<PublicRoute><AboutYourself /></PublicRoute>} />
+        <Route path="/academic-level" element={<PublicRoute><AcademicLevel /></PublicRoute>} />
+
+        {/* Protected Routes */}
+        <Route path="/home" element={<ProtectedRoute><Homepage /></ProtectedRoute>} />
+        <Route path="/chat" element={<ProtectedRoute><Chatpage /></ProtectedRoute>} />
+        <Route path="/connections" element={<ProtectedRoute><Connectionspage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/user-profile" element={<ProtectedRoute><ProfilepageOrganizationPage /></ProtectedRoute>} />
+        <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+        {/* Root route - redirect to welcome */}
+        <Route path="/" element={<Navigate to="/welcome" replace />} />
+        
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/welcome" replace />} />
+      </Routes>
     </SignUpProvider>
   );
 }
- 
+
 function App() {
-  const [currentPage, setCurrentPage] = useState('welcome');
   return (
-    <AuthProvider setCurrentPage={setCurrentPage}>
-      <AppContent currentPage={currentPage} setCurrentPage={setCurrentPage} />
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
   );
 }
 

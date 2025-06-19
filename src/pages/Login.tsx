@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import background from "../public/background img.png";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
@@ -7,11 +8,8 @@ import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
 import API from "../services/API";
 
-interface LoginProps {
-  onSignUp: () => void;
-}
-
-export const Login = ({ onSignUp }: LoginProps) => {
+export const Login = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -19,6 +17,10 @@ export const Login = ({ onSignUp }: LoginProps) => {
     password: "",
   });
   const { login, signInWithGoogle } = useAuth();
+
+  const handleSignUp = () => {
+    navigate('/signup');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,16 +39,14 @@ export const Login = ({ onSignUp }: LoginProps) => {
     <div className="min-h-screen bg-white flex flex-col sm:flex-row font-archivo">
       {/* Mobile Header */}
       <div className="sm:hidden p-6 flex items-center">
-        <button
-          onClick={onSignUp}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+      <a href="/welcome" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6" />
-        </button>
+        </a>
       </div>
 
       {/* Desktop Left Section */}
       <div className="hidden sm:flex w-[740px] p-8 flex-col">
-        <Logo />
+        <a href="/welcome"><Logo /></a>
         <div className="flex-1 flex flex-col items-center justify-center">
           <img
             src={background}
@@ -145,7 +145,7 @@ export const Login = ({ onSignUp }: LoginProps) => {
               Don't have an account yet?{" "}
               <button
                 type="button"
-                onClick={onSignUp}
+                onClick={handleSignUp}
                 className="text-[#750015] hover:underline transition-all">
                 Sign Up
               </button>

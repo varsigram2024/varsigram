@@ -1,5 +1,5 @@
 import React, { Suspense, ChangeEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -7,23 +7,20 @@ import { Input } from "../../components/Input/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
 import { CloseSVG } from "../../components/Input/close.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
-import UserProfile1 from "../../components/UserProfile1/index.tsx";
-import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
-import { Button } from "../../components/Button/index";
-import UserProfile2 from "../../components/UserProfile2";
 import BottomNav from "../../components/BottomNav";
 import { useAuth } from '../../auth/AuthContext';
 import { toast } from 'react-toastify';
-import { LogOut, Bell, Lock, User, Shield, HelpCircle } from 'lucide-react';
+import { LogOut, Bell, Lock, User, Shield, HelpCircle, Moon, UserX } from 'lucide-react';
 
-interface SettingsProps {
-  onComplete: (page: string) => void;
-}
-
-export default function Settings({ onComplete }: SettingsProps) {
+export default function Settings() {
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
 
   const handleLogout = () => {
     logout();
@@ -42,13 +39,13 @@ export default function Settings({ onComplete }: SettingsProps) {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      <Sidebar1 onComplete={onComplete} currentPage="settings" />
+      <Sidebar1 onComplete={handleNavigation} currentPage="settings" />
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
+      <div className="flex w-full lg:w-[85%] pb-5 items-start justify-center  flex-row">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
           {/* Mobile Header */}
           <div className="mt-5 lg:hidden flex flex-row justify-between">
-            <div onClick={() => onComplete('user-profile')} className="hover:opacity-80 transition-opacity cursor-pointer">
+            <div onClick={() => handleNavigation('user-profile')} className="hover:opacity-80 transition-opacity cursor-pointer">
               <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
             </div>
             <div>
@@ -98,7 +95,7 @@ export default function Settings({ onComplete }: SettingsProps) {
                 </div>
                 <div className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-3">
-                    <Img src="images/vectors/moon.svg" alt="Dark Mode" className="h-[20px] w-[20px]" />
+                    <Moon size={20} />
                     <Text>Dark Mode</Text>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -115,7 +112,10 @@ export default function Settings({ onComplete }: SettingsProps) {
               <div className="space-y-4">
                 <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
                   <HelpCircle size={20} />
-                  <Text>Help Center</Text>
+                  <Text><a href="https://chat.whatsapp.com/EGY8l7P0ZqT6DIrXp8YgAx" target="_blank" rel="noopener noreferrer">Help Center</a></Text>
+                </button>
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Text><a href="https://chat.whatsapp.com/EGY8l7P0ZqT6DIrXp8YgAx" target="_blank" rel="noopener noreferrer">Feedback</a></Text>
                 </button>
                 <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
                   <Text>Terms of Service</Text>
@@ -134,11 +134,18 @@ export default function Settings({ onComplete }: SettingsProps) {
               <LogOut size={20} />
               <Text>Logout</Text>
             </button>
+            {/* Deactivate Button */}
+            <button
+              className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <UserX size={20} />
+              <Text>Deactivate</Text>
+            </button>
           </div>
         </div>
       </div>
 
-      <BottomNav onComplete={onComplete} currentPage="settings" />
+      <BottomNav onComplete={handleNavigation} currentPage="settings" />
     </div>
   );
 }

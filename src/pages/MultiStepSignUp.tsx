@@ -56,7 +56,7 @@ export const MultiStepSignUp = ({ onLogin }: { onLogin: () => void }) => {
   return (
     <div className="min-h-screen bg-white">
       <ProgressBar currentStep={currentStep} totalSteps={TOTAL_STEPS} />
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="max-w-fit mx-auto p-0 pt-6 lg:pt-24">
         {renderStep()}
       </div>
     </div>

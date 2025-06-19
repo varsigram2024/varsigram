@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -10,7 +10,6 @@ import { Input } from "../../components/Input/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
 import { CloseSVG } from "../../components/Input/close.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
-import UserProfile1 from "../../components/UserProfile1/index.tsx";
 import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
 import { Button } from "../../components/Button";
 import CreateConversation from "../../modals/createCONVERSATION";
@@ -20,18 +19,24 @@ import { toast } from 'react-hot-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase/config.ts';
 import EditPostModal from "../../components/EditPostModal";
+import { ClickableUser } from "../../components/ClickableUser";
+import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
 
 interface Post {
   id: string;
   author_username: string;
+  author_profile_pic_url: string | null;
   content: string;
   slug: string;
+  media_urls: string[];
   timestamp: string;
   like_count: number;
   comment_count: number;
   share_count: number;
   has_liked: boolean;
-  author_profile_pic_url: string;
+  trending_score: number;
+  last_engagement_at: string | null;
+  author_display_name: string;
 }
 
 interface User {
@@ -42,17 +47,13 @@ interface User {
   author_profile_pic_url: string;
 }
 
-interface HomepageProps {
-  onComplete: (page: string) => void;
-}
-
-export default function Homepage({ onComplete }: HomepageProps) {
+export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { token, user, logout } = useAuth();
+  const { token, user, logout, isLoading: isAuthLoading } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -60,6 +61,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -229,7 +231,14 @@ export default function Homepage({ onComplete }: HomepageProps) {
     }
   };
 
-  if (isLoading) {
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
+
+  // Debug: log the user object
+  console.log('Homepage user:', user);
+
+  if (isLoading || isAuthLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
@@ -247,13 +256,13 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
-      <Sidebar1 onComplete={onComplete} currentPage="home" />
+      <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
         <div className="hidden lg:flex items-center justify-between">
           <div 
-            onClick={() => onComplete('user-profile')} 
+            onClick={() => handleNavigation('user-profile')} 
             className="hover:opacity-80 transition-opacity cursor-pointer"
           >
             <Text as="p" className="text-[24px] font-medium md:text-[22px]">
@@ -291,7 +300,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
             <div className="mt-5 lg:hidden flex flex-row justify-between items-center">
               <div 
-                onClick={() => onComplete('user-profile')} 
+                onClick={() => handleNavigation('user-profile')} 
                 className="hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <Img 
@@ -309,7 +318,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
               <div className='flex flex-row justify-between'>
                   <div 
-                    onClick={() => onComplete('settings')} 
+                    onClick={() => handleNavigation('settings')} 
                     className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
                   >
                    <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
@@ -476,118 +485,13 @@ export default function Homepage({ onComplete }: HomepageProps) {
           
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
             <div className="overflow-hidden h-full">
-            <Input
-              name="search_seven"
-              placeholder="Search Varsigram"
-              value={searchBarValue}
-              onChange={(e) => setSearchBarValue(e.target.value)}
-              prefix={<Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />}
-              suffix={
-                searchBarValue?.length > 0 ? <CloseSVG onClick={handleClearSearch} fillColor="gray_800" /> : null
-              }
-              className="flex h-[48px] items-center rounded-[24px] border-[1.5px] border-[#e6e6e699] pl-[22px] pr-3 text-[14px] text-[#3a3a3a]"
-            />
-
-            <Text as="p" className="mt-5 text-[24px] font-medium md:text-[22px]">Who to follow</Text>
-            <div className="my-3 flex flex-col gap-5 h-full overflow-auto scrollbar-hide">
-              {/* <UserProfile1 />
-              <UserProfile1 /> */}
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-            </div>
+              <WhoToFollowSidePanel />
             </div>
           </div>
         </div>
       </div>
 
-      <BottomNav onComplete={onComplete} currentPage="home" />
+      <BottomNav />
 
       {isEditModalOpen && editingPost && (
         <EditPostModal
