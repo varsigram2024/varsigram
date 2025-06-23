@@ -249,28 +249,47 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
     ```json
     {
-      "content": "Post content",
-      "image": "image_file" (Optional - file upload)
+      "content": "",
+      "slug": "",
+      "media_urls": ["", "", ""]
     }
     ```
 
-- **`GET /posts/<slug:slug>/` \[name='post-detail']**
+- **`GET /posts/<str:post_id>/` \[name='post-detail']**
 
-  - Description: Retrieves a specific post by its slug.
+  - Description: Retrieves a specific post by its id.
   - Request: `GET`
 
-- **`GET /posts/<slug:slug>/comments/` \[name='post-comments']**
+- **`POST /posts/<str:post_id>/comments/create/` \[name='post-detail']**
+
+  - Description: Retrieves a specific post by its id.
+  - Request: `POST`
+  - Authentication: Required for `POST`
+  - Request Body (JSON - for POST):
+
+    ```json
+    {
+      "text": ""
+    }
+    ```
+
+- **`GET /posts/<str:post_id>/comments/` \[name='post-comments']**
 
   - Description: Retrieves comments for a specific post.
   - Request: `GET`
 
-- **`POST /posts/<slug:slug>/like/` \[name='post-like']**
+- **`POST /posts/<str:post_id>/like/` \[name='post-like']**
 
   - Description: Likes a specific post.
   - Request: `POST`
   - Authentication: Required
 
-- **`POST /posts/<slug:slug>/share/` \[name='post-share']**
+- **`GET /posts/<str:post_id>/likes/` \[name='post-likes-list']**
+
+  - Description: Retrieves likes for a specific post.
+  - Request: `GET`
+
+- **`POST /posts/<str:post_id/share/` \[name='post-share']**
 
   - Description: Shares a specific post. Creates a new "Share" entry referencing the original post.
   - Request: `POST`
@@ -278,14 +297,14 @@ Most endpoints require authentication. Authentication is handled using token-bas
   - Response (201 Created): Returns the newly created share object.
   - Response (400 Bad Request): If the post has already been shared by the user.
 
-- **`GET /users/<slug:display_name_slug>/posts/` \[name='user-posts']**
+- **`GET /users/<str:user_id>/posts/` \[name='user-posts']**
 
-  - Description: Retrieves all posts by a specific user, identified by their `display_name_slug`.
+  - Description: Retrieves all posts by a specific user, identified by their `user_id`.
   - Request: `GET`
   - Response (200 OK): Returns a list of posts.
   - Response (404 Not Found): If the user is not found.
 
-- **`PUT /posts/<slug:slug>/edit/` \[name='post-edit']**
+- **`PUT /posts/<str:post_id>/` \[name='post-detail']**
 
   - Description: Edits a specific post.
   - Request: `PUT`
@@ -299,7 +318,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     }
     ```
 
-- **`DELETE /posts/<slug:slug>/delete/` \[name='post-delete']**
+- **`DELETE /posts/<str:post_id>/` \[name='post-detail']**
 
   - Description: Deletes a specific post.
   - Request: `DELETE`

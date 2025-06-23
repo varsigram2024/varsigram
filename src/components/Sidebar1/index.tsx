@@ -109,7 +109,10 @@ export default function Sidebar1() {
         </div>
 
         <div 
-          onClick={() => handleNavigation('user-profile')}     
+          onClick={() => {
+            const displayNameSlug = user?.display_name_slug;
+            navigate(`/user-profile/${displayNameSlug}`);
+          }}     
           className="flex self-stretch gap-5 px-5 py-[18px] items-center cursor-pointer hover:bg-gray-50"
         >
           <Img 

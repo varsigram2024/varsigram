@@ -12,7 +12,6 @@ import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
 import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.tsx";
 import BottomNav from "../../components/BottomNav/index.tsx";
-import Posts from "../../components/Posts/index.tsx";
 import { useAuth } from "../../auth/AuthContext";
 
 // Add interface for props
@@ -441,7 +440,7 @@ export default function Profile() {
             
         </div>
 
-        <BottomNav onComplete={handleNavigation} currentPage="user-profile" />
+        <BottomNav />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
 import { useSignUp } from "../auth/SignUpContext";
 import { toast } from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
 
 const levels = ["100", "200", "300", "400", "500"];
 
@@ -21,6 +22,7 @@ export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
     year: "",
   });
   const [isYearSelected, setIsYearSelected] = useState(false);
+  const navigate = useNavigate();
 
   const handleYearSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedYear = e.target.value;
@@ -60,7 +62,7 @@ export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
       
       await submitSignUp();
       console.log('Signup completed successfully');
-      onNext();
+      navigate("/home");
     } catch (error) {
       console.error('Signup failed:', error);
       toast.error('Signup failed. Please try again.');

@@ -18,6 +18,7 @@ import { Toaster } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
+import ProfilePage from './pages/Profilepage/index.tsx';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -66,7 +67,7 @@ function AppContent() {
         <Route path="/chat" element={<ProtectedRoute><Chatpage /></ProtectedRoute>} />
         <Route path="/connections" element={<ProtectedRoute><Connectionspage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/user-profile" element={<ProtectedRoute><ProfilepageOrganizationPage /></ProtectedRoute>} />
+        <Route path="/user-profile/:display_name_slug" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
         {/* Root route - redirect to welcome */}

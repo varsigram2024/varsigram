@@ -15,6 +15,7 @@ interface User {
   account_type: 'student' | 'organization';  // Add this
   following_count?: number;  // Add this
   followers_count?: number;  // Add this
+  display_name_slug?: string;
 }
 
 interface AuthContextType {

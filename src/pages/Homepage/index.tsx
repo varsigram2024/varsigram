@@ -18,12 +18,12 @@ import { LogOut } from "lucide-react";
 import { toast } from 'react-hot-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase/config.ts';
-import EditPostModal from "../../components/EditPostModal";
 import { ClickableUser } from "../../components/ClickableUser";
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
 
 interface Post {
   id: string;
+  author_id: string;
   author_username: string;
   author_profile_pic_url: string | null;
   content: string;
@@ -37,6 +37,7 @@ interface Post {
   trending_score: number;
   last_engagement_at: string | null;
   author_display_name: string;
+  author_name?: string;
 }
 
 interface User {
@@ -62,6 +63,8 @@ export default function Homepage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [feedPosts, setFeedPosts] = useState<Post[]>([]);
+  const [isFeedLoading, setIsFeedLoading] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -73,6 +76,7 @@ export default function Homepage() {
           },
         });
         setPosts(response.data);
+        console.log('Posts:', response.data); // Log the fetched posts
       } catch (err) {
         setError('Failed to fetch posts');
         console.error('Error fetching posts:', err);
@@ -85,6 +89,29 @@ export default function Homepage() {
       fetchPosts();
     }
   }, [token]);
+
+  useEffect(() => {
+    if (activeTab === 'following' && token) {
+      setIsFeedLoading(true);
+      axios.get('https://api.varsigram.com/api/v1/feed/', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => {
+        setFeedPosts(response.data);
+        console.log('Feed posts:', response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching feed:', error);
+        setFeedPosts([]);
+      })
+      .finally(() => {
+        setIsFeedLoading(false);
+      });
+    }
+  }, [activeTab, token]);
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -170,15 +197,41 @@ export default function Homepage() {
   };
 
   const handlePostUpdate = (updatedPost: Post) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => 
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
         post.id === updatedPost.id ? updatedPost : post
       )
     );
   };
+  
 
-  const handlePostDelete = (postId: string) => {
-    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+  const handlePostDelete = async (post: Post) => {
+    console.log('Deleting post:', post);
+    if (!post.id) {
+      toast.error('Cannot delete post: missing post identifier');
+      return;
+    }
+
+    if (!token) {
+      toast.error('Please login to delete posts');
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `https://api.varsigram.com/api/v1/posts/${post.id}/`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+      toast.success('Post deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete post');
+    }
   };
 
   const handlePostEdit = (post: Post) => {
@@ -189,8 +242,7 @@ export default function Homepage() {
   const handleEditSubmit = async (editedContent: string) => {
     if (!editingPost) return;
 
-    if (!editingPost.slug) {
-      console.error('Post slug is missing:', editingPost);
+    if (!editingPost.id) {
       toast.error('Cannot edit post: missing post identifier');
       return;
     }
@@ -201,11 +253,9 @@ export default function Homepage() {
     }
 
     try {
-      const response = await axios.put(
-        `https://api.varsigram.com/api/v1/posts/${editingPost.slug}/`,
-        {
-          content: editedContent,
-        },
+      await axios.put(
+        `https://api.varsigram.com/api/v1/posts/${editingPost.id}/`,
+        { content: editedContent },
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -226,7 +276,6 @@ export default function Homepage() {
       setEditingPost(null);
       toast.success('Post updated successfully');
     } catch (error) {
-      console.error('Error updating post:', error);
       toast.error('Failed to update post');
     }
   };
@@ -235,24 +284,45 @@ export default function Homepage() {
     navigate(`/${path}`);
   };
 
+  const handlePostLikeUpdate = (postId: string, like_count: number, has_liked: boolean) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, like_count, has_liked }
+          : post
+      )
+    );
+  };
+
+  const handleLike = async (post: Post) => {
+    // Save previous state for revert
+    const prevLikeCount = post.like_count;
+    const prevHasLiked = post.has_liked;
+
+    // Optimistically update UI
+    handlePostLikeUpdate(
+      post.id,
+      post.has_liked ? post.like_count - 1 : post.like_count + 1,
+      !post.has_liked
+    );
+
+    try {
+      const response = await axios.post(
+        `https://api.varsigram.com/api/v1/posts/${post.id}/like/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Sync with backend response
+      handlePostLikeUpdate(post.id, response.data.like_count, response.data.has_liked);
+    } catch (error) {
+      // Revert on error
+      handlePostLikeUpdate(post.id, prevLikeCount, prevHasLiked);
+      console.error("Failed to like/unlike post:", error);
+    }
+  };
+
   // Debug: log the user object
   console.log('Homepage user:', user);
-
-  if (isLoading || isAuthLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
@@ -262,7 +332,10 @@ export default function Homepage() {
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
         <div className="hidden lg:flex items-center justify-between">
           <div 
-            onClick={() => handleNavigation('user-profile')} 
+            onClick={() => {
+              const displayNameSlug = user?.display_name_slug || user?.username || user?.email?.split('@')[0];
+              navigate(`/user-profile/${displayNameSlug}`);
+            }}  
             className="hover:opacity-80 transition-opacity cursor-pointer"
           >
             <Text as="p" className="text-[24px] font-medium md:text-[22px]">
@@ -344,7 +417,7 @@ export default function Homepage() {
                   type="text"
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="What's on your mind?"
+                  placeholder="Create a vars..."
                   className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -377,7 +450,7 @@ export default function Homepage() {
                 <textarea
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="What's on your mind?"
+                  placeholder="Create a vars..."
                   className="w-full p-2 text-[20px] font-normal text-gray-800 bg-transparent border-none outline-none focus:outline-none resize-none"
                   rows={3}
                 />
@@ -444,37 +517,86 @@ export default function Homepage() {
               </div>
             )}
 
-          <div className="relative w-full">
-            <div 
-              className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full absolute'}`}
-            >
-              {activeTab === 'forYou' && (
-                <div className="space-y-6">
-                  {posts.map((post) => (
-                    <Post 
-                      key={post.id} 
-                      post={post} 
-                      onPostUpdate={handlePostUpdate}
-                      onPostDelete={handlePostDelete}
-                      onPostEdit={handlePostEdit}
-                      currentUserEmail={user?.email}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="w-full post-section">
+            {(isLoading || isAuthLoading) && (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
+              </div>
+            )}
 
-            <div 
-              className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'}`}
-            >
-              {activeTab === 'following' && (
-                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-                  <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                    Coming soon...
-                  </Text>
+            {error && !isLoading && !isAuthLoading && (
+              <div className="flex justify-center items-center py-20">
+                <p className="text-red-500 text-center">{error}</p>
+              </div>
+            )}
+
+            {!isLoading && !isAuthLoading && !error && (
+              <>
+                <div 
+                  className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100' : 'opacity-0'}`}
+                >
+                  {activeTab === 'forYou' && (
+                    <div className="space-y-6 w-full">
+                      {posts.map((post) => (
+                        <Post 
+                          key={post.id} 
+                          post={post} 
+                          onPostUpdate={(updatedPost) => {
+                            setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                          }}
+                          onPostDelete={(post) => {
+                            setPosts(prev => prev.filter(p => p.id !== post.id));
+                          }}
+                          onPostEdit={(post) => {
+                            // This is now handled internally by the Post component
+                          }}
+                          currentUserId={user?.id}
+                          currentUserEmail={user?.email}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                <div 
+                    className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'}`}
+                  >
+                  {activeTab === 'following' && (
+                    <div className="space-y-6">
+                      {isFeedLoading ? (
+                        <div className="flex justify-center items-center h-40">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                        </div>
+                      ) : feedPosts.length === 0 ? (
+                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                            No posts in your feed yet.
+                          </Text>
+                        </div>
+                      ) : (
+                        feedPosts.map((post) => (
+                          <Post 
+                            key={post.id} 
+                            post={post} 
+                            onPostUpdate={(updatedPost) => {
+                              setFeedPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                            }}
+                            onPostDelete={(post) => {
+                              setFeedPosts(prev => prev.filter(p => p.id !== post.id));
+                            }}
+                            onPostEdit={(post) => {
+                              // This is now handled internally by the Post component
+                            }}
+                            currentUserId={user?.id}
+                            currentUserEmail={user?.email}
+                          />
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -493,16 +615,7 @@ export default function Homepage() {
 
       <BottomNav />
 
-      {isEditModalOpen && editingPost && (
-        <EditPostModal
-          post={editingPost}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setEditingPost(null);
-          }}
-          onSubmit={handleEditSubmit}
-        />
-      )}
+      
     </div>
   );
 }
