@@ -223,11 +223,11 @@ export const Post: React.FC<PostProps> = ({
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
-            <ClickableUser
-              username={post.author_username || post.author_display_name || 'Unknown User'}
+          <ClickableUser
+              displayNameSlug={post.author_display_name_slug ?? ''}
               profilePicUrl={post.author_profile_pic_url}
               displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
-              onUserClick={(u) => navigate(`/user-profile/${u}`)}
+              onUserClick={(slug) => navigate(`/user-profile/${slug}`)}
               size="medium"
             />
 

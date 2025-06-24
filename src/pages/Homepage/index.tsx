@@ -46,6 +46,7 @@ interface User {
   fullName: string;
   profile_pic_url?: string;
   author_profile_pic_url: string;
+  display_name_slug?: string;
 }
 
 export default function Homepage() {
@@ -333,8 +334,11 @@ export default function Homepage() {
         <div className="hidden lg:flex items-center justify-between">
           <div 
             onClick={() => {
-              const displayNameSlug = user?.display_name_slug || user?.username || user?.email?.split('@')[0];
-              navigate(`/user-profile/${displayNameSlug}`);
+              if (user?.display_name_slug) {
+                navigate(`/user-profile/${user.display_name_slug}`);
+              } else {
+                toast.error("Profile link unavailable");
+              }
             }}  
             className="hover:opacity-80 transition-opacity cursor-pointer"
           >
@@ -373,13 +377,26 @@ export default function Homepage() {
 
             <div className="mt-5 lg:hidden flex flex-row justify-between items-center">
               <div 
-                onClick={() => handleNavigation('user-profile')} 
+                onClick={() => {
+                  if (user?.display_name_slug) {
+                    navigate(`/user-profile/${user.display_name_slug}`);
+                  } else {
+                    toast.error("Profile link unavailable");
+                  }
+                }} 
                 className="hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <Img 
                   src={user?.profile_pic_url || "images/user.png"} 
                   alt="Profile" 
                   className="h-[32px] w-[32px] rounded-[50%]" 
+                  onClick={() => {
+                    if (user?.display_name_slug) {
+                      navigate(`/user-profile/${user.display_name_slug}`);
+                    } else {
+                      toast.error("Profile link unavailable");
+                    }
+                  }}
                 />
               </div>
 

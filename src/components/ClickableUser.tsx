@@ -1,18 +1,19 @@
 import React from 'react';
 import { Text } from './Text';
 import { Img } from './Img';
+import { navigate } from 'react-router-dom';
 
 interface ClickableUserProps {
-  username: string;
+  displayNameSlug: string;
   profilePicUrl?: string | null;
   displayName?: string;
-  onUserClick: (username: string) => void;
+  onUserClick: (displayNameSlug: string) => void;
   size?: 'small' | 'medium' | 'large';
   showVerified?: boolean;
 }
 
 export const ClickableUser: React.FC<ClickableUserProps> = ({
-  username,
+  displayNameSlug,
   profilePicUrl,
   displayName,
   onUserClick,
@@ -28,16 +29,16 @@ export const ClickableUser: React.FC<ClickableUserProps> = ({
   return (
     <div 
       className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-      onClick={() => onUserClick(username)}
+      onClick={() => onUserClick(displayNameSlug)}
     >
       <Img
         src={profilePicUrl || 'images/user.png'}
-        alt={displayName || username}
+        alt={displayName || displayNameSlug}
         className={`${sizeClasses[size]} rounded-full object-cover`}
       />
       <div className="flex items-center gap-1">
         <Text className="font-medium hover:underline">
-          {displayName || username}
+          {displayName || displayNameSlug}
         </Text>
         {showVerified && (
           <Img src="images/vectors/verified.svg" alt="Verified" className="h-[12px] w-[12px]" />

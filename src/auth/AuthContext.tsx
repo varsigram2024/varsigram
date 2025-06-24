@@ -88,7 +88,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               bio: user.bio,
               account_type: data.profile_type,
               following_count: user.following_count,
-              followers_count: user.followers_count
+              followers_count: user.followers_count,
+              display_name_slug: profile.display_name_slug
             });
           } catch (profileError: any) {
             console.error('Profile fetch failed:', profileError);
@@ -241,7 +242,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           bio: user.bio,
           account_type: userData.profile_type,
           following_count: user.following_count,
-          followers_count: user.followers_count
+          followers_count: user.followers_count,
+          display_name_slug: profile.display_name_slug
         });
 
         toast.success('Login successful! Welcome back');

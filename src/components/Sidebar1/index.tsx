@@ -110,7 +110,7 @@ export default function Sidebar1() {
 
         <div 
           onClick={() => {
-            const displayNameSlug = user?.display_name_slug;
+            const displayNameSlug = user?.display_name_slug || user?.email?.split('@')[0];
             navigate(`/user-profile/${displayNameSlug}`);
           }}     
           className="flex self-stretch gap-5 px-5 py-[18px] items-center cursor-pointer hover:bg-gray-50"

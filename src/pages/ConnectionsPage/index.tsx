@@ -108,7 +108,11 @@ export default function Connectionspage() {
     }
   }, [activeTab, token]);
 
-  const handleFollow = async (display_name_slug: string) => {
+  const handleFollow = async (display_name_slug: string, organization_name?: string) => {
+    if (!organization_name) {
+      toast.error('You can only follow organizations.');
+      return;
+    }
     try {
       const userSlug = display_name_slug || user?.email?.split('@')[0];
       await axios.post(
@@ -129,14 +133,18 @@ export default function Connectionspage() {
         )
       );
 
-      toast.success('Successfully followed user');
+      toast.success('Successfully followed organization');
     } catch (error) {
-      console.error('Error following user:', error);
-      toast.error('Failed to follow user');
+      console.error('Error following organization:', error);
+      toast.error('Failed to follow organization');
     }
   };
 
-  const handleUnfollow = async (display_name_slug: string) => {
+  const handleUnfollow = async (display_name_slug: string, organization_name?: string) => {
+    if (!organization_name) {
+      toast.error('You can only unfollow organizations.');
+      return;
+    }
     try {
       const userSlug = display_name_slug || user?.email?.split('@')[0];
       await axios.post(
@@ -157,10 +165,10 @@ export default function Connectionspage() {
         )
       );
 
-      toast.success('Successfully unfollowed user');
+      toast.success('Successfully unfollowed organization');
     } catch (error) {
-      console.error('Error unfollowing user:', error);
-      toast.error('Failed to unfollow user');
+      console.error('Error unfollowing organization:', error);
+      toast.error('Failed to unfollow organization');
     }
   };
 
@@ -201,7 +209,7 @@ export default function Connectionspage() {
     }
   };
 
-  const filteredUsers = users; // For "Who to Follow" tab
+  const filteredUsers = users.filter(user => !!user.organization_name);
 
   const fetchFollowers = async (displayNameSlug: string) => {
     try {
@@ -322,8 +330,8 @@ export default function Connectionspage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             user.is_following
-                              ? handleUnfollow(user.display_name_slug)
-                              : handleFollow(user.display_name_slug);
+                              ? handleUnfollow(user.display_name_slug, user.organization_name)
+                              : handleFollow(user.display_name_slug, user.organization_name);
                           }}
                           className={`px-4 py-2 rounded-full transition-colors ${
                             user.is_following 
