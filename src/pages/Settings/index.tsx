@@ -11,12 +11,14 @@ import BottomNav from "../../components/BottomNav";
 import { useAuth } from '../../auth/AuthContext';
 import { toast } from 'react-toastify';
 import { LogOut, Bell, Lock, User, Shield, HelpCircle, Moon, UserX } from 'lucide-react';
+import EditProfilePanel from "../../components/EditProfilePanel";
 
 export default function Settings() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const handleNavigation = (path: string) => {
     navigate(`/${path}`);
@@ -41,6 +43,14 @@ export default function Settings() {
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
       <Sidebar1 onComplete={handleNavigation} currentPage="settings" />
 
+      {/* Edit Profile Side Panel (desktop only) */}
+      <div className="hidden lg:block">
+        <EditProfilePanel
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+        />
+      </div>
+
       <div className="flex w-full lg:w-[85%] pb-5 items-start justify-center  flex-row">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
           {/* Mobile Header */}
@@ -64,11 +74,17 @@ export default function Settings() {
             <div className="bg-white rounded-xl p-6">
               <Text className="text-xl font-semibold mb-4">Account</Text>
               <div className="space-y-4">
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <button
+                  className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => navigate("/settings/edit-profile")}
+                >
                   <User size={20} />
                   <Text>Edit Profile</Text>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <button
+                  className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => navigate("/settings/change-password")}
+                >
                   <Lock size={20} />
                   <Text>Change Password</Text>
                 </button>

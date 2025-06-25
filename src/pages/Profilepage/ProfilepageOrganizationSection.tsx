@@ -74,7 +74,7 @@ export default function ProfileOrganizationSection() {
         placeholder="Search"
         value={searchBarValue1}
         onChange={(e) => setSearchBarValue1(e.target.value)}
-        prefix={<Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />}
+        prefix={<Img src="/images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />}
         suffix={
           searchBarValue1?.length > 0 ? (
             <CloseSVG onClick={() => setSearchBarValue1("")} fillColor="gray_800" />
@@ -104,9 +104,9 @@ export default function ProfileOrganizationSection() {
                                   user.display_name || 
                                   user.username || 'Unknown User';
                 const profilePicUrl = user.organization?.display_name_slug ? 
-                                    user.user?.profile_pic_url : 
+                                    user.organization?.user?.profile_pic_url : 
                                     user.profile_pic_url;
-                const username = user.organization?.display_name_slug || user.username;
+                const username = user.organization?.user?.email || user.username;
 
                 return (
                   <div 
@@ -116,7 +116,7 @@ export default function ProfileOrganizationSection() {
                   >
                     <div className="flex-shrink-0">
                       <Img
-                        src={profilePicUrl || "images/user.png"}
+                        src={profilePicUrl || "/images/user.png"}
                         alt={displayName}
                         className="h-[40px] w-[40px] rounded-full object-cover"
                       />

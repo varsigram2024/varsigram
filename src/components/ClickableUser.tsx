@@ -32,7 +32,7 @@ export const ClickableUser: React.FC<ClickableUserProps> = ({
       onClick={() => onUserClick(displayNameSlug)}
     >
       <Img
-        src={profilePicUrl || 'images/user.png'}
+        src={profilePicUrl || '/images/user.png'}
         alt={displayName || displayNameSlug}
         className={`${sizeClasses[size]} rounded-full object-cover`}
       />

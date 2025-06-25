@@ -45,6 +45,10 @@ interface FollowingItem {
   organization: {
     display_name_slug: string;
     organization_name: string;
+    user: {
+      email: string;
+      // add other fields if needed
+    };
   };
   user: {
     email: string;
@@ -61,6 +65,7 @@ export default function Connectionspage() {
   const navigate = useNavigate();
   const [following, setFollowing] = useState<FollowingItem[]>([]);
   const [isFollowingLoading, setIsFollowingLoading] = useState(false);
+  const [followers, setFollowers] = useState<any[]>([]);
 
   const fetchUsers = async () => {
     try {
@@ -69,7 +74,7 @@ export default function Connectionspage() {
         return;
       }
 
-      const usersResponse = await axios.get('https://api.varsigram.com/api/v1/users/search/', {
+      const usersResponse = await axios.get('https://api.varsigram.com/api/v1/users/who-to-follow/', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -147,9 +152,8 @@ export default function Connectionspage() {
     }
     try {
       const userSlug = display_name_slug || user?.email?.split('@')[0];
-      await axios.post(
+      await axios.delete(
         `https://api.varsigram.com/api/v1/users/${userSlug}/unfollow/`,
-        {},
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -209,7 +213,10 @@ export default function Connectionspage() {
     }
   };
 
-  const filteredUsers = users.filter(user => !!user.organization_name);
+  const followedSlugs = new Set(following.map(f => f.organization.display_name_slug));
+  const filteredUsers = users.filter(
+    user => !!user.organization_name && !followedSlugs.has(user.display_name_slug || "")
+  );
 
   const fetchFollowers = async (displayNameSlug: string) => {
     try {
@@ -330,8 +337,8 @@ export default function Connectionspage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             user.is_following
-                              ? handleUnfollow(user.display_name_slug, user.organization_name)
-                              : handleFollow(user.display_name_slug, user.organization_name);
+                              ? handleUnfollow(user.display_name_slug || "", user.organization_name || "")
+                              : handleFollow(user.display_name_slug || "", user.organization_name || "");
                           }}
                           className={`px-4 py-2 rounded-full transition-colors ${
                             user.is_following 
@@ -372,10 +379,18 @@ export default function Connectionspage() {
                               </Text>
                             </div>
                             <Text className="text-sm text-gray-500">
-                              {item.user?.email || "No email"}
+                              {item.organization?.user?.email || "No email"}
                             </Text>
                           </div>
                         </div>
+                        <button
+                          onClick={() =>
+                            handleUnfollow(item.organization.display_name_slug || "", item.organization.organization_name || "")
+                          }
+                          className="px-4 py-2 rounded-full bg-gray-400 text-gray-600 hover:bg-gray-200 transition-colors"
+                        >
+                          Unfollow
+                        </button>
                       </div>
                     ))
                   )}

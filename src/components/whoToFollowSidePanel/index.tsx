@@ -30,8 +30,6 @@ export default function WhoToFollowSidePanel() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(response.data);
-      } catch (error) {
-        toast.error("Failed to fetch users");
       } finally {
         setIsLoading(false);
       }
@@ -91,7 +89,7 @@ export default function WhoToFollowSidePanel() {
         placeholder="Search Varsigram"
         value={searchBarValue}
         onChange={(e) => setSearchBarValue(e.target.value)}
-        prefix={<Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />}
+        prefix={<Img src="/images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />}
         suffix={
           searchBarValue?.length > 0 ? (
             <CloseSVG onClick={() => setSearchBarValue("")} fillColor="gray_800" />
@@ -116,7 +114,7 @@ export default function WhoToFollowSidePanel() {
                   </Text>
                   {user.is_verified && (
                     <Img
-                      src="images/vectors/verified.svg"
+                      src="/images/vectors/verified.svg"
                       alt="Verified"
                       className="h-[16px] w-[16px] mt-0.5"
                     />

@@ -12,6 +12,7 @@ import CommentSection from '../CommentSection';
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from '../EditPostModal';
 
+
 interface Post {
   id: string;
   author_id: string;
@@ -28,6 +29,7 @@ interface Post {
   trending_score: number;
   last_engagement_at: string | null;
   author_display_name: string;
+  author_display_name_slug: string;
   author_name?: string;
 }
 
@@ -71,15 +73,16 @@ export const Post: React.FC<PostProps> = ({
 
   const renderMedia = () => {
     if (!post.media_urls || post.media_urls.length === 0) return null;
-
+    // Only show up to 4 images
+    const mediaToShow = post.media_urls.slice(0, 4);
     return (
-      <div className="mt-4 grid gap-2">
-        {post.media_urls.map((url, index) => (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {mediaToShow.map((url, index) => (
           <Img
             key={index}
             src={url}
             alt={`Post media ${index + 1}`}
-            className="w-full rounded-lg max-h-[500px] object-cover"
+            className="w-full h-40 object-cover rounded-lg"
           />
         ))}
       </div>
@@ -87,42 +90,40 @@ export const Post: React.FC<PostProps> = ({
   };
 
   const handleLike = async () => {
-    if (isLiking || !token) return;
-    
-    // Save previous state for revert
-    const prevLikeCount = likeCount;
-    const prevHasLiked = hasLiked;
+    if (isLiking) return;
 
-    // Optimistically update UI
-    setHasLiked(!hasLiked);
-    setLikeCount(prev => hasLiked ? prev - 1 : prev + 1);
-    setIsLiking(true);
+    if (!token) {
+      toast.error('Please login to like posts');
+      return;
+    }
 
     try {
+      setIsLiking(true);
+      setLikeCount(prev => hasLiked ? prev - 1 : prev + 1);
+      setHasLiked(prev => !prev);
+
       const response = await axios.post(
         `https://api.varsigram.com/api/v1/posts/${post.id}/like/`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
       );
-      
-      // Sync with backend response
-      setLikeCount(response.data.like_count);
-      setHasLiked(response.data.has_liked);
-      
-      // Update parent component if callback provided
+
       if (onPostUpdate) {
         onPostUpdate({
           ...post,
           like_count: response.data.like_count,
-          has_liked: response.data.has_liked
+          has_liked: response.data.has_liked,
         });
       }
     } catch (error) {
-      // Revert on error
-      setLikeCount(prevLikeCount);
-      setHasLiked(prevHasLiked);
-      console.error("Failed to like/unlike post:", error);
-      toast.error("Action failed. Please try again.");
+      setLikeCount(post.like_count);
+      setHasLiked(post.has_liked);
+      toast.error('Failed to update like status');
     } finally {
       setIsLiking(false);
     }
@@ -218,6 +219,8 @@ export const Post: React.FC<PostProps> = ({
     navigate(`/user-profile/${username}`);
   };
 
+ 
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -270,13 +273,7 @@ export const Post: React.FC<PostProps> = ({
             {post.content}
           </Text>
 
-          {post.media_urls?.length > 0 && (
-            <div className="mt-4 grid gap-2">
-              {post.media_urls.map((url, index) => (
-                <Img key={index} src={url} alt={`Post media ${index + 1}`} className="w-full rounded-lg max-h-[500px] object-cover" />
-              ))}
-            </div>
-          )}
+          {renderMedia()}
 
           <div className="flex justify-between items-center border-t pt-4">
             <div className="flex items-center gap-2 cursor-pointer" onClick={handleLike}>
@@ -304,7 +301,7 @@ export const Post: React.FC<PostProps> = ({
               <Img src="/images/vectors/revers.svg" alt="Share" className="h-[20px] w-[20px]" />
               <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
             </div>
-            <Img src="images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer" />
+            <Img src="/images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer" />
           </div>
 
           <CommentSection open={showComments} onClose={() => setShowComments(false)} postId={post.id} />

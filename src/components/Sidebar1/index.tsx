@@ -87,12 +87,12 @@ export default function Sidebar1() {
         </div>
 
         <div className="flex self-stretch gap-5 px-5 py-[18px] items-center">
-          <Img src="images/resources-icon.svg" alt="Library" className="h-[24px] w-[24px]" />
+          <Img src="/images/resources-icon.svg" alt="Library" className="h-[24px] w-[24px]" />
           {!collapsed && <Text as="p" className="text-[16px] font-semibold">Resources</Text>}
         </div>
 
         <div className="flex self-stretch gap-5 px-5 py-[18px] items-center">
-          <Img src="images/marketplace-icon.svg" alt="File" className="h-[24px] w-[24px]" />
+          <Img src="/images/marketplace-icon.svg" alt="File" className="h-[24px] w-[24px]" />
           {!collapsed && <Text as="p" className="text-[16px] font-semibold">Marketplace</Text>}
         </div>
 
@@ -100,7 +100,7 @@ export default function Sidebar1() {
           onClick={() => handleNavigation('settings')}  
           className="flex self-stretch gap-5 px-5 py-[18px] mt-[20vh] items-center cursor-pointer hover:bg-gray-50"
         >
-          <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
+          <Img src="/images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
           {!collapsed && (
             <Text as="p" className={currentPage === 'settings' ? 'text-[#750015]' : 'text-black'}>
               Settings
@@ -116,7 +116,7 @@ export default function Sidebar1() {
           className="flex self-stretch gap-5 px-5 py-[18px] items-center cursor-pointer hover:bg-gray-50"
         >
           <Img 
-            src={user?.profile_pic_url || "images/user.png"} 
+            src={user?.profile_pic_url || "/images/user.png"} 
             alt="Profile" 
             className="h-[32px] w-[32px] rounded-[50%]" 
           />

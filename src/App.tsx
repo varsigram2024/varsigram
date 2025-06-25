@@ -19,6 +19,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import ProfilePage from './pages/Profilepage/index.tsx';
+import EditProfile from "./pages/Settings/EditProfile";
+import ChangePassword from "./pages/Settings/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -69,6 +73,10 @@ function AppContent() {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/user-profile/:display_name_slug" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/settings/edit-profile" element={<EditProfile />} />
+        <Route path="/settings/change-password" element={<ChangePassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Root route - redirect to welcome */}
         <Route path="/" element={<Navigate to="/welcome" replace />} />

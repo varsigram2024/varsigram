@@ -18,8 +18,10 @@ import { LogOut } from "lucide-react";
 import { toast } from 'react-hot-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase/config.ts';
+import { uploadPostMedia } from '../../utils/fileUpload';
 import { ClickableUser } from "../../components/ClickableUser";
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
+import CreatePostModal from '../../components/CreatePostModal';
 
 interface Post {
   id: string;
@@ -145,13 +147,11 @@ export default function Homepage() {
 
     try {
       setIsUploading(true);
-      
-      // First, upload all images to Firebase Storage
+
+      // Upload all images using signed URL logic
       const mediaUrls = await Promise.all(
         selectedFiles.map(async (file) => {
-          const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
-          return getDownloadURL(snapshot.ref);
+          return uploadPostMedia(file, token);
         })
       );
 
@@ -322,6 +322,20 @@ export default function Homepage() {
     }
   };
 
+
+  const handleMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !token) return;
+
+    try {
+      const publicUrl = await uploadPostMedia(file, token);
+      // Add this URL to your post's media_urls array
+      setMediaUrls(prev => [...prev, publicUrl]);
+    } catch (error) {
+      toast.error("Failed to upload media.");
+    }
+  };
+
   // Debug: log the user object
   console.log('Homepage user:', user);
 
@@ -425,7 +439,21 @@ export default function Homepage() {
 
             
 
-            {!isCreatePostOpen ? (
+            {isCreatePostOpen && (
+              <CreatePostModal
+                newPostContent={newPostContent}
+                setNewPostContent={setNewPostContent}
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
+                isUploading={isUploading}
+                onClose={handleCancelPost}
+                onSubmit={handleCreatePost}
+                handleFileChange={handleFileChange}
+                handleRemoveFile={handleRemoveFile}
+              />
+            )}
+
+            {!isCreatePostOpen && (
               <div 
                 className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => setIsCreatePostOpen(true)}
@@ -433,103 +461,20 @@ export default function Homepage() {
                 <input
                   type="text"
                   value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
                   placeholder="Create a vars..."
                   className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsCreatePostOpen(true);
-                  }}
                   readOnly
                 />
                 <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      fileInputRef.current?.click();
+                      setIsCreatePostOpen(true);
                     }}
                     className="cursor-pointer"
                   >
                     <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
                   </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col w-full p-4 bg-white rounded-[28px] shadow-sm">
-                <textarea
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="Create a vars..."
-                  className="w-full p-2 text-[20px] font-normal text-gray-800 bg-transparent border-none outline-none focus:outline-none resize-none"
-                  rows={3}
-                />
-                {selectedFiles.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="absolute top-2 right-2 p-1 bg-gray-800 bg-opacity-50 rounded-full text-white hover:bg-opacity-75"
-                        >
-                          <CloseSVG />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 text-gray-500 hover:text-gray-700"
-                      disabled={selectedFiles.length >= 5}
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                    />
-                    {selectedFiles.length > 0 && (
-                      <span className="text-sm text-gray-500">
-                        {selectedFiles.length}/5 images
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleCancelPost}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleCreatePost}
-                      disabled={isUploading || (!newPostContent.trim() && selectedFiles.length === 0)}
-                      className="px-4 py-2 text-white bg-[#750015] rounded-lg hover:bg-[#8c001a] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isUploading ? 'Posting...' : 'Post'}
-                    </button>
-                  </div>
                 </div>
               </div>
             )}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import background from "../public/background img.png";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
@@ -29,7 +29,7 @@ export const Login = () => {
       await login(formData.email, formData.password);
     } catch (error: any) {
       console.error("Login failed:", error);
-      alert(error.message);
+      
     } finally {
       setIsLoading(false);
     }
@@ -106,6 +106,14 @@ export const Login = () => {
                   </button>
                 }
               />
+            </div>
+
+            <div
+              className="text-center mt-4 animate-slide-up"
+              style={{ animationDelay: "250ms" }}>
+              <Link to="/forgot-password" className="text-sm text-[#750015] hover:underline">
+                Forgot Password?
+              </Link>
             </div>
 
             <div
