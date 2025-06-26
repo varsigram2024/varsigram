@@ -56,10 +56,13 @@ export default function EditProfile() {
 
   // Initialize editMode for all fields when fields are set
   useEffect(() => {
-    const fieldKeys = Object.keys(fields);
-    const initialEditMode: { [key: string]: boolean } = {};
-    fieldKeys.forEach(key => { initialEditMode[key] = false; });
-    setEditMode(initialEditMode);
+    if (Object.keys(editMode).length === 0 && Object.keys(fields).length > 0) {
+      const fieldKeys = Object.keys(fields);
+      const initialEditMode: { [key: string]: boolean } = {};
+      fieldKeys.forEach(key => { initialEditMode[key] = false; });
+      setEditMode(initialEditMode);
+    }
+    // eslint-disable-next-line
   }, [fields]);
 
   // Handle field change
@@ -72,8 +75,15 @@ export default function EditProfile() {
     setEditMode((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   // Save changes
   const handleSave = async (key: string) => {
+    if (key === "email" && !isValidEmail(fields[key])) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
     if (!token) return;
     setLoading(true);
     try {
@@ -110,13 +120,29 @@ export default function EditProfile() {
       <Text className="w-40 font-medium">{label}</Text>
       {editMode[key] ? (
         <>
-          <input
-            type={type}
-            value={fields[key] || ""}
-            onChange={e => handleChange(key, e.target.value)}
-            className="border rounded px-2 py-1 flex-1 mr-2"
-          />
+          {type === "select" ? (
+            <select
+              value={fields[key] || ""}
+              onChange={e => handleChange(key, e.target.value)}
+              className="border rounded px-2 py-1 flex-1 mr-2"
+            >
+              <option value="">Select year</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+              <option value="300">300</option>
+              <option value="400">400</option>
+              <option value="500">500</option>
+            </select>
+          ) : (
+            <input
+              type={type}
+              value={fields[key] || ""}
+              onChange={e => handleChange(key, e.target.value)}
+              className="border rounded px-2 py-1 flex-1 mr-2"
+            />
+          )}
           <button
+            type="button"
             onClick={() => handleSave(key)}
             disabled={loading}
             className="text-green-600"
@@ -129,8 +155,9 @@ export default function EditProfile() {
         <>
           <span className="flex-1">{fields[key] || <span className="text-gray-400">Not set</span>}</span>
           <button
+            type="button"
             onClick={() => toggleEdit(key)}
-            className="text-blue-600 ml-2"
+            className="text-[#750015] ml-2"
             title="Edit"
           >
             <Pencil size={18} />
@@ -147,22 +174,22 @@ export default function EditProfile() {
         <Text className="text-2xl font-bold mb-6">Edit Profile</Text>
         {profileType === "student" && (
           <form>
-            {renderField("Email", "email")}
+            {/* {renderField("Email", "email", "email")} */}
             {renderField("Bio", "bio")}
             {renderField("Name", "name")}
-            {renderField("Faculty", "faculty")}
-            {renderField("Department", "department")}
-            {renderField("Year", "year")}
-            {renderField("Religion", "religion")}
+            {/* {renderField("Faculty", "faculty")} */}
+            {/* {renderField("Department", "department")} */}
+            {renderField("Year", "year", "select")}
+            {/* {renderField("Religion", "religion")} */}
             {renderField("Phone Number", "phone_number")}
-            {renderField("Sex", "sex")}
-            {renderField("University", "university")}
-            {renderField("Date of Birth", "date_of_birth", "date")}
+            {/* {renderField("Sex", "sex")} */}
+            {/* {renderField("University", "university")} */}
+            {/* {renderField("Date of Birth", "date_of_birth", "date")} */}
           </form>
         )}
         {profileType === "organization" && (
           <form>
-            {renderField("Email", "email")}
+            {renderField("Email", "email", "email")}
             {renderField("Bio", "bio")}
             {renderField("Organization Name", "organization_name")}
           </form>

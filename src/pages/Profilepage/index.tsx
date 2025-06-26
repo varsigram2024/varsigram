@@ -118,13 +118,13 @@ export default function Profile() {
           `https://api.varsigram.com/api/v1/profile/${display_name_slug}/`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
-        const { profile_type, profile } = profileResponse.data;
+        const { profile_type, profile, is_following, followers_count, following_count } = profileResponse.data;
         const isOrg = profile_type === 'organization';
 
         // Prepare promises for followers, following, posts
         let followersPromise = Promise.resolve([]);
         let followingPromise = axios.get(
-          `https://api.varsigram.com/api/v1/users/${profile.user.id}/following/`,
+          `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         ).then(res => res.data).catch(() => []);
         let postsPromise = axios.get(
@@ -134,7 +134,7 @@ export default function Profile() {
 
         if (isOrg) {
           followersPromise = axios.get(
-            `https://api.varsigram.com/api/v1/users/${profile.display_name_slug}/followers/`,
+            `https://api.varsigram.com/api/v1/users/followers/?followee_type=${profile_type}&followee_id=${profile.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           ).then(res => res.data).catch(() => []);
         }
@@ -147,7 +147,11 @@ export default function Profile() {
         ]);
 
         setFollowers(followersArr);
+        console.log("Followers of this profile:", followersArr);
+
         setFollowing(followingArr);
+        console.log("Following of this profile:", followingArr);
+
         setPosts(postsArr);
 
         setUserProfile({
@@ -157,8 +161,8 @@ export default function Profile() {
           profile_pic_url: profile.user.profile_pic_url,
           bio: isOrg ? profile.user?.bio : profile.user?.bio,
           is_verified: profile.user?.is_verified || false,
-          followers_count: isOrg ? followersArr.length : 0,
-          following_count: followingArr.length,
+          followers_count,
+          following_count,
           account_type: profile_type,
           name: profile.name,
           organization_name: profile.organization_name,
@@ -170,12 +174,15 @@ export default function Profile() {
           exclusive: profile.exclusive,
         });
 
+        setIsFollowing(is_following);
+
         // Check if current user is following this user (only for external profiles)
         if (user?.email !== profile.user.email) {
           try {
-            const followingResponse = await axios.get(`https://api.varsigram.com/api/v1/following/`, {
-              headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const followingResponse = await axios.get(
+              `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+              { headers: { 'Authorization': `Bearer ${token}` }, }
+            );
             const followingList = followingResponse.data;
             const isUserFollowing = followingList.some((followedUser: any) =>
               followedUser.organization?.display_name_slug === profile.display_name_slug
@@ -200,23 +207,16 @@ export default function Profile() {
   const handleFollow = async () => {
     if (!userProfile || !user || !token) return;
 
-    const follower_type = userProfile.account_type; // This is the profile being viewed, not the logged-in user!
-    // You need the logged-in user's type and id:
-    const followerType = user.account_type; // You may need to get this from your auth context
-    const followerId = user.id;
-    const followeeType = userProfile.account_type;
-    const followeeId = userProfile.id;
+    const follower_type = user.account_type;
+    const follower_id = user.id;
+    const followee_type = userProfile.account_type;
+    const followee_id = userProfile.id;
 
     try {
       if (isFollowing) {
         await axios.post(
           `https://api.varsigram.com/api/v1/users/unfollow/`,
-          {
-            follower_type: followerType,
-            follower_id: followerId,
-            followee_type: followeeType,
-            followee_id: followeeId,
-          },
+          { follower_type, follower_id, followee_type, followee_id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFollowing(false);
@@ -225,12 +225,7 @@ export default function Profile() {
       } else {
         await axios.post(
           `https://api.varsigram.com/api/v1/users/follow/`,
-          {
-            follower_type: followerType,
-            follower_id: followerId,
-            followee_type: followeeType,
-            followee_id: followeeId,
-          },
+          { follower_type, follower_id, followee_type, followee_id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFollowing(true);
@@ -326,10 +321,11 @@ export default function Profile() {
   }, [token]);
 
   useEffect(() => {
-    if (!token) return;
-    axios.get('https://api.varsigram.com/api/v1/following/', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    if (!userProfile || !token) return;
+    axios.get(
+      `https://api.varsigram.com/api/v1/users/following/?follower_type=${userProfile.account_type}&follower_id=${userProfile.id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
     .then(response => {
       console.log('/following/ on user-profile page:', response.data);
       setFollowing(response.data);
@@ -337,33 +333,59 @@ export default function Profile() {
     .catch(error => {
       console.error('Error fetching /following/ on user-profile page:', error);
     });
-  }, [token]);
+  }, [userProfile, token]);
 
   useEffect(() => {
-    const fetchFollowers = async (displayNameSlug: string) => {
-      if (!displayNameSlug) {
-        console.warn("No display_name_slug provided to fetchFollowers");
-        setFollowers([]);
-        return;
-      }
-      try {
-        const response = await axios.get(
-          `https://api.varsigram.com/api/v1/users/${displayNameSlug}/followers/`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setFollowers(response.data);
-      } catch (error) {
-        setFollowers([]);
-      }
+    const fetchFollowers = async () => {
+      if (!userProfile) return;
+      // now safe to use userProfile.account_type
     };
     if (token && userProfile?.organization_name) {
-      fetchFollowers(userProfile.organization_name);
+      fetchFollowers();
     }
   }, [token, userProfile?.organization_name]);
 
   useEffect(() => {
     console.log("Followers array:", followers);
   }, [followers]);
+
+  const fetchPosts = async () => {
+    const response = await axios.get(
+      `https://api.varsigram.com/api/v1/users/${user?.id}/posts/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setPosts(response.data);
+  };
+
+  useEffect(() => {
+    const checkIfFollowing = async () => {
+      if (!user || !userProfile || !token) return;
+
+      try {
+        const response = await axios.get(
+          `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        // The response is an array of follow objects
+        const isUserFollowing = response.data.some((f: any) => {
+          // For organizations
+          if (f.followee_organization && userProfile.account_type === "organization") {
+            return f.followee_organization.id === Number(userProfile.id);
+          }
+          // For students
+          if (f.followee_student && userProfile.account_type === "student") {
+            return f.followee_student.id === Number(userProfile.id);
+          }
+          return false;
+        });
+        setIsFollowing(isUserFollowing);
+      } catch (err) {
+        setIsFollowing(false);
+      }
+    };
+
+    checkIfFollowing();
+  }, [user, userProfile, token]);
 
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100">
@@ -555,10 +577,10 @@ export default function Profile() {
 
                         <div className="flex flex-wrap gap-6">
                           <Text as="p" className="text-[16px] font-normal">
-                            <span className="font-semibold">{followers.length}</span> Followers
+                            <span className="font-semibold">{userProfile.followers_count}</span> Followers
                           </Text>
                           <Text as="p" className="text-[16px] font-normal">
-                            <span className="font-semibold">{following.length}</span> Following
+                            <span className="font-semibold">{userProfile.following_count}</span> Following
                           </Text>
                         </div>
 

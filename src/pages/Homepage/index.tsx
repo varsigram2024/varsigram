@@ -147,7 +147,7 @@ export default function Homepage() {
 
     try {
       setIsUploading(true);
-
+      
       // Upload all images using signed URL logic
       const mediaUrls = await Promise.all(
         selectedFiles.map(async (file) => {

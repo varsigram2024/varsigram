@@ -31,6 +31,8 @@ interface Post {
   author_display_name: string;
   author_display_name_slug: string;
   author_name?: string;
+  is_shared?: boolean;
+  original_post?: Post;
 }
 
 interface PostProps {
@@ -246,6 +248,29 @@ export const Post: React.FC<PostProps> = ({
     }
   };
 
+  const handleShare = async () => {
+    if (!token) {
+      toast.error('Please login to revers posts');
+      return;
+    }
+    try {
+      await axios.post(
+        `https://api.varsigram.com/api/v1/posts/${post.id}/share/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Post revarsed!');
+      // Optionally update share count in UI:
+      if (onPostUpdate) {
+        onPostUpdate({ ...post, share_count: post.share_count + 1 });
+      }
+    } catch (error) {
+      toast.error('Failed to revars post');
+    }
+  };
+
+  const isRevarsed = post.is_shared && post.original_post;
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -295,7 +320,23 @@ export const Post: React.FC<PostProps> = ({
           </div>
 
           <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
-            {post.content}
+            {isRevarsed && (
+              <div className="text-xs text-gray-500 mb-2">
+                <span>
+                  <b>{post.author_name || post.author_display_name}</b> revarsed
+                </span>
+              </div>
+            )}
+            {isRevarsed ? (
+              <div className="border p-2 rounded bg-gray-50">
+                <Text>{post.original_post?.content}</Text>
+                <div className="text-xs text-gray-400 mt-1">
+                  by {post.original_post?.author_name || post.original_post?.author_display_name}
+                </div>
+              </div>
+            ) : (
+              post.content
+            )}
           </Text>
 
           {renderMedia()}
@@ -318,12 +359,12 @@ export const Post: React.FC<PostProps> = ({
             </div>
 
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowComments(true)}>
-              <Img src="/images/vectors/vers.svg" alt="Comment" className="h-[20px] w-[20px]" />
+              <Img src="/images/vectors/vars.svg" alt="Comment" className="h-[20px] w-[20px]" />
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
             <div className="flex items-center gap-2">
-              <Img src="/images/vectors/revers.svg" alt="Share" className="h-[20px] w-[20px]" />
+              <Img src="/images/vectors/revars.svg" alt="Share" className="h-[20px] w-[20px] cursor-pointer" onClick={handleShare} />
               <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
             </div>
             <div className="relative">

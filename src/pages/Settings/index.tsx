@@ -24,6 +24,7 @@ export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -31,8 +32,10 @@ export default function Settings() {
         try {
           const res = await getProfile(token);
           setIsVerified(res.data?.profile?.user?.is_verified ?? false);
+          setProfilePicUrl(res.data?.profile?.user?.profile_pic_url ?? null);
         } catch {
           setIsVerified(false);
+          setProfilePicUrl(null);
         }
       }
     };
@@ -75,7 +78,15 @@ export default function Settings() {
           {/* Mobile Header */}
           <div className="mt-5 lg:hidden flex flex-row justify-between">
             <div onClick={() => handleNavigation('user-profile')} className="hover:opacity-80 transition-opacity cursor-pointer">
-              <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
+              <Img
+                src={
+                  profilePicUrl && profilePicUrl.startsWith("http")
+                    ? profilePicUrl
+                    : "images/user-image.png"
+                }
+                alt="Profile"
+                className="h-[32px] w-[32px] rounded-[50%]"
+              />
             </div>
             <div>
               <Text className="font-semibold text-xl">Settings</Text>

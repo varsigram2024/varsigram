@@ -26,14 +26,12 @@ export const getProfile = async (token: string) => {
   });
 };
 
-export const updateStudent = async (data: any, token: string) => {
-  return axios.put(`${API_BASE}/student/update/`, data, {
-    headers: { Authorization: `Bearer ${token}` }
+export const updateStudent = (payload: any, token: string) =>
+  axios.patch("https://api.varsigram.com/api/v1/student/update/", payload, {
+    headers: { Authorization: `Bearer ${token}` },
   });
-};
 
-export const updateOrganization = async (data: any, token: string) => {
-  return axios.put(`${API_BASE}/organization/update/`, data, {
-    headers: { Authorization: `Bearer ${token}` }
+export const updateOrganization = (payload: any, token: string) =>
+  axios.patch("https://api.varsigram.com/api/v1/organization/update/", payload, {
+    headers: { Authorization: `Bearer ${token}` },
   });
-};

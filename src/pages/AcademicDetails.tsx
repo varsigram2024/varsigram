@@ -22,15 +22,15 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
 
   const faculties = [
     "College of Medicine",
-    "Faculty of Arts",
-    "Faculty of Education",
-    "Faculty of Engineering",
-    "Faculty of Environmental Sciences",
-    "Faculty of Law",
-    "Faculty of Management Sciences",
-    "Faculty of Pharmacy",
-    "Faculty of Sciences",
-    "Faculty of Social Sciences"
+    "Arts",
+    "Education",
+    "Engineering",
+    "Environmental Sciences",
+    "Law",
+    "Management Sciences",
+    "Pharmacy",
+    "Sciences",
+    "Social Sciences"
   ];
 
   // const departments = [

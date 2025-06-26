@@ -126,7 +126,7 @@ export default function Chatpage() {
                 className="flex h-[48px] items-center rounded-[24px] border-[1.5px] bg-white border-[#e6e6e699] pl-[22px] pr-3 text-[14px] text-[#3a3a3a]"
                 />
             
-                <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
+                {/* <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
 
                     <div className="flex items-start justify-between gap-5">
                     <Text as="p" className="self-end text-[16px] font-bold">Prompts</Text>
@@ -153,7 +153,7 @@ export default function Chatpage() {
 
                     </div>
 
-                </div>
+                </div> */}
 
                 <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
 
