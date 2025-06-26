@@ -8,6 +8,7 @@ import { PhoneVerification } from './pages/PhoneVerification';
 import { AcademicDetails } from './pages/AcademicDetails';
 import { AboutYourself } from './pages/AboutYourself';
 import { AcademicLevel } from './pages/AcademicLevel';
+import { EmailVerification } from './pages/EmailVerification.tsx';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import './styles/animations.css';
 import Chatpage from './pages/Chatpage';
@@ -77,6 +78,8 @@ function AppContent() {
         <Route path="/settings/change-password" element={<ChangePassword />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/settings/email-verification" element={<EmailVerification />} />
+
 
         {/* Root route - redirect to welcome */}
         <Route path="/" element={<Navigate to="/welcome" replace />} />

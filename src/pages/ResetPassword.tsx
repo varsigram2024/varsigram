@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import API from "../services/API"; // Uncomment and use your actual API
+import axios from "axios";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -16,10 +17,12 @@ const ResetPassword = () => {
   // Get params from URL
   const uid = searchParams.get("uid");
   const token = searchParams.get("token");
-  const email = searchParams.get("email");
+  console.log(uid);
+  console.log(token);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("uid:", uid, "token:", token);
     setError("");
     setMessage("");
 
@@ -35,7 +38,13 @@ const ResetPassword = () => {
 
     try {
       // Replace with your actual API call
-      // await API.post("/reset-password", { uid, token, email, password, confirm_password: confirmPassword });
+      await axios.post(
+        `https://api.varsigram.com/api/v1/password-reset-confirm/?uid=${encodeURIComponent(uid || "")}&token=${encodeURIComponent(token || "")}`,
+        {
+          new_password: password,
+          confirm_password: confirmPassword
+        }
+      );
       setMessage("Password reset successful! You can now log in.");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: any) {
@@ -45,7 +54,7 @@ const ResetPassword = () => {
     }
   };
 
-  if (!uid || !token || !email) {
+  if (!uid || !token ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-white p-8 rounded shadow">

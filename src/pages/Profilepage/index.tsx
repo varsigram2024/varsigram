@@ -19,6 +19,7 @@ import { ClickableUser } from "../../components/ClickableUser";
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post.tsx/index.tsx";
 import { uploadProfilePicture } from '../../utils/fileUpload.ts';
+import { Pencil, Save } from "lucide-react";
 
 // Add interface for props
 interface ProfilepageOrganizationProps {
@@ -77,6 +78,7 @@ interface UserProfile {
   university?: string;
   date_of_birth?: string;
   display_name_slug: string;
+  exclusive?: boolean;
 }
 
 // const makeProfilePicUrl = (url: string) => {
@@ -153,17 +155,19 @@ export default function Profile() {
           email: profile.user.email,
           username: profile.user.username,
           profile_pic_url: profile.user.profile_pic_url,
-          bio: isOrg ? profile.user?.bio : profile.bio,
+          bio: isOrg ? profile.user?.bio : profile.user?.bio,
           is_verified: profile.user?.is_verified || false,
           followers_count: isOrg ? followersArr.length : 0,
           following_count: followingArr.length,
           account_type: profile_type,
           name: profile.name,
           organization_name: profile.organization_name,
+          university: profile.university,
           faculty: profile.faculty,
           department: profile.department,
           year: profile.year,
           display_name_slug: profile.display_name_slug,
+          exclusive: profile.exclusive,
         });
 
         // Check if current user is following this user (only for external profiles)
@@ -194,24 +198,41 @@ export default function Profile() {
   }, [display_name_slug, token, user?.email]);
 
   const handleFollow = async () => {
-    if (!display_name_slug || !token) return;
+    if (!userProfile || !user || !token) return;
+
+    const follower_type = userProfile.account_type; // This is the profile being viewed, not the logged-in user!
+    // You need the logged-in user's type and id:
+    const followerType = user.account_type; // You may need to get this from your auth context
+    const followerId = user.id;
+    const followeeType = userProfile.account_type;
+    const followeeId = userProfile.id;
 
     try {
       if (isFollowing) {
-        await axios.delete(`https://api.varsigram.com/api/v1/users/${display_name_slug}/unfollow/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
+        await axios.post(
+          `https://api.varsigram.com/api/v1/users/unfollow/`,
+          {
+            follower_type: followerType,
+            follower_id: followerId,
+            followee_type: followeeType,
+            followee_id: followeeId,
           },
-        });
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setIsFollowing(false);
         setUserProfile(prev => prev ? { ...prev, followers_count: prev.followers_count - 1 } : null);
         toast.success('Unfollowed successfully');
       } else {
-        await axios.post(`https://api.varsigram.com/api/v1/users/${display_name_slug}/follow/`, {}, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
+        await axios.post(
+          `https://api.varsigram.com/api/v1/users/follow/`,
+          {
+            follower_type: followerType,
+            follower_id: followerId,
+            followee_type: followeeType,
+            followee_id: followeeId,
           },
-        });
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setIsFollowing(true);
         setUserProfile(prev => prev ? { ...prev, followers_count: prev.followers_count + 1 } : null);
         toast.success('Followed successfully');
@@ -265,9 +286,9 @@ export default function Profile() {
           email: profile.user.email,
           username: profile.user.username,
           profile_pic_url: profile.user.profile_pic_url,
-          bio: profile.user.bio,
-          is_verified: profile.is_verified,
-          followers_count: profile.followers_count,
+          bio: profile_type === "organization" ? profile.user.bio : profile.bio,
+          is_verified: profile.user?.is_verified || false,
+          followers_count: profile_type === "organization" ? profile.followers_count : 0,
           following_count: profile.following_count,
           account_type: profile_type,
           name: profile.name,
@@ -281,6 +302,7 @@ export default function Profile() {
           university: profile.university,
           date_of_birth: profile.date_of_birth,
           display_name_slug: profile.display_name_slug,
+          exclusive: profile.exclusive,
         });
       } else {
         setUserProfile(null);
@@ -343,14 +365,6 @@ export default function Profile() {
     console.log("Followers array:", followers);
   }, [followers]);
 
-  if (!userProfile) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Text>User not found</Text>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100">
       <div className="flex w-full items-start justify-center bg-white">
@@ -358,23 +372,25 @@ export default function Profile() {
 
         <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row">
           <div className="main lg:mt-[0px] w-full flex lg:flex-1 flex-col max-h-full items-center lg:items-end md:gap-[70px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-0 md:px-5 gap-[35px]">
-            {/* Move the loading spinner here */}
             {isLoading ? (
               <div className="flex justify-center items-center h-[300px] w-full">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
+              </div>
+            ) : !userProfile ? (
+              <div className="flex justify-center items-center h-[300px] w-full">
+                <Text>User not found</Text>
               </div>
             ) : (
               <>
                 {/* Cover photo section */}
                 <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full">
                   <div className="flex w-full flex-col self-stretch gap-2.5">
-                    <div className="flex flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] bg-[#750015] p-10 sm:p-5">
-                      <Img src="/images/cover-photo-bg.svg" alt="Cover" className="h-[60px] w-[60px]" />
-                      <Text as="h4" className="text-[28px] font-semibold text-white md:text-[26px] sm:text-[24px]">
+                    <div className="flex h-[170px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5" style={{ backgroundImage: `url(${userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http') ? userProfile.profile_pic_url : '/images/cover-photo-bg.svg'})`, backgroundSize: 'cover' }}>
+                      {/* <Text as="h4" className="text-[28px] font-semibold text-white md:text-[26px] sm:text-[24px]">
                         {userProfile.organization_name || 'User Profile'}
-                      </Text>
+                      </Text> */}
                     </div>
-                    <div className="relative ml-4 mt-[-46px] w-[120px] h-[120px] rounded-[50%] border-[5px] border-[#ffdbe2] bg-white">
+                    <div className="overflow-hidden relative ml-4 mt-[-46px] w-[120px] h-[120px] rounded-[50%] border-[5px] border-[#ffdbe2] bg-white">
                       {user?.email === userProfile?.email ? (
                         <>
                           <div 
@@ -387,12 +403,11 @@ export default function Profile() {
                               </div>
                             ) : (
                               <>
-                                {console.log("Profile Picture URL:", userProfile?.profile_pic_url)}
                                 <Img
                                   src={
                                     userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http')
                                       ? userProfile.profile_pic_url
-                                      : "/images/user-image.png"
+                                      : "/images/user.png"
                                   }
                                   alt="Profile Picture"
                                   className="w-full h-full object-cover"
@@ -415,7 +430,6 @@ export default function Profile() {
                         </>
                       ) : (
                         <>
-                          {console.log("Profile Picture URL:", userProfile?.profile_pic_url)}
                           <Img
                             src={
                               userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http')
@@ -435,7 +449,9 @@ export default function Profile() {
                         <Heading size="h3_semibold" as="h1" className="text-[28px] font-semibold md:text-[26px] sm:text-[24px]">
                           {userProfile.name || userProfile.organization_name || userProfile.username}
                         </Heading>
-                        {userProfile.is_verified && (
+                        {userProfile.account_type === "organization" &&
+                         userProfile.is_verified &&
+                         userProfile.exclusive && (
                           <Img 
                             src="/images/vectors/verified.svg" 
                             alt="Verified" 
@@ -443,6 +459,29 @@ export default function Profile() {
                           />
                         )}
                       </div>
+
+
+                          {/* Additional info for students */}
+                      {userProfile.account_type === 'student' && (
+                        <div className="flex flex-row gap-2">
+                          {userProfile.university && (
+                            <Text as="p" className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600">
+                              {userProfile.university}
+                            </Text>
+                          )}
+                          {userProfile.faculty && (
+                            <Text as="p" className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600">
+                              {userProfile.faculty}
+                            </Text>
+                          )}
+                          {userProfile.department && (
+                            <Text as="p" className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600">
+                               {userProfile.department}
+                            </Text>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         {isEditingBio ? (
                           <>
@@ -493,9 +532,7 @@ export default function Profile() {
                                 title="Edit bio"
                               >
                                 {/* Pen SVG icon */}
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l-6 6m-2 2h2v2h2v-2h2v-2h-2v-2h-2v2H9v2z" />
-                                </svg>
+                                <Pencil size={10} color="#750015" />
                               </button>
                             )}
                           </>
@@ -503,7 +540,7 @@ export default function Profile() {
                       </div>
                       
                       {/* Follow button - only show if not viewing own profile */}
-                      {user?.email !== userProfile.email && userProfile.account_type === 'organization' && (
+                      {user?.email !== userProfile.email && (
                         <Button
                           onClick={handleFollow}
                           className={`px-6 py-2 rounded-full font-semibold transition-colors ${
@@ -517,62 +554,55 @@ export default function Profile() {
                       )}
 
                         <div className="flex flex-wrap gap-6">
-                          {userProfile?.account_type === 'organization' && (
-                            <Text as="p" className="text-[16px] font-normal">
-                              <span className="font-semibold">{followers.length}</span> Followers
-                            </Text>
-                          )}
+                          <Text as="p" className="text-[16px] font-normal">
+                            <span className="font-semibold">{followers.length}</span> Followers
+                          </Text>
                           <Text as="p" className="text-[16px] font-normal">
                             <span className="font-semibold">{following.length}</span> Following
                           </Text>
                         </div>
 
-                      {/* Additional info for students */}
-                      {userProfile.account_type === 'student' && (
-                        <div className="flex flex-col gap-2">
-                          {userProfile.faculty && (
-                            <Text as="p" className="text-[14px] font-normal text-gray-600">
-                              Faculty: {userProfile.faculty}
-                            </Text>
-                          )}
-                          {userProfile.department && (
-                            <Text as="p" className="text-[14px] font-normal text-gray-600">
-                              Department: {userProfile.department}
-                            </Text>
-                          )}
-                          {userProfile.year && (
-                            <Text as="p" className="text-[14px] font-normal text-gray-600">
-                              Year: {userProfile.year}
-                            </Text>
-                          )}
-                        </div>
-                      )}
+                    
                     </div>
                   </div>
                   <div className="h-px bg-[#d9d9d9]" />
                 </div>
 
                 {/* Posts Section */}
-                {(userProfile.display_name_slug || userProfile.email) && token && (
-                  <div className="w-full">
-                    {posts.map((post) => (
-                      <Post
-                        key={post.id}
-                        post={post}
-                        onPostUpdate={(updatedPost) => {
-                          setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                        }}
-                        onPostDelete={(post) => {
-                          setPosts(prev => prev.filter(p => p.id !== post.id));
-                        }}
-                        onPostEdit={(post) => {
-                          // This is now handled internally by the Post component
-                        }}
-                        currentUserId={user?.id}
-                        currentUserEmail={user?.email}
-                      />
-                    ))}
+                {!user?.is_verified ? (
+                  <div className="w-full flex flex-col items-center justify-center bg-yellow-50 border border-yellow-300 rounded-lg p-4 my-4">
+                    <Text className="text-yellow-800 font-semibold mb-2">
+                      Kindly go to SETTINGS to Verify your Email, in order to engage with content. THANK YOU!!!
+                    </Text>
+                    <Button
+                      onClick={() => navigate("/settings/email-verification")}
+                      className="bg-[#750015] text-white px-4 py-2 rounded"
+                    >
+                      Go to Email Verification
+                    </Button>
                   </div>
+                ) : (
+                  (userProfile.display_name_slug || userProfile.email) && token && (
+                    <div className="w-full">
+                      {posts.map((post) => (
+                        <Post
+                          key={post.id}
+                          post={post}
+                          onPostUpdate={(updatedPost) => {
+                            setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                          }}
+                          onPostDelete={(post) => {
+                            setPosts(prev => prev.filter(p => p.id !== post.id));
+                          }}
+                          onPostEdit={(post) => {
+                            // This is now handled internally by the Post component
+                          }}
+                          currentUserId={user?.id}
+                          currentUserEmail={user?.email}
+                        />
+                      ))}
+                    </div>
+                  )
                 )}
               </>
             )}

@@ -33,25 +33,25 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
     "Faculty of Social Sciences"
   ];
 
-  const departments = [
-    "Computer Science",
-    "Electrical Engineering",
-    "Mechanical Engineering",
-    "Civil Engineering",
-    "Chemical Engineering",
-    "Mathematics",
-    "Physics",
-    "Chemistry",
-    "Biology",
-    "Business Administration",
-    "Economics",
-    "Psychology",
-    "Sociology",
-    "Political Science",
-    "History",
-    "English",
-    "Philosophy"
-  ];
+  // const departments = [
+  //   "Computer Science",
+  //   "Electrical Engineering",
+  //   "Mechanical Engineering",
+  //   "Civil Engineering",
+  //   "Chemical Engineering",
+  //   "Mathematics",
+  //   "Physics",
+  //   "Chemistry",
+  //   "Biology",
+  //   "Business Administration",
+  //   "Economics",
+  //   "Psychology",
+  //   "Sociology",
+  //   "Political Science",
+  //   "History",
+  //   "English",
+  //   "Philosophy"
+  // ];
 
   const facultyDepartments: { [faculty: string]: string[] } = {
     "College of Medicine": ["Medicine and Surgery", "Physiotheraphy", "Radiography", "Anatomy", "Medical Laboratory Science", "Pharmacology", "Physiology", "Dentistry", "Nursing Science"],
@@ -200,7 +200,10 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
           </label>
           <select
             value={selectedFaculty}
-            onChange={(e) => setSelectedFaculty(e.target.value)}
+            onChange={(e) => {
+              setSelectedFaculty(e.target.value);
+              setFormData({ ...formData, faculty: e.target.value });
+            }}
             className="w-full h-[56px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#750015]"
           >
             <option value="">Select Faculty</option>

@@ -10,8 +10,8 @@ interface AboutYourselfProps {
   onBack: () => void;
 }
 
-const genders = ["Male", "Female", "Other"];
-const religions = ["Christianity", "Islam", "Traditional", "Other"];
+const genders = ["Male", "Female"];
+const religions = ["Christianity", "Islam",];
 const days = Array.from({ length: 31 }, (_, i) =>
   String(i + 1).padStart(2, "0")
 );

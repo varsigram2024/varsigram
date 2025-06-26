@@ -361,40 +361,102 @@ Most endpoints require authentication. Authentication is handled using token-bas
   - Request: GET
   - Response (200 OK): Returns a list of trending posts.
 
-### Following/Followers
+### Following & Followers
 
-- **`POST /users/<slug:display_name_slug>/follow/` \[name='follow-organization']**
+#### **Follow a User or Organization**
 
-  - Description: Allows a student to follow an organization, identified by its `display_name_slug`.
-  - Request: `POST`
+- **`POST /users/follow/`**  
+  _Allows any student or organization to follow another student or organization._
+
+  **Request:**
+
+  - Method: `POST`
   - Authentication: Required
-  - Response (201 Created): On successful follow.
-  - Response (400 Bad Request): If the user is not a student or is already following the organization.
-  - Response (404 Not Found): If the organization is not found.
+  - Body:
+    ```json
+    {
+      "follower_type": "student", // or "organization"
+      "follower_id": 1,
+      "followee_type": "organization", // or "student"
+      "followee_id": 2
+    }
+    ```
+    **Responses:**
+  - `201 Created`: Follow successful.
+  - `400 Bad Request`: Invalid request or already following.
+  - `404 Not Found`: Follower or followee not found.
 
-- **`POST /users/<slug:display_name_slug>/unfollow/` \[name='unfollow-organization']**
+---
 
-  - Description: Allows a student to unfollow an organization, identified by its `display_name_slug`.
-  - Request: `POST`
+#### **Unfollow a User or Organization**
+
+- **`POST /users/unfollow/`**  
+  _Allows a student or organization to unfollow another student or organization._
+
+  **Request:**
+
+  - Method: `POST`
   - Authentication: Required
-  - Response (204 No Content): On successful unfollow.
-  - Response (404 Not Found): If the follow relationship does not exist.
+  - Body:
+    ```json
+    {
+      "follower_type": "student", // or "organization"
+      "follower_id": 1,
+      "followee_type": "organization", // or "student"
+      "followee_id": 2
+    }
+    ```
+    **Responses:**
+  - `204 No Content`: Unfollow successful.
+  - `404 Not Found`: Follow relationship does not exist.
 
-- **`GET /users/<slug:display_name_slug>/followers/` \[name='organization-followers']**
+---
 
-  - Description: Retrieves the followers (students) of an organization, identified by its `display_name_slug`.
-  - Request: `GET`
-  - Response (200 OK): Returns a list of student followers.
-  - Response (404 Not Found): If the organization is not found.
+#### **List Followers**
 
-- **`GET /following/` \[name='following-organizations']**
+- **`GET /users/followers/?followee_type=&followee_id=`**  
+  _Retrieve all followers (students or organizations) of a given user or organization._
 
-  - Description: Retrieves the organizations that the authenticated user (student) is following.
-  - Request: `GET`
+  **Request:**
+
+  - Method: `GET`
+  - Query Parameters:
+    - `followee_type`: `"student"` or `"organization"`
+    - `followee_id`: ID of the user or organization
+
+  **Responses:**
+
+  - `200 OK`: Returns a list of followers.
+  - `404 Not Found`: Followee not found.
+
+---
+
+#### **List Following**
+
+- **`GET /users/following/?follower_type=&follower_id=`**  
+  _Retrieve all users or organizations that a given user or organization is following._
+
+  **Request:**
+
+  - Method: `GET`
   - Authentication: Required
-  - Response (200 OK): Returns a list of followed organizations.
+  - Query Parameters:
+    - `follower_type`: `"student"` or `"organization"`
+    - `follower_id`: ID of the user or organization
 
-- **`GET /who-to-follow/` \[name='who-to-follow']**
+  **Responses:**
+
+  - `200 OK`: Returns a list of followed users/organizations.
+
+---
+
+**Notes:**
+
+- All follow/unfollow actions require authentication.
+- You can follow/unfollow between any combination of students and organizations.
+- The same endpoints
+
+* **`GET /who-to-follow/` \[name='who-to-follow']**
 
   - Description: Returns a list of recommended organizations for the authenticated student to follow. Recommendations are based on the student's department, faculty, religion, and always include exclusive organizations.
   - Request: `GET`

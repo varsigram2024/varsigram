@@ -1,4 +1,4 @@
-import React, { Suspense, ChangeEvent, useState } from "react";
+import React, { Suspense, ChangeEvent, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
@@ -10,15 +10,34 @@ import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import BottomNav from "../../components/BottomNav";
 import { useAuth } from '../../auth/AuthContext';
 import { toast } from 'react-toastify';
-import { LogOut, Bell, Lock, User, Shield, HelpCircle, Moon, UserX } from 'lucide-react';
+import {
+  LogOut, Bell, Lock, User, Shield, Mail, HelpCircle, Moon, UserX,
+  CheckCircle, XCircle
+} from 'lucide-react';
 import EditProfilePanel from "../../components/EditProfilePanel";
+import { getProfile } from '../../services/API';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (token) {
+        try {
+          const res = await getProfile(token);
+          setIsVerified(res.data?.profile?.user?.is_verified ?? false);
+        } catch {
+          setIsVerified(false);
+        }
+      }
+    };
+    fetchProfile();
+  }, [token]);
 
   const handleNavigation = (path: string) => {
     navigate(`/${path}`);
@@ -87,6 +106,20 @@ export default function Settings() {
                 >
                   <Lock size={20} />
                   <Text>Change Password</Text>
+                </button>
+                <button
+                  className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors justify-between"
+                  onClick={() => navigate("/settings/email-verification")}
+                >
+                  <span className="flex items-center gap-3">
+                    <Mail size={20} />
+                    <Text>Email Verification</Text>
+                  </span>
+                  {isVerified === null ? null : isVerified ? (
+                    <CheckCircle className="text-green-600" size={22} />
+                  ) : (
+                    <XCircle className="text-red-500" size={22} />
+                  )}
                 </button>
                 <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
                   <Shield size={20} />

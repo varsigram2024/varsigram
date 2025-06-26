@@ -61,8 +61,8 @@ export const AcademicLevel = ({ onNext, onBack }: AcademicLevelProps) => {
       console.log('Full context data before submission:', signUpData);
       
       await submitSignUp();
-      console.log('Signup completed successfully');
-      navigate("/home");
+      toast.success('Sign up successful! Please log in.');
+      navigate("/login");
     } catch (error) {
       console.error('Signup failed:', error);
       toast.error('Signup failed. Please try again.');

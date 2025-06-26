@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { useNavigate } from "react-router-dom";
+import API from "../services/API";
+import axios from "axios";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -12,9 +14,12 @@ const ForgotPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    // TODO: Call your API to send reset email here
-    // Example: await API.post('/forgot-password', { email });
-    setSubmitted(true);
+    try {
+      await axios.post("https://api.varsigram.com/api/v1/password-reset/", { email });
+      setSubmitted(true);
+    } catch (err: any) {
+      setError("Failed to send reset link. Please try again.");
+    }
   };
 
   return (

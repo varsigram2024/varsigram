@@ -58,6 +58,7 @@ export const Post: React.FC<PostProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const navigate = useNavigate();
 
   const formatTimestamp = (timestamp: string) => {
@@ -219,7 +220,31 @@ export const Post: React.FC<PostProps> = ({
     navigate(`/user-profile/${username}`);
   };
 
- 
+  const postUrl = `${window.location.origin}/posts/${post.id}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast.success("Link copied!");
+      setShowShareMenu(false);
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleWebShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: "Check out this post on Varsigram",
+        text: post.content,
+        url: postUrl,
+      })
+        .then(() => setShowShareMenu(false))
+        .catch(() => toast.error("Share cancelled or failed"));
+    } else {
+      toast.error("Sharing not supported on this device");
+    }
+  };
 
   return (
     <>
@@ -301,7 +326,30 @@ export const Post: React.FC<PostProps> = ({
               <Img src="/images/vectors/revers.svg" alt="Share" className="h-[20px] w-[20px]" />
               <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
             </div>
-            <Img src="/images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer" />
+            <div className="relative">
+              <Img
+                src="/images/vectors/share.svg"
+                alt="Share"
+                className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
+                onClick={() => setShowShareMenu((prev) => !prev)}
+              />
+              {showShareMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg py-2 z-20">
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
+                  >
+                    <span>Copy Link</span>
+                  </button>
+                  <button
+                    onClick={handleWebShare}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
+                  >
+                    <span>Share...</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <CommentSection open={showComments} onClose={() => setShowComments(false)} postId={post.id} />
