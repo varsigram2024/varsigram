@@ -24,7 +24,7 @@ export default function BottomNav() {
           <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'home' ? 'text-[#750015]' : 'text-gray-600'}>
             <path d="M7.08848 5.22458L6.08847 6.00547C4.57182 7.18981 3.81348 7.78199 3.40674 8.61695C3 9.45191 3 10.4165 3 12.3455V14.4376C3 18.2239 3 20.1171 4.17157 21.2934C5.11466 22.2402 6.52043 22.4249 9 22.4609V18.4666C9 17.5347 9 17.0687 9.15224 16.7012C9.35523 16.2111 9.74458 15.8218 10.2346 15.6188C10.6022 15.4666 11.0681 15.4666 12 15.4666C12.9319 15.4666 13.3978 15.4666 13.7654 15.6188C14.2554 15.8218 14.6448 16.2111 14.8478 16.7012C15 17.0687 15 17.5347 15 18.4666V22.4609C17.4796 22.4249 18.8853 22.2402 19.8284 21.2934C21 20.1171 21 18.2239 21 14.4376V12.3455C21 10.4165 21 9.45191 20.5933 8.61695C20.1865 7.78199 19.4282 7.18981 17.9115 6.00547L16.9115 5.22458C14.5521 3.38215 13.3724 2.46094 12 2.46094C10.6276 2.46094 9.44787 3.38215 7.08848 5.22458Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
           </svg>
-          <Text as="p" className={`mt-1 ${currentPage === 'home' ? 'text-[#750015]' : 'text-gray-600'}`}>Home</Text>
+          <Text as="p" className={`mt-1 ${currentPage === 'home' ? 'text-[#750015]' : 'text-gray-600'}`}></Text>
         </div>
         
 
@@ -43,7 +43,7 @@ export default function BottomNav() {
             <path d="M3.69141 20.2383C2.65587 20.2383 1.81641 19.3988 1.81641 18.3633C1.81641 15.7745 3.91507 13.6758 6.5039 13.6758" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           </svg>
-          <Text as="p" className={`mt-1 ${currentPage === 'connections' ? 'text-[#750015]' : 'text-gray-600'}`}>Connections</Text>
+          <Text as="p" className={`mt-1 ${currentPage === 'connections' ? 'text-[#750015]' : 'text-gray-600'}`}></Text>
         </div>
 
 
@@ -56,19 +56,19 @@ export default function BottomNav() {
           <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}>
           <path d="M22 12.1526C22 17.4358 17.5222 21.7193 12 21.7193C11.3507 21.7202 10.7032 21.6601 10.0654 21.5404C9.60633 21.4541 9.37678 21.411 9.21653 21.4355C9.05627 21.46 8.82918 21.5807 8.37499 21.8223C7.09014 22.5056 5.59195 22.7469 4.15111 22.4789C4.69874 21.8053 5.07275 20.9971 5.23778 20.1307C5.33778 19.6007 5.09 19.0859 4.71889 18.709C3.03333 16.9974 2 14.691 2 12.1526C2 6.86951 6.47778 2.58594 12 2.58594C17.5222 2.58594 22 6.86951 22 12.1526Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
           </svg>
-            <Text as="p" className={`mt-1 ${currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}`}>Chat</Text>
+            <Text as="p" className={`mt-1 ${currentPage === 'chat' ? 'text-[#750015]' : 'text-gray-600'}`}></Text>
         </div>
 
 
         
         <a href="#" className="flex flex-col items-center">
           <Img src="/images/resources-icon.svg" alt="Notifications" className="h-[24px] w-[24px]" />
-          <Text as="p" className="text-[12px] mt-1">Resources</Text>
+          <Text as="p" className="text-[12px] mt-1"></Text>
         </a>
         
         <a href="#" className="flex flex-col items-center">
           <Img src="/images/marketplace-icon.svg" alt="Market" className="h-[24px] w-[24px]" />
-          <Text as="p" className="text-[12px] mt-1">Marketplace</Text>
+          <Text as="p" className="text-[12px] mt-1"></Text>
         </a>
 
       </div>

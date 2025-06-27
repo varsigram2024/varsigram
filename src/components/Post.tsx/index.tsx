@@ -36,6 +36,12 @@ interface Post {
   account_type: string;
   is_verified: boolean;
   exclusive: boolean;
+  organization?: {
+    user?: {
+      is_verified: boolean;
+    };
+    exclusive: boolean;
+  };
 }
 
 interface PostProps {
@@ -291,6 +297,14 @@ export const Post: React.FC<PostProps> = ({
 
   const isRevarsed = post.is_shared && post.original_post;
 
+  const mappedPost = {
+    ...post,
+    account_type: post.organization ? "organization" : "student",
+    is_verified: post.organization?.user?.is_verified ?? false,
+    exclusive: post.organization?.exclusive ?? false,
+    // ...other fields
+  };
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -337,22 +351,17 @@ export const Post: React.FC<PostProps> = ({
                 )}
               </div>
             )}
-          </div>
 
-          {/* Author name and verified icon */}
-          <div className="flex items-center gap-1">
-            <Text className="font-semibold hover:underline">
-              {post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
-            </Text>
-            {post.account_type === "organization" &&
-              post.is_verified &&
-              post.exclusive && (
-                <img
-                  src="/images/vectors/verified.svg"
-                  alt="verified"
-                  className="h-[16px] w-[16px]"
-                />
-            )}
+
+               {post.account_type === "organization" &&
+                  post.is_verified &&
+                  post.exclusive && (
+                    <img
+                      src="/images/vectors/verified.svg"
+                      alt="verified"
+                      className="h-[16px] w-[16px]"
+                    />
+                )}
           </div>
 
           <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">

@@ -48,9 +48,20 @@ interface User {
 }
 
 interface FollowingItem {
-  organization: {
+  followee_organization?: {
     display_name_slug: string;
     organization_name: string;
+    user: {
+      email: string;
+      profile_pic_url?: string;
+      // add other fields if needed
+    };
+    bio?: string;
+    id?: number;
+  };
+  followee_student?: {
+    display_name_slug: string;
+    name: string;
     user: {
       email: string;
       profile_pic_url?: string;
@@ -77,54 +88,52 @@ export default function Connectionspage() {
   const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   const [followers, setFollowers] = useState<any[]>([]);
 
-  const fetchUsers = async () => {
+  const fetchFollowing = async () => {
+    if (!token || !user) return;
     try {
-      if (!token) {
-        toast.error('Please login to view connections');
-        return;
-      }
+      const response = await axios.get(
+        `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setFollowing(response.data);
 
+      // Get followed IDs for filtering
+      const followedIds = response.data.map((f: any) => {
+        const followeeOrg = f.followee_organization;
+        const followeeStudent = f.followee_student;
+        const followee = followeeOrg || followeeStudent;
+        return followee?.id;
+      }).filter(Boolean);
+
+      // Fetch recommended users and mark is_following
       const usersResponse = await axios.get(`${API_BASE_URL}/who-to-follow/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-
       setUsers(usersResponse.data.map((u: any) => ({
         ...u,
         account_type: u.type,
         id: u.id,
+        is_following: followedIds.includes(u.id),
       })));
-      console.log('who-to-follow output:', usersResponse.data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      setFollowing([]);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
-  };  
+  };
 
   useEffect(() => {
-    fetchUsers();
+    if (token) {
+      setIsLoading(true);
+      fetchFollowing();
+    }
   }, [token]);
 
   useEffect(() => {
     if (activeTab === 'following' && token && user) {
       setIsFollowingLoading(true);
-      axios.get(
-        `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then(response => {
-        setFollowing(response.data);
-        console.log('Following fetched successfully:', response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching following:', error);
-        setFollowing([]);
-      })
-      .finally(() => {
-        setIsFollowingLoading(false);
-      });
+      fetchFollowing().finally(() => setIsFollowingLoading(false));
     }
   }, [activeTab, token, user]);
 
@@ -133,47 +142,49 @@ export default function Connectionspage() {
       toast.error('Please login to follow users.');
       return;
     }
-
     const follower_id = user.id;
     const follower_type = user.account_type;
     const followee_id = userToFollow.id;
     const followee_type = userToFollow.account_type;
-
-    // Log the IDs for debugging
-    console.log("FOLLOWER:", { id: follower_id, type: follower_type });
-    console.log("FOLLOWEE:", { id: followee_id, type: followee_type });
-
-    if (!follower_id || !followee_id) {
-      toast.error('Invalid follower or followee id');
-      return;
-    }
-
+  
     try {
       await axios.post(
         `${API_BASE_URL}/users/follow/`,
-        {
-          follower_type,
-          follower_id,
-          followee_type,
-          followee_id,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { follower_type, follower_id, followee_type, followee_id },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+      toast.success('Successfully followed');
+      // Update users array
       setUsers(prevUsers =>
         prevUsers.map(u =>
-          u.email === userToFollow.email
+          u.id === userToFollow.id
             ? { ...u, is_following: true }
             : u
         )
       );
-      toast.success('Successfully followed');
+      // Add to following array
+      setFollowing(prev => [
+        ...prev,
+        {
+          [userToFollow.account_type === "organization" ? "followee_organization" : "followee_student"]: {
+            ...userToFollow,
+            user: {
+              email: userToFollow.email,
+              profile_pic_url: userToFollow.profile_pic_url,
+            },
+            id: userToFollow.id,
+          },
+          user: {
+            email: userToFollow.email,
+            profile_pic_url: userToFollow.profile_pic_url,
+          }
+        }
+      ]);
     } catch (error) {
       toast.error('Failed to follow');
     }
   };
-
+  
   const handleUnfollow = async (userToUnfollow: User) => {
     if (!user || !token) {
       toast.error('Please login to unfollow users.');
@@ -181,13 +192,14 @@ export default function Connectionspage() {
     }
     const follower_id = user.id;
     const followee_id = userToUnfollow.id;
-
-    if (!follower_id || !followee_id) {
-      toast.error('Invalid follower or followee id');
-      return;
-    }
-
+  
     try {
+      console.log({
+        follower_type: user.account_type,
+        follower_id,
+        followee_type: userToUnfollow.account_type,
+        followee_id,
+      });
       await axios.post(
         `${API_BASE_URL}/users/unfollow/`,
         {
@@ -196,18 +208,26 @@ export default function Connectionspage() {
           followee_type: userToUnfollow.account_type,
           followee_id,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+      toast.success('Successfully unfollowed');
+      // Update users array
       setUsers(prevUsers =>
         prevUsers.map(u =>
-          u.email === userToUnfollow.email
+          u.id === userToUnfollow.id
             ? { ...u, is_following: false }
             : u
         )
       );
-      toast.success('Successfully unfollowed');
+      // Remove from following array
+      setFollowing(prev =>
+        prev.filter(f => {
+          const followeeOrg = f.followee_organization;
+          const followeeStudent = f.followee_student;
+          const followeeUserId = followeeOrg?.user?.id ?? followeeStudent?.user?.id;
+          return followeeUserId !== userToUnfollow.id;
+        })
+      );
     } catch (error) {
       toast.error('Failed to unfollow');
     }
@@ -414,7 +434,19 @@ export default function Connectionspage() {
                       const userInfo = followeeOrg ? followeeOrg.user : followeeStudent ? followeeStudent.user : null;
                       return (
                         <div key={idx} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
-                          <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+                          <div
+                            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => {
+                              // For organizations
+                              if (followeeOrg) {
+                                navigate(`/user-profile/${followeeOrg.display_name_slug}`);
+                              }
+                              // For students
+                              else if (followeeStudent) {
+                                navigate(`/user-profile/${followeeStudent.display_name_slug}`);
+                              }
+                            }}
+                          >
                             <Img
                               src={userInfo?.profile_pic_url && userInfo.profile_pic_url.startsWith('http')
                                 ? userInfo.profile_pic_url
@@ -429,17 +461,18 @@ export default function Connectionspage() {
                                 </Text>
                               </div>
                               <Text className="text-sm text-gray-500">
-                                {userInfo?.bio || "No Bio"}
+                                {(followeeOrg?.bio || followeeStudent?.bio) ?? "No Bio"}
                               </Text>
                             </div>
                           </div>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              handleUnfollow({
-                                email: userInfo?.email,
-                                profile_pic_url: userInfo?.profile_pic_url,
-                                id: followee.id ?? 0,
+                              // Call unfollow API
+                              await handleUnfollow({
+                                email: userInfo?.email || "",
+                                profile_pic_url: userInfo?.profile_pic_url || "",
+                                id: followeeOrg?.user?.id ?? followeeStudent?.user?.id ?? 0,
                                 account_type: followeeOrg ? "organization" : "student",
                               });
                             }}

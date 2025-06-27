@@ -36,9 +36,10 @@ export default function ProfileOrganizationSection() {
   useEffect(() => {
     const fetchFollowing = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/following/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}/users/following/?follower_type=${profile.account_type}&follower_id=${profile.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setFollowing(response.data);
         console.log("Following data:", response.data);
       } catch (error) {

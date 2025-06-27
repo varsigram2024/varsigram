@@ -115,56 +115,21 @@ export default function Profile() {
       if (!display_name_slug || !token) return;
       setIsLoading(true);
       try {
-        // Fetch profile
         const profileResponse = await axios.get(
           `${API_BASE_URL}/profile/${display_name_slug}/`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
         const { profile_type, profile, is_following, followers_count, following_count } = profileResponse.data;
-        const isOrg = profile_type === 'organization';
-
-        // Prepare promises for followers, following, posts
-        let followersPromise = Promise.resolve([]);
-        let followingPromise = axios.get(
-          `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).then(res => res.data).catch(() => []);
-        let postsPromise = axios.get(
-          `${API_BASE_URL}/users/${profile.user.id}/posts/`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        ).then(res => res.data).catch(() => []);
-
-        if (isOrg) {
-          followersPromise = axios.get(
-            `${API_BASE_URL}/users/followers/?followee_type=${profile_type}&followee_id=${profile.id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ).then(res => res.data).catch(() => []);
-        }
-
-        // Wait for all
-        const [followersArr, followingArr, postsArr] = await Promise.all([
-          followersPromise,
-          followingPromise,
-          postsPromise
-        ]);
-
-        setFollowers(followersArr);
-        console.log("Followers of this profile:", followersArr);
-
-        setFollowing(followingArr);
-        console.log("Following of this profile:", followingArr);
-
-        setPosts(postsArr);
-
+    
         setUserProfile({
           id: profile.user.id,
           email: profile.user.email,
           username: profile.user.username,
           profile_pic_url: profile.user.profile_pic_url,
-          bio: isOrg ? profile.user?.bio : profile.user?.bio,
+          bio: profile.user?.bio,
           is_verified: profile.user?.is_verified || false,
-          followers_count,
-          following_count,
+          followers_count: typeof followers_count === "number" ? followers_count : 0,
+          following_count: typeof following_count === "number" ? following_count : 0,
           account_type: profile_type,
           name: profile.name,
           organization_name: profile.organization_name,
@@ -175,35 +140,11 @@ export default function Profile() {
           display_name_slug: profile.display_name_slug,
           exclusive: profile.exclusive,
         });
-
         setIsFollowing(is_following);
-
-        // Check if current user is following this user (only for external profiles)
-        if (user?.email !== profile.user.email) {
-          try {
-            const followingResponse = await axios.get(
-              `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
-              { headers: { 'Authorization': `Bearer ${token}` }, }
-            );
-            const followingList = followingResponse.data;
-            const isUserFollowing = followingList.some((followedUser: any) => {
-              if (profile_type === "organization") {
-                return followedUser.organization?.display_name_slug === profile.display_name_slug;
-              } else if (profile_type === "student") {
-                return followedUser.student?.id === profile.id;
-              }
-              return false;
-            });
-            setIsFollowing(isUserFollowing);
-          } catch (err) {
-            console.error('Error checking follow status:', err);
-          }
-        }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
         setUserProfile(null);
       } finally {
-        setIsLoading(false); // Only set to false after all data is fetched
+        setIsLoading(false);
       }
     };
 
@@ -212,7 +153,6 @@ export default function Profile() {
 
   const handleFollow = async () => {
     if (!userProfile || !user || !token) return;
-
     const follower_type = user.account_type;
     const follower_id = user.id;
     const followee_type = userProfile.account_type;
@@ -226,7 +166,10 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFollowing(false);
-        setUserProfile(prev => prev ? { ...prev, followers_count: prev.followers_count - 1 } : null);
+        setUserProfile(prev => prev
+          ? { ...prev, followers_count: Math.max(0, Number(prev.followers_count) - 1) }
+          : null
+        );
         toast.success('Unfollowed successfully');
       } else {
         await axios.post(
@@ -235,11 +178,13 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFollowing(true);
-        setUserProfile(prev => prev ? { ...prev, followers_count: prev.followers_count + 1 } : null);
+        setUserProfile(prev => prev
+          ? { ...prev, followers_count: Number(prev.followers_count) + 1 }
+          : null
+        );
         toast.success('Followed successfully');
       }
     } catch (error) {
-      console.error('Error following/unfollowing:', error);
       toast.error('Failed to update follow status');
     }
   };
@@ -279,9 +224,8 @@ export default function Profile() {
         }
       );
 
-      // Set userProfile from the API response
       if (response.data && response.data.profile) {
-        const { profile_type, profile } = response.data;
+        const { profile_type, profile, followers_count, following_count } = response.data;
         setUserProfile({
           id: profile.user.id,
           email: profile.user.email,
@@ -289,8 +233,8 @@ export default function Profile() {
           profile_pic_url: profile.user.profile_pic_url,
           bio: profile_type === "organization" ? profile.user.bio : profile.bio,
           is_verified: profile.user?.is_verified || false,
-          followers_count: profile_type === "organization" ? profile.followers_count : 0,
-          following_count: profile.following_count,
+          followers_count: typeof followers_count === "number" ? followers_count : 0,
+          following_count: typeof following_count === "number" ? following_count : 0,
           account_type: profile_type,
           name: profile.name,
           organization_name: profile.organization_name,
@@ -308,11 +252,8 @@ export default function Profile() {
       } else {
         setUserProfile(null);
       }
-
-      // ... (your updateUser logic can stay)
     } catch (error) {
       setUserProfile(null);
-      // ... (your error handling)
     } finally {
       setIsLoading(false);
     }
@@ -362,36 +303,6 @@ export default function Profile() {
     );
     setPosts(response.data);
   };
-
-  useEffect(() => {
-    const checkIfFollowing = async () => {
-      if (!user || !userProfile || !token) return;
-
-      try {
-        const response = await axios.get(
-          `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        // The response is an array of follow objects
-        const isUserFollowing = response.data.some((f: any) => {
-          // For organizations
-          if (f.followee_organization && userProfile.account_type === "organization") {
-            return f.followee_organization.id === Number(userProfile.id);
-          }
-          // For students
-          if (f.followee_student && userProfile.account_type === "student") {
-            return f.followee_student.id === Number(userProfile.id);
-          }
-          return false;
-        });
-        setIsFollowing(isUserFollowing);
-      } catch (err) {
-        setIsFollowing(false);
-      }
-    };
-
-    checkIfFollowing();
-  }, [user, userProfile, token]);
 
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100">
@@ -462,7 +373,7 @@ export default function Profile() {
                             src={
                               userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http')
                                 ? userProfile.profile_pic_url
-                                : "/images/user-image.png"
+                                : "/images/user.png"
                             }
                             alt="Profile Picture"
                             className="w-full h-full object-cover"
