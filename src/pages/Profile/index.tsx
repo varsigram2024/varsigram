@@ -14,6 +14,8 @@ import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.ts
 import BottomNav from "../../components/BottomNav/index.tsx";
 import { useAuth } from "../../auth/AuthContext";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Add interface for props
 interface ProfileProps {
   onComplete: (page: string) => void;
@@ -68,7 +70,7 @@ export default function Profile() {
       if (!username || !token) return;
       setIsLoading(true);
       try {
-        const response = await axios.get(`https://api.varsigram.com/api/v1/profile/${username}/`, {
+        const response = await axios.get(`${API_BASE_URL}/profile/${username}/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -95,7 +97,7 @@ export default function Profile() {
         // Use user id from profileUser.profile.user.id
         const userId = profileUser.profile.user?.id;
         if (!userId) return;
-        const response = await axios.get(`https://api.varsigram.com/api/v1/posts/user/${userId}/`, {
+        const response = await axios.get(`${API_BASE_URL}/posts/user/${userId}/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -158,8 +160,8 @@ export default function Profile() {
 
       // Update the user's profile with the new image URL
       const endpoint = profileUser?.profile?.user?.account_type === 'organization' 
-        ? 'https://api.varsigram.com/api/v1/organization/update'
-        : 'https://api.varsigram.com/api/v1/student/update';
+        ? `${API_BASE_URL}/organization/update`
+        : `${API_BASE_URL}/student/update`;
 
       const updateResponse = await axios({
         method: 'post',
@@ -222,7 +224,7 @@ export default function Profile() {
 
   const fetchUserData = async () => {
     try {
-      const response = await axios.get('https://api.varsigram.com/api/v1/profile/', {
+      const response = await axios.get(`${API_BASE_URL}/profile/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

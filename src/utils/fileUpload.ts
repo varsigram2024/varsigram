@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-const BACKEND_BASE_URL = 'https://api.varsigram.com';
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Use env variable
 
 export async function uploadProfilePicture(file: File, jwtToken: string, accountType: 'student' | 'organization') {
     if (!file) throw new Error("No file selected for upload.");
 
     // 1. Get signed URL from backend
     const getUrlResponse = await axios.post(
-        `${BACKEND_BASE_URL}/api/v1/get-signed-upload-url/`,
+        `${BACKEND_BASE_URL}/get-signed-upload-url/`,
         { file_name: file.name, content_type: file.type },
         { headers: { 'Authorization': `Bearer ${jwtToken}` } }
     );
@@ -25,8 +25,8 @@ export async function uploadProfilePicture(file: File, jwtToken: string, account
     // 3. Update user's profile_pic_url in backend (NESTED under "user")
     const updateEndpoint =
         accountType === 'student'
-            ? `${BACKEND_BASE_URL}/api/v1/student/update/`
-            : `${BACKEND_BASE_URL}/api/v1/organization/update/`;
+            ? `${BACKEND_BASE_URL}/student/update/`
+            : `${BACKEND_BASE_URL}/organization/update/`;
      console.log(public_download_url)
     try {
         await axios.patch(
@@ -48,7 +48,7 @@ export async function uploadPostMedia(file: File, jwtToken: string): Promise<str
 
     // 1. Get signed URL from backend
     const getUrlResponse = await axios.post(
-        `${BACKEND_BASE_URL}/api/v1/get_post_media_upload_url/`,
+        `${BACKEND_BASE_URL}/get_post_media_upload_url/`,
         { file_name: file.name, content_type: file.type },
         { headers: { 'Authorization': `Bearer ${jwtToken}` } }
     );

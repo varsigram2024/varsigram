@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface Post {
   id: string;
   content: string;
@@ -33,7 +35,7 @@ export const Home = () => {
     setIsSubmitting(true);
     try {
       const response = await axios.post(
-        'https://api.varsigram.com/api/v1/posts/',
+        `${API_BASE_URL}/posts/`,
         { content: newPost },
         {
           headers: {
@@ -55,7 +57,7 @@ export const Home = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get('https://api.varsigram.com/api/v1/feed/', {
+        const response = await axios.get(`${API_BASE_URL}/feed/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

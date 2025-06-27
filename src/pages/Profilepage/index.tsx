@@ -21,6 +21,8 @@ import { Post } from "../../components/Post.tsx/index.tsx";
 import { uploadProfilePicture } from '../../utils/fileUpload.ts';
 import { Pencil, Save } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Add interface for props
 interface ProfilepageOrganizationProps {
   onComplete: (page: string) => void;
@@ -115,7 +117,7 @@ export default function Profile() {
       try {
         // Fetch profile
         const profileResponse = await axios.get(
-          `https://api.varsigram.com/api/v1/profile/${display_name_slug}/`,
+          `${API_BASE_URL}/profile/${display_name_slug}/`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
         const { profile_type, profile, is_following, followers_count, following_count } = profileResponse.data;
@@ -124,17 +126,17 @@ export default function Profile() {
         // Prepare promises for followers, following, posts
         let followersPromise = Promise.resolve([]);
         let followingPromise = axios.get(
-          `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+          `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         ).then(res => res.data).catch(() => []);
         let postsPromise = axios.get(
-          `https://api.varsigram.com/api/v1/users/${profile.user.id}/posts/`,
+          `${API_BASE_URL}/users/${profile.user.id}/posts/`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         ).then(res => res.data).catch(() => []);
 
         if (isOrg) {
           followersPromise = axios.get(
-            `https://api.varsigram.com/api/v1/users/followers/?followee_type=${profile_type}&followee_id=${profile.id}`,
+            `${API_BASE_URL}/users/followers/?followee_type=${profile_type}&followee_id=${profile.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           ).then(res => res.data).catch(() => []);
         }
@@ -180,7 +182,7 @@ export default function Profile() {
         if (user?.email !== profile.user.email) {
           try {
             const followingResponse = await axios.get(
-              `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+              `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
               { headers: { 'Authorization': `Bearer ${token}` }, }
             );
             const followingList = followingResponse.data;
@@ -215,7 +217,7 @@ export default function Profile() {
     try {
       if (isFollowing) {
         await axios.post(
-          `https://api.varsigram.com/api/v1/users/unfollow/`,
+          `${API_BASE_URL}/users/unfollow/`,
           { follower_type, follower_id, followee_type, followee_id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -224,7 +226,7 @@ export default function Profile() {
         toast.success('Unfollowed successfully');
       } else {
         await axios.post(
-          `https://api.varsigram.com/api/v1/users/follow/`,
+          `${API_BASE_URL}/users/follow/`,
           { follower_type, follower_id, followee_type, followee_id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -264,7 +266,7 @@ export default function Profile() {
   const fetchUserData = async () => {
     try {
       const response = await axios.get(
-        `https://api.varsigram.com/api/v1/profile/${display_name_slug}/`,
+        `${API_BASE_URL}/profile/${display_name_slug}/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -323,7 +325,7 @@ export default function Profile() {
   useEffect(() => {
     if (!userProfile || !token) return;
     axios.get(
-      `https://api.varsigram.com/api/v1/users/following/?follower_type=${userProfile.account_type}&follower_id=${userProfile.id}`,
+      `${API_BASE_URL}/users/following/?follower_type=${userProfile.account_type}&follower_id=${userProfile.id}`,
       { headers: { Authorization: `Bearer ${token}` } }
     )
     .then(response => {
@@ -351,7 +353,7 @@ export default function Profile() {
 
   const fetchPosts = async () => {
     const response = await axios.get(
-      `https://api.varsigram.com/api/v1/users/${user?.id}/posts/`,
+      `${API_BASE_URL}/users/${user?.id}/posts/`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setPosts(response.data);
@@ -363,7 +365,7 @@ export default function Profile() {
 
       try {
         const response = await axios.get(
-          `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+          `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         // The response is an array of follow objects
@@ -524,8 +526,8 @@ export default function Profile() {
 
                                     await axios.patch(
                                       userProfile.account_type === "organization"
-                                        ? "https://api.varsigram.com/api/v1/organization/update/"
-                                        : "https://api.varsigram.com/api/v1/student/update/",
+                                        ? `${API_BASE_URL}/organization/update/`
+                                        : `${API_BASE_URL}/student/update/`,
                                       payload,
                                       { headers: { Authorization: `Bearer ${token}` } }
                                     );

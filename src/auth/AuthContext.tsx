@@ -32,7 +32,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API = axios.create({
-  baseURL: 'https://api.varsigram.com/api/v1/',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -145,15 +145,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Full request data:', JSON.stringify(requestData, null, 2));
 
       // Make the API call
-      const response = await axios.post(
-        'https://api.varsigram.com/api/v1/register/',
-        requestData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        }
+      const response = await API.post(
+        '/register/',
+        requestData
       );
 
       console.log('API Response:', response.data);

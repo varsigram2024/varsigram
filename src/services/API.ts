@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "https://api.varsigram.com/api/v1";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export const sendOtp = async (token: string) => {
   return axios.post(`${API_BASE}/send-otp/`, {}, {
@@ -27,11 +27,11 @@ export const getProfile = async (token: string) => {
 };
 
 export const updateStudent = (payload: any, token: string) =>
-  axios.patch("https://api.varsigram.com/api/v1/student/update/", payload, {
+  axios.patch(`${API_BASE}/student/update/`, payload, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
 export const updateOrganization = (payload: any, token: string) =>
-  axios.patch("https://api.varsigram.com/api/v1/organization/update/", payload, {
+  axios.patch(`${API_BASE}/organization/update/`, payload, {
     headers: { Authorization: `Bearer ${token}` },
   });
