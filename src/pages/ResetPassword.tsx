@@ -5,6 +5,9 @@ import { Button } from "../components/Button";
 import API from "../services/API"; // Uncomment and use your actual API
 import axios from "axios";
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; 
+
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -39,7 +42,7 @@ const ResetPassword = () => {
     try {
       // Replace with your actual API call
       await axios.post(
-        `https://api.varsigram.com/api/v1/password-reset-confirm/?uid=${encodeURIComponent(uid || "")}&token=${encodeURIComponent(token || "")}`,
+        `${API_BASE_URL}/password-reset-confirm/?uid=${encodeURIComponent(uid || "")}&token=${encodeURIComponent(token || "")}`,
         {
           new_password: password,
           confirm_password: confirmPassword

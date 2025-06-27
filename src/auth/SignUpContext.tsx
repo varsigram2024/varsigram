@@ -4,7 +4,7 @@ import { useAuth } from "./AuthContext";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 
-const API_URL = "https://api.varsigram.com/api/v1";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface SignUpData {
   email: string;

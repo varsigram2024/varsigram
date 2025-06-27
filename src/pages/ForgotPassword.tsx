@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/API";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -15,7 +17,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     setError("");
     try {
-      await axios.post("https://api.varsigram.com/api/v1/password-reset/", { email });
+      await axios.post(`${API_BASE_URL}/password-reset/`, { email });
       setSubmitted(true);
     } catch (err: any) {
       setError("Failed to send reset link. Please try again.");

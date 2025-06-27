@@ -8,6 +8,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useAuth } from '../../auth/AuthContext';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function ChangePassword() {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -32,7 +33,7 @@ export default function ChangePassword() {
     setIsSubmitting(true);
     try {
       await axios.put(
-        "https://api.varsigram.com/api/v1/change-password/",
+        `${API_BASE_URL}/change-password/`,
         {
           old_password: oldPassword,
           new_password: newPassword,

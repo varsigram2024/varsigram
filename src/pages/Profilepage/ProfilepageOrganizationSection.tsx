@@ -10,6 +10,7 @@ import axios from "axios";
 import { ClickableUser } from "../../components/ClickableUser";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface FollowingUser {
   id: string;
   username: string;
@@ -35,7 +36,7 @@ export default function ProfileOrganizationSection() {
   useEffect(() => {
     const fetchFollowing = async () => {
       try {
-        const response = await axios.get("https://api.varsigram.com/api/v1/following/", {
+        const response = await axios.get(`${API_BASE_URL}/following/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFollowing(response.data);

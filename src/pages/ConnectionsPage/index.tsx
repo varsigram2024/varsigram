@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../../auth/AuthContext';
 import { ClickableUser } from "../../components/ClickableUser";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface User {
   // Common fields
   email: string;
@@ -83,7 +84,7 @@ export default function Connectionspage() {
         return;
       }
 
-      const usersResponse = await axios.get('https://api.varsigram.com/api/v1/who-to-follow/', {
+      const usersResponse = await axios.get(`${API_BASE_URL}/who-to-follow/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -110,7 +111,7 @@ export default function Connectionspage() {
     if (activeTab === 'following' && token && user) {
       setIsFollowingLoading(true);
       axios.get(
-        `https://api.varsigram.com/api/v1/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+        `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then(response => {
@@ -149,7 +150,7 @@ export default function Connectionspage() {
 
     try {
       await axios.post(
-        'https://api.varsigram.com/api/v1/users/follow/',
+        `${API_BASE_URL}/users/follow/`,
         {
           follower_type,
           follower_id,
@@ -188,7 +189,7 @@ export default function Connectionspage() {
 
     try {
       await axios.post(
-        'https://api.varsigram.com/api/v1/users/unfollow/',
+        `${API_BASE_URL}/users/unfollow/`,
         {
           follower_type: user.account_type,
           follower_id,
@@ -229,7 +230,7 @@ export default function Connectionspage() {
       navigate(`/user-profile/${displayNameSlug}`);
     } else {
       // If display_name_slug is not in the response, we need to fetch it first
-      axios.get(`https://api.varsigram.com/api/v1/users/search/?email=${user.email}`, {
+      axios.get(`${API_BASE_URL}/users/search/?email=${user.email}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -261,7 +262,7 @@ export default function Connectionspage() {
   const fetchFollowers = async (displayNameSlug: string) => {
     try {
       const response = await axios.get(
-        `https://api.varsigram.com/api/v1/users/${displayNameSlug}/followers/`,
+        `${API_BASE_URL}/users/${displayNameSlug}/followers/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setFollowers(response.data);

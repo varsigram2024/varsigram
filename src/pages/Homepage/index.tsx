@@ -23,6 +23,8 @@ import { ClickableUser } from "../../components/ClickableUser";
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
 import CreatePostModal from '../../components/CreatePostModal';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface Post {
   id: string;
   author_id: string;
@@ -72,7 +74,7 @@ export default function Homepage() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get('https://api.varsigram.com/api/v1/posts/', {
+        const response = await axios.get(`${API_BASE_URL}/posts/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -96,7 +98,7 @@ export default function Homepage() {
   useEffect(() => {
     if (activeTab === 'following' && token) {
       setIsFeedLoading(true);
-      axios.get('https://api.varsigram.com/api/v1/feed/', {
+      axios.get(`${API_BASE_URL}/feed/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -171,7 +173,7 @@ export default function Homepage() {
         author_display_name: user?.fullName ? user.fullName.split(' ')[0] : user?.username || 'Unknown User'
       };
 
-      const response = await axios.post('https://api.varsigram.com/api/v1/posts/', postData, {
+      const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -220,7 +222,7 @@ export default function Homepage() {
 
     try {
       await axios.delete(
-        `https://api.varsigram.com/api/v1/posts/${post.id}/`,
+        `${API_BASE_URL}/posts/${post.id}/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -255,7 +257,7 @@ export default function Homepage() {
 
     try {
       await axios.put(
-        `https://api.varsigram.com/api/v1/posts/${editingPost.id}/`,
+        `${API_BASE_URL}/posts/${editingPost.id}/`,
         { content: editedContent },
         {
           headers: {
@@ -309,7 +311,7 @@ export default function Homepage() {
 
     try {
       const response = await axios.post(
-        `https://api.varsigram.com/api/v1/posts/${post.id}/like/`,
+        `${API_BASE_URL}/posts/${post.id}/like/`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
