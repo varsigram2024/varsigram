@@ -56,9 +56,9 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
   const facultyDepartments: { [faculty: string]: string[] } = {
     "College of Medicine": ["Medicine and Surgery", "Physiotheraphy", "Radiography", "Anatomy", "Medical Laboratory Science", "Pharmacology", "Physiology", "Dentistry", "Nursing Science"],
 
-    "Faculty of Arts": ["Creative Arts", "French", "Russian", "German", "History & Strategic Studies", "Linguistics/Igbo", "Linguistics/Yoryba", "Linguistics", "Chinese", "Christian Religious Studies", "Islamic Religious Studies", "English", "Philosophy"],
+    "Arts": ["Creative Arts", "French", "Russian", "German", "History & Strategic Studies", "Linguistics/Igbo", "Linguistics/Yoryba", "Linguistics", "Chinese", "Christian Religious Studies", "Islamic Religious Studies", "English", "Philosophy"],
 
-    "Faculty of Education": [ "Adult Education",
+    "Education": [ "Adult Education",
       "Education Economics",
       "Business Education",
       "Education Islamic Religious Studies",
@@ -83,7 +83,7 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
       "Technology Education",
       "Special Education"],
 
-    "Faculty of Engineering": [
+    "Engineering": [
       "Biomedical Engineering",
       "Chemical Engineering",
       "Civil Engineering",
@@ -96,11 +96,11 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
       "Systems Engineering"
     ],
     
-    "Faculty of Environmental Sciences": ["Architecture", "Building", "Estate Management", "Quantity Surveying", "Urban and Regional Planning"],
+    "Environmental Sciences": ["Architecture", "Building", "Estate Management", "Quantity Surveying", "Urban and Regional Planning"],
 
-    "Faculty of Law": ["Law"],
+    "Law": ["Law"],
 
-    "Faculty of Management Sciences": [
+    "Management Sciences": [
       "Accounting",
       "Actuarial Science",
       "Banking & Finance",
@@ -111,9 +111,9 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
       "Procurement"
     ],
     
-    "Faculty of Pharmacy": ["Pharmacy"],
+    "Pharmacy": ["Pharmacy"],
 
-    "Faculty of Sciences": [
+    "Sciences": [
       "Biochemistry",
       "Biostatistics",
       "Botany",
@@ -134,7 +134,7 @@ export const AcademicDetails = ({ onNext, onBack }: AcademicDetailsProps) => {
       "Zoology"
     ],
     
-    "Faculty of Social Sciences": [
+    "Social Sciences": [
       "Economics",
       "Economics & Development Studies",
       "Geography",
