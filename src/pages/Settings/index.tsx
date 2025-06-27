@@ -82,7 +82,7 @@ export default function Settings() {
                 src={
                   profilePicUrl && profilePicUrl.startsWith("http")
                     ? profilePicUrl
-                    : "images/user-image.png"
+                    : "images/user.png"
                 }
                 alt="Profile"
                 className="h-[32px] w-[32px] rounded-[50%]"
