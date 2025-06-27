@@ -26,6 +26,10 @@ import EditProfile from "./pages/Settings/EditProfile";
 import ChangePassword from "./pages/Settings/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import { EmailVerificationBanner } from "./components/EmailVerificationBanner";
+import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
+import Marketplace from "./pages/Marketplace";
+import Resources from "./pages/Resources";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -81,7 +85,9 @@ function AppContent() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/settings/email-verification" element={<EmailVerification />} />
-
+        <Route path="/settings/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
+        <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
 
         {/* Root route - redirect to welcome */}
         <Route path="/" element={<Navigate to="/welcome" replace />} />
@@ -99,6 +105,7 @@ function App() {
       <AuthProvider>
         <Analytics />
         <SpeedInsights />
+        <EmailVerificationBanner />
         <AppContent />
       </AuthProvider>
     </Router>

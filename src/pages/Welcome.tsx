@@ -27,15 +27,17 @@ export const Welcome = () => {
           </div>
 
           <div>
-            <p className="text-xs lg:text-xl text-end font-bold text-white">Linkedin</p>
+            <a href="https://www.linkedin.com/company/varsigram/" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-xl text-end font-bold text-white">Linkedin</a>
           </div>
 
           <div>
-            <h2 className="text-xs lg:text-xl text-end font-bold text-white">Instagram</h2>
+            <a href="https://www.instagram.com/thevarsigram?igsh=YzljYTk1ODg3Zg==" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-xl text-end font-bold text-white">Instagram</a>
           </div>
+          
           <div>
-            <h2 className="text-xs lg:text-xl text-end font-bold text-white">X</h2>
+            <a href="https://x.com/thevarsigram?t=7jkCKWXhaPOe1o9Sn99SLg&s=08" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-xl text-end font-bold text-white">X</a>
           </div>
+          
           <div>
             <Button
               variant="secondary"

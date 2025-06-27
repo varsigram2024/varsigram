@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, NavLink } from "react-router-dom";
 import { Text } from "../Text";
 import { Img } from "../Img";
 
@@ -61,15 +61,22 @@ export default function BottomNav() {
 
 
         
-        <a href="#" className="flex flex-col items-center">
-          <Img src="/images/resources-icon.svg" alt="Notifications" className="h-[24px] w-[24px]" />
-          <Text as="p" className="text-[12px] mt-1"></Text>
-        </a>
+        <NavLink
+          to="/resources"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center px-2 py-1 ${
+              isActive ? "text-[#750015]" : "text-gray-500"
+            }`
+          }
+        >
+          <img src="/images/vectors/resources-icon.svg" alt="Resources" className="w-6 h-6 mb-1" />
+          
+        </NavLink>
         
-        <a href="#" className="flex flex-col items-center">
-          <Img src="/images/marketplace-icon.svg" alt="Market" className="h-[24px] w-[24px]" />
-          <Text as="p" className="text-[12px] mt-1"></Text>
-        </a>
+        <Link to="/marketplace" className="flex flex-col items-center">
+          <Img src="/images/marketplace-icon.svg" alt="Marketplace" className="h-6 w-6" />
+          
+        </Link>
 
       </div>
     </div>

@@ -132,7 +132,8 @@ export default function Settings() {
                     <XCircle className="text-red-500" size={22} />
                   )}
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
                   <Shield size={20} />
                   <Text>Privacy Settings</Text>
                 </button>
@@ -180,7 +181,9 @@ export default function Settings() {
                 <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
                   <Text>Terms of Service</Text>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => navigate("/settings/privacy-policy")}
+                >
                   <Text>Privacy Policy</Text>
                 </button>
               </div>

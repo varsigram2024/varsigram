@@ -53,6 +53,8 @@ interface PostProps {
   currentUserEmail?: string;
 }
 
+const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
+
 export const Post: React.FC<PostProps> = ({ 
   post, 
   onPostUpdate, 
@@ -71,6 +73,11 @@ export const Post: React.FC<PostProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+
+  // Helper to determine if content is long
+  const isLong = post.content.length > MAX_LENGTH;
+  const displayContent = expanded ? post.content : post.content.slice(0, MAX_LENGTH);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -364,7 +371,13 @@ export const Post: React.FC<PostProps> = ({
                 )}
           </div>
 
-          <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+          <Text
+            as="p"
+            className={`w-full text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line ${
+              !expanded && isLong ? 'max-h-32 overflow-hidden' : ''
+            }`}
+            style={{ lineHeight: "1.6" }}
+          >
             {isRevarsed && (
               <div className="text-xs text-gray-500 mb-2">
                 <span>
@@ -373,16 +386,35 @@ export const Post: React.FC<PostProps> = ({
               </div>
             )}
             {isRevarsed ? (
-              <div className="border p-2 rounded bg-gray-50">
+              <div className="border p-2 rounded bg-gray-50 whitespace-pre-line">
                 <Text>{post.original_post?.content}</Text>
                 <div className="text-xs text-gray-400 mt-1">
                   by {post.original_post?.author_name || post.original_post?.author_display_name}
                 </div>
               </div>
             ) : (
-              post.content
+              displayContent
             )}
+            {!expanded && isLong && <span>...</span>}
           </Text>
+
+          {/* Read more/less button */}
+          {!expanded && isLong && (
+            <button
+              className="text-[#750015] font-semibold mt-2 hover:underline"
+              onClick={() => setExpanded(true)}
+            >
+              Read more
+            </button>
+          )}
+          {expanded && isLong && (
+            <button
+              className="text-[#750015] font-semibold mt-2 hover:underline"
+              onClick={() => setExpanded(false)}
+            >
+              Show less
+            </button>
+          )}
 
           {renderMedia()}
 
@@ -408,10 +440,10 @@ export const Post: React.FC<PostProps> = ({
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Img src="/images/vectors/revars.svg" alt="Share" className="h-[20px] w-[20px] cursor-pointer" onClick={handleShare} />
               <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
-            </div>
+            </div> */}
             <div className="relative">
               <Img
                 src="/images/vectors/share.svg"
@@ -455,3 +487,6 @@ export const Post: React.FC<PostProps> = ({
     </>
   );
 };
+
+
+

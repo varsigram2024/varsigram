@@ -485,7 +485,6 @@ export default function Homepage() {
                   value={newPostContent}
                   placeholder="Create a vars..."
                   className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-                  readOnly
                 />
                 <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
                   <button
