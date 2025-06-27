@@ -1,3 +1,4 @@
+// ... existing code ...
 import React, { useState } from 'react';
 import { Text } from '../Text';
 import { Img } from '../Img';
@@ -11,7 +12,6 @@ import { useNavigate } from 'react-router-dom';
 import CommentSection from '../CommentSection';
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from '../EditPostModal';
-
 
 interface Post {
   id: string;
@@ -126,10 +126,27 @@ export const Post: React.FC<PostProps> = ({
           has_liked: response.data.has_liked,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       setLikeCount(post.like_count);
       setHasLiked(post.has_liked);
-      toast.error('Failed to update like status');
+
+      // Enhanced error handling
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const message = error.response?.data?.detail || error.response?.data?.message;
+
+        if (status === 403 && message?.toLowerCase().includes('verify')) {
+          toast.error('Please verify your email to like posts.');
+        } else if (status === 401) {
+          toast.error('You must be logged in to like posts.');
+        } else if (message) {
+          toast.error(message);
+        } else {
+          toast.error('Failed to update like status');
+        }
+      } else {
+        toast.error('Failed to update like status');
+      }
     } finally {
       setIsLiking(false);
     }
@@ -279,7 +296,7 @@ export const Post: React.FC<PostProps> = ({
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
-          <ClickableUser
+            <ClickableUser
               displayNameSlug={post.author_display_name_slug ?? ''}
               profilePicUrl={post.author_profile_pic_url}
               displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
@@ -322,6 +339,7 @@ export const Post: React.FC<PostProps> = ({
             )}
           </div>
 
+          {/* Author name and verified icon */}
           <div className="flex items-center gap-1">
             <Text className="font-semibold hover:underline">
               {post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
