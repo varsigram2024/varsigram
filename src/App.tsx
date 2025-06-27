@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Welcome } from './pages/Welcome';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
@@ -96,6 +97,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <Analytics />
+        <SpeedInsights />
         <AppContent />
       </AuthProvider>
     </Router>
