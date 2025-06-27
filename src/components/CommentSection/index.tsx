@@ -24,6 +24,7 @@ export default function CommentSection({ postId, open, onClose }: CommentSection
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function CommentSection({ postId, open, onClose }: CommentSection
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
+    setIsPosting(true);
     try {
       await axios.post(
         `https://api.varsigram.com/api/v1/posts/${postId}/comments/create/`,
@@ -60,6 +62,8 @@ export default function CommentSection({ postId, open, onClose }: CommentSection
       fetchComments();
     } catch (error) {
       console.error("Failed to add comment:", error);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -135,13 +139,24 @@ export default function CommentSection({ postId, open, onClose }: CommentSection
             placeholder="Add a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            disabled={isPosting}
           />
           <button
             type="submit"
-            className="bg-[#750015] text-white px-4 py-2 rounded-full"
-            disabled={!newComment.trim()}
+            className="bg-[#750015] text-white px-4 py-2 rounded-full flex items-center justify-center min-w-[70px]"
+            disabled={!newComment.trim() || isPosting}
           >
-            Post
+            {isPosting ? (
+              <>
+                <svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Posting...
+              </>
+            ) : (
+              "Post"
+            )}
           </button>
         </form>
       </div>

@@ -131,7 +131,7 @@ export const Login = () => {
               <span className="text-base">OR</span>
               <div className="flex-1 h-[1px] bg-[#BFBFBF]"></div>
             </div>
-
+{/* 
             <button
               type="button"
               onClick={signInWithGoogle}
@@ -145,7 +145,7 @@ export const Login = () => {
               <span className="text-base font-medium">
                 Continue with Google
               </span>
-            </button>
+            </button> */}
 
             <p
               className="text-center animate-slide-up"

@@ -382,11 +382,11 @@ export default function Connectionspage() {
                               <Text className="font-semibold hover:underline">
                                 {user.name}
                               </Text>
-                              <Img
+                              {/* <Img
                                 src="images/vectors/verified.svg"
                                 alt="verified"
                                 className="h-[16px] w-[16px]"
-                              />
+                              /> */}
                             </div>
                             <Text className="text-sm text-gray-500">{user.bio}</Text>
                             {(user.department || user.faculty) && (
