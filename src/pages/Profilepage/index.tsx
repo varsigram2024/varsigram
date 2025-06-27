@@ -186,9 +186,14 @@ export default function Profile() {
               { headers: { 'Authorization': `Bearer ${token}` }, }
             );
             const followingList = followingResponse.data;
-            const isUserFollowing = followingList.some((followedUser: any) =>
-              followedUser.organization?.display_name_slug === profile.display_name_slug
-            );
+            const isUserFollowing = followingList.some((followedUser: any) => {
+              if (profile_type === "organization") {
+                return followedUser.organization?.display_name_slug === profile.display_name_slug;
+              } else if (profile_type === "student") {
+                return followedUser.student?.id === profile.id;
+              }
+              return false;
+            });
             setIsFollowing(isUserFollowing);
           } catch (err) {
             console.error('Error checking follow status:', err);
@@ -196,7 +201,6 @@ export default function Profile() {
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
-        toast.error('Failed to load user profile');
         setUserProfile(null);
       } finally {
         setIsLoading(false); // Only set to false after all data is fetched

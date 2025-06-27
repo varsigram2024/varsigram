@@ -33,6 +33,9 @@ interface Post {
   author_name?: string;
   is_shared?: boolean;
   original_post?: Post;
+  account_type: string;
+  is_verified: boolean;
+  exclusive: boolean;
 }
 
 interface PostProps {
@@ -316,6 +319,21 @@ export const Post: React.FC<PostProps> = ({
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Text className="font-semibold hover:underline">
+              {post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
+            </Text>
+            {post.account_type === "organization" &&
+              post.is_verified &&
+              post.exclusive && (
+                <img
+                  src="/images/vectors/verified.svg"
+                  alt="verified"
+                  className="h-[16px] w-[16px]"
+                />
             )}
           </div>
 
