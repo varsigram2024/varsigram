@@ -8,12 +8,12 @@ interface ProgressBarProps {
     const progress = (currentStep / totalSteps) * 100;
   
     return (
-      <div className="w-full bg-gray-200 h-2">
+      <div className="w-full h-auto">
         <div 
-          className="bg-[#750015] h-2 transition-all duration-300"
+          className="bg-[#750015] h-0.5 transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
-        <div className="flex justify-between mt-2 text-sm text-gray-600">
+        <div className="flex justify-between mt-0.5 text-sm text-gray-600">
           {Array.from({ length: totalSteps }).map((_, index) => (
             <div key={index} className="flex flex-col items-center">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center ${

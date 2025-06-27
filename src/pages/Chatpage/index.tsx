@@ -1,5 +1,5 @@
 import React, { Suspense, ChangeEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -16,7 +16,7 @@ import BottomNav from "../../components/BottomNav";
 
 
 interface ChatpageProps {
-  onComplete: (page: string) => void;
+  // onComplete: (page: string) => void;
 }
 
 
@@ -68,7 +68,8 @@ const userProfileList = [
 
 
 
-export default function Chatpage({ onComplete }: ChatpageProps) {
+export default function Chatpage() {
+  const navigate = useNavigate();
   const [searchBarValue, setSearchBarValue] = useState("");
   const [searchBarValue6, setSearchBarValue6] = useState("");
   const [searchBarValue7, setSearchBarValue7] = useState("");
@@ -78,9 +79,13 @@ export default function Chatpage({ onComplete }: ChatpageProps) {
 
   const handleClearSearch = () => setSearchBarValue("");
 
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
+
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      <Sidebar1 onComplete={onComplete} currentPage="chat" />
+      <Sidebar1 />
 
       <div className="flex flex-row-reverse w-full lg:w-[85%] items-start justify-center h-auto">
         <div className="hidden lg:flex mt-[38px] lg:mt-[0px] flex-1 items-center justify-center gap-[4px] md:flex-col md:self-stretch p-5"> 
@@ -100,7 +105,7 @@ export default function Chatpage({ onComplete }: ChatpageProps) {
             <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[15px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
                 <div className="flex items-center gap-2.5 mb-8">
                 <div 
-                    onClick={() => onComplete('user-profile')} 
+                    onClick={() => handleNavigation('user-profile')} 
                     className="hover:opacity-80 transition-opacity cursor-pointer"
                 >
                     <Text as="p" className="text-[24px] font-medium md:text-[22px]">
@@ -121,7 +126,7 @@ export default function Chatpage({ onComplete }: ChatpageProps) {
                 className="flex h-[48px] items-center rounded-[24px] border-[1.5px] bg-white border-[#e6e6e699] pl-[22px] pr-3 text-[14px] text-[#3a3a3a]"
                 />
             
-                <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
+                {/* <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
 
                     <div className="flex items-start justify-between gap-5">
                     <Text as="p" className="self-end text-[16px] font-bold">Prompts</Text>
@@ -148,7 +153,7 @@ export default function Chatpage({ onComplete }: ChatpageProps) {
 
                     </div>
 
-                </div>
+                </div> */}
 
                 <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
 
@@ -180,7 +185,7 @@ export default function Chatpage({ onComplete }: ChatpageProps) {
 
       </div>
 
-      <BottomNav onComplete={onComplete} currentPage="chat" />
+      <BottomNav />
     </div>
   );
 }

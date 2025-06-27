@@ -1,15 +1,21 @@
-// src/components/Post.tsx
 import React, { useState } from 'react';
 import { Text } from '../Text';
 import { Img } from '../Img';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase/config'; // Adjust the path to your Firebase config
+import { storage } from '../../firebase/config';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { ClickableUser } from '../ClickableUser';
+import { useNavigate } from 'react-router-dom';
+import CommentSection from '../CommentSection';
+import { useAuth } from "../../auth/AuthContext";
+import EditPostModal from '../EditPostModal';
+
 
 interface Post {
   id: string;
+  author_id: string;
   author_username: string;
   author_profile_pic_url: string | null;
   content: string;
@@ -23,13 +29,18 @@ interface Post {
   trending_score: number;
   last_engagement_at: string | null;
   author_display_name: string;
+  author_display_name_slug: string;
+  author_name?: string;
+  is_shared?: boolean;
+  original_post?: Post;
 }
 
 interface PostProps {
   post: Post;
   onPostUpdate?: (updatedPost: Post) => void;
-  onPostDelete?: (postId: string) => void;
+  onPostDelete?: (post: Post) => void;
   onPostEdit?: (post: Post) => void;
+  currentUserId?: string;
   currentUserEmail?: string;
 }
 
@@ -38,12 +49,19 @@ export const Post: React.FC<PostProps> = ({
   onPostUpdate, 
   onPostDelete, 
   onPostEdit,
-  currentUserEmail 
+  currentUserId,
+  currentUserEmail
 }) => {
+  const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
-  const [localLikeCount, setLocalLikeCount] = useState(post.like_count);
-  const [localHasLiked, setLocalHasLiked] = useState(post.has_liked);
+  const [hasLiked, setHasLiked] = useState(post.has_liked);
+  const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [showOptions, setShowOptions] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const navigate = useNavigate();
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -58,15 +76,16 @@ export const Post: React.FC<PostProps> = ({
 
   const renderMedia = () => {
     if (!post.media_urls || post.media_urls.length === 0) return null;
-
+    // Only show up to 4 images
+    const mediaToShow = post.media_urls.slice(0, 4);
     return (
-      <div className="mt-4 grid gap-2">
-        {post.media_urls.map((url, index) => (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {mediaToShow.map((url, index) => (
           <Img
             key={index}
             src={url}
             alt={`Post media ${index + 1}`}
-            className="w-full rounded-lg max-h-[500px] object-cover"
+            className="w-full h-40 object-cover rounded-lg"
           />
         ))}
       </div>
@@ -76,7 +95,6 @@ export const Post: React.FC<PostProps> = ({
   const handleLike = async () => {
     if (isLiking) return;
 
-    const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Please login to like posts');
       return;
@@ -84,11 +102,11 @@ export const Post: React.FC<PostProps> = ({
 
     try {
       setIsLiking(true);
-      setLocalLikeCount(prev => localHasLiked ? prev - 1 : prev + 1);
-      setLocalHasLiked(prev => !prev);
+      setLikeCount(prev => hasLiked ? prev - 1 : prev + 1);
+      setHasLiked(prev => !prev);
 
       const response = await axios.post(
-        `https://api.varsigram.com/api/v1/posts/${post.slug}/like/`,
+        `https://api.varsigram.com/api/v1/posts/${post.id}/like/`,
         {},
         {
           headers: {
@@ -106,18 +124,20 @@ export const Post: React.FC<PostProps> = ({
         });
       }
     } catch (error) {
-      setLocalLikeCount(post.like_count);
-      setLocalHasLiked(post.has_liked);
+      setLikeCount(post.like_count);
+      setHasLiked(post.has_liked);
       toast.error('Failed to update like status');
     } finally {
       setIsLiking(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
+  const handlePostDelete = async (postToDelete: Post) => {
+    if (!postToDelete.id) {
+      toast.error('Cannot delete post: missing post identifier');
+      return;
+    }
 
-    const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Please login to delete posts');
       return;
@@ -125,7 +145,7 @@ export const Post: React.FC<PostProps> = ({
 
     try {
       await axios.delete(
-        `https://api.varsigram.com/api/v1/posts/${post.slug}/delete/`,
+        `https://api.varsigram.com/api/v1/posts/${postToDelete.id}/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -133,44 +153,137 @@ export const Post: React.FC<PostProps> = ({
         }
       );
 
+      // Call parent callback to remove from list
       if (onPostDelete) {
-        onPostDelete(post.id);
+        onPostDelete(postToDelete);
       }
       toast.success('Post deleted successfully');
     } catch (error) {
-      console.error('Error deleting post:', error);
       toast.error('Failed to delete post');
     }
   };
 
-  const handleEdit = () => {
-    if (onPostEdit) {
-      onPostEdit(post);
+  const handlePostEdit = (postToEdit: Post) => {
+    setEditingPost(postToEdit);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (editedContent: string) => {
+    if (!editingPost) return;
+
+    if (!editingPost.id) {
+      toast.error('Cannot edit post: missing post identifier');
+      return;
+    }
+
+    if (!token) {
+      toast.error('Please login to edit posts');
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `https://api.varsigram.com/api/v1/posts/${editingPost.id}/`,
+        { content: editedContent },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const updatedPost = { ...editingPost, content: editedContent };
+      
+      // Update parent component if callback provided
+      if (onPostUpdate) {
+        onPostUpdate(updatedPost);
+      }
+
+      setIsEditModalOpen(false);
+      setEditingPost(null);
+      toast.success('Post updated successfully');
+    } catch (error) {
+      toast.error('Failed to update post');
     }
   };
 
-  const isAuthor = currentUserEmail === post.author_username;
+  // Check if current user is the author
+  const isAuthor = React.useMemo(() => {
+    return (
+      // Match by email (if author_username exists and matches email)
+      (post.author_username && (currentUserEmail === post.author_username || user?.email === post.author_username)) ||
+      // Match by user ID (convert to string for comparison)
+      (post.author_id && (currentUserId?.toString() === post.author_id.toString() || user?.id?.toString() === post.author_id.toString()))
+    );
+  }, [post.author_username, post.author_id, currentUserEmail, currentUserId, user?.email, user?.id]);
+
+  const handleUserClick = (username: string) => {
+    navigate(`/user-profile/${username}`);
+  };
+
+  const postUrl = `${window.location.origin}/posts/${post.id}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast.success("Link copied!");
+      setShowShareMenu(false);
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleWebShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: "Check out this post on Varsigram",
+        text: post.content,
+        url: postUrl,
+      })
+        .then(() => setShowShareMenu(false))
+        .catch(() => toast.error("Share cancelled or failed"));
+    } else {
+      toast.error("Sharing not supported on this device");
+    }
+  };
+
+  const handleShare = async () => {
+    if (!token) {
+      toast.error('Please login to revers posts');
+      return;
+    }
+    try {
+      await axios.post(
+        `https://api.varsigram.com/api/v1/posts/${post.id}/share/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Post revarsed!');
+      // Optionally update share count in UI:
+      if (onPostUpdate) {
+        onPostUpdate({ ...post, share_count: post.share_count + 1 });
+      }
+    } catch (error) {
+      toast.error('Failed to revars post');
+    }
+  };
+
+  const isRevarsed = post.is_shared && post.original_post;
 
   return (
-    <div className="flex w-full flex-col items-center md:w-full lg:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-      <div className="flex flex-col gap-7 self-stretch">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-start justify-between gap-5">
-            <div className="flex items-center">
-              <div className="w-[32px] lg:w-[64px] rounded-[32px] bg-[#e6e6e699] px-1 py-2">
-                <Img src={post.author_profile_pic_url || "images/user.png"} alt="User Avatar" className="h-auto lg:h-[48px] w-full object-cover" />
-              </div>
-              <div className="flex flex-1 flex-col items-start px-4">
-                <span className="flex items-center gap-1.5 self-stretch w-auto">
-                  <Text as="p" className="text-[14px] font-extrabold md:text-[22px]">{post.author_username}</Text>
-                  <Img src="images/vectors/verified.svg" alt="Verified Icon" className="h-[16px] w-[16px]" />
-                </span>
-                <Text as="p" className="mt-[-2px] text-[14px] font-normal text-[#adacb2]">
-                  {formatTimestamp(post.timestamp)}
-                </Text>
-              </div>
-            </div>
-            
+    <>
+      <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
+        <div className="flex flex-col gap-7 self-stretch">
+          <div className="flex justify-between items-start">
+          <ClickableUser
+              displayNameSlug={post.author_display_name_slug ?? ''}
+              profilePicUrl={post.author_profile_pic_url}
+              displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
+              onUserClick={(slug) => navigate(`/user-profile/${slug}`)}
+              size="medium"
+            />
+
             {isAuthor && (
               <div className="relative">
                 <button 
@@ -179,72 +292,121 @@ export const Post: React.FC<PostProps> = ({
                 >
                   <MoreVertical size={20} />
                 </button>
-                
+
                 {showOptions && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
-                    <button
-                      onClick={() => {
-                        setShowOptions(false);
-                        handleEdit();
-                      }}
+                    <button 
+                      onClick={() => { 
+                        setShowOptions(false); 
+                        handlePostEdit(post); 
+                      }} 
                       className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
                     >
-                      <Edit size={16} />
-                      <span>Edit</span>
+                      <Edit size={16} /> <span>Edit</span>
                     </button>
-                    <button
-                      onClick={() => {
-                        setShowOptions(false);
-                        handleDelete();
-                      }}
+                    <button 
+                      onClick={() => { 
+                        setShowOptions(false); 
+                        handlePostDelete(post); 
+                      }} 
                       className="flex items-center gap-2 w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100"
                     >
-                      <Trash2 size={16} />
-                      <span>Delete</span>
+                      <Trash2 size={16} /> <span>Delete</span>
                     </button>
                   </div>
                 )}
               </div>
             )}
           </div>
-          <div className="h-px bg-[#d9d9d9]" />
-        </div>
 
-        <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
-          {post.content}
-        </Text>
+          <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+            {isRevarsed && (
+              <div className="text-xs text-gray-500 mb-2">
+                <span>
+                  <b>{post.author_name || post.author_display_name}</b> revarsed
+                </span>
+              </div>
+            )}
+            {isRevarsed ? (
+              <div className="border p-2 rounded bg-gray-50">
+                <Text>{post.original_post?.content}</Text>
+                <div className="text-xs text-gray-400 mt-1">
+                  by {post.original_post?.author_name || post.original_post?.author_display_name}
+                </div>
+              </div>
+            ) : (
+              post.content
+            )}
+          </Text>
 
-        {renderMedia()}
+          {renderMedia()}
 
-        <div className="h-px bg-[#d9d9d9]" />
+          <div className="flex justify-between items-center border-t pt-4">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={handleLike}>
+              {isLiking ? (
+                <svg className="animate-spin h-4 w-4 text-[#750015]" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+              ) : (
+                <img
+                  src={hasLiked ? "/images/vectors/like_filled.svg" : "/images/vectors/like.svg"}
+                  alt="Like"
+                  className="h-[20px] w-[20px]"
+                />
+              )}
+              <span>{likeCount}</span>
+            </div>
 
-        <div className="flex flex-col gap-3.5">
-          <div className="flex justify-between items-center">
-            <div 
-              className="flex items-center gap-1 lg:gap-2 cursor-pointer"
-              onClick={handleLike}
-            >
-              <Img 
-                src={localHasLiked ? "images/vectors/like_filled.svg" : "images/vectors/like.svg"} 
-                alt="Likes" 
-                className={`h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] ${isLiking ? 'opacity-50' : ''}`}
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowComments(true)}>
+              <Img src="/images/vectors/vars.svg" alt="Comment" className="h-[20px] w-[20px]" />
+              <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Img src="/images/vectors/revars.svg" alt="Share" className="h-[20px] w-[20px] cursor-pointer" onClick={handleShare} />
+              <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
+            </div>
+            <div className="relative">
+              <Img
+                src="/images/vectors/share.svg"
+                alt="Share"
+                className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
+                onClick={() => setShowShareMenu((prev) => !prev)}
               />
-              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">
-                {localLikeCount}
-              </Text>
+              {showShareMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg py-2 z-20">
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
+                  >
+                    <span>Copy Link</span>
+                  </button>
+                  <button
+                    onClick={handleWebShare}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
+                  >
+                    <span>Share...</span>
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-1 lg:gap-2">
-              <Img src="images/vectors/vers.svg" alt="Comments" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer" />
-              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">{post.comment_count}</Text>
-            </div>
-            <div className="flex items-center gap-1 lg:gap-2">
-              <Img src="images/vectors/revers.svg" alt="Shares" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer" />
-              <Text as="p" className="text-[9px] lg:text-[14px] font-normal">{post.share_count}</Text>
-            </div>
-            <Img src="images/vectors/share.svg" alt="Share" className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer" />
           </div>
+
+          <CommentSection open={showComments} onClose={() => setShowComments(false)} postId={post.id} />
         </div>
       </div>
-    </div>
+
+      {isEditModalOpen && editingPost && (
+        <EditPostModal
+          post={editingPost}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingPost(null);
+          }}
+          onSubmit={handleEditSubmit}
+        />
+      )}
+    </>
   );
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -10,7 +10,6 @@ import { Input } from "../../components/Input/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
 import { CloseSVG } from "../../components/Input/close.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
-import UserProfile1 from "../../components/UserProfile1/index.tsx";
 import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
 import { Button } from "../../components/Button";
 import CreateConversation from "../../modals/createCONVERSATION";
@@ -19,19 +18,30 @@ import { LogOut } from "lucide-react";
 import { toast } from 'react-hot-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase/config.ts';
-import EditPostModal from "../../components/EditPostModal";
+import { uploadPostMedia } from '../../utils/fileUpload';
+import { ClickableUser } from "../../components/ClickableUser";
+import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
+import CreatePostModal from '../../components/CreatePostModal';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Post {
   id: string;
+  author_id: string;
   author_username: string;
+  author_profile_pic_url: string | null;
   content: string;
   slug: string;
+  media_urls: string[];
   timestamp: string;
   like_count: number;
   comment_count: number;
   share_count: number;
   has_liked: boolean;
-  author_profile_pic_url: string;
+  trending_score: number;
+  last_engagement_at: string | null;
+  author_display_name: string;
+  author_name?: string;
 }
 
 interface User {
@@ -40,19 +50,16 @@ interface User {
   fullName: string;
   profile_pic_url?: string;
   author_profile_pic_url: string;
+  display_name_slug?: string;
 }
 
-interface HomepageProps {
-  onComplete: (page: string) => void;
-}
-
-export default function Homepage({ onComplete }: HomepageProps) {
+export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { token, user, logout } = useAuth();
+  const { token, user, logout, isLoading: isAuthLoading } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -60,17 +67,21 @@ export default function Homepage({ onComplete }: HomepageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const [feedPosts, setFeedPosts] = useState<Post[]>([]);
+  const [isFeedLoading, setIsFeedLoading] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get('https://api.varsigram.com/api/v1/posts/', {
+        const response = await axios.get(`${API_BASE_URL}/posts/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
         setPosts(response.data);
+        console.log('Posts:', response.data); // Log the fetched posts
       } catch (err) {
         setError('Failed to fetch posts');
         console.error('Error fetching posts:', err);
@@ -83,6 +94,29 @@ export default function Homepage({ onComplete }: HomepageProps) {
       fetchPosts();
     }
   }, [token]);
+
+  useEffect(() => {
+    if (activeTab === 'following' && token) {
+      setIsFeedLoading(true);
+      axios.get(`${API_BASE_URL}/feed/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => {
+        setFeedPosts(response.data);
+        console.log('Feed posts:', response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching feed:', error);
+        setFeedPosts([]);
+      })
+      .finally(() => {
+        setIsFeedLoading(false);
+      });
+    }
+  }, [activeTab, token]);
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -116,12 +150,10 @@ export default function Homepage({ onComplete }: HomepageProps) {
     try {
       setIsUploading(true);
       
-      // First, upload all images to Firebase Storage
+      // Upload all images using signed URL logic
       const mediaUrls = await Promise.all(
         selectedFiles.map(async (file) => {
-          const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-          const snapshot = await uploadBytes(storageRef, file);
-          return getDownloadURL(snapshot.ref);
+          return uploadPostMedia(file, token);
         })
       );
 
@@ -141,7 +173,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
         author_display_name: user?.fullName ? user.fullName.split(' ')[0] : user?.username || 'Unknown User'
       };
 
-      const response = await axios.post('https://api.varsigram.com/api/v1/posts/', postData, {
+      const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -168,15 +200,41 @@ export default function Homepage({ onComplete }: HomepageProps) {
   };
 
   const handlePostUpdate = (updatedPost: Post) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => 
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
         post.id === updatedPost.id ? updatedPost : post
       )
     );
   };
+  
 
-  const handlePostDelete = (postId: string) => {
-    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+  const handlePostDelete = async (post: Post) => {
+    console.log('Deleting post:', post);
+    if (!post.id) {
+      toast.error('Cannot delete post: missing post identifier');
+      return;
+    }
+
+    if (!token) {
+      toast.error('Please login to delete posts');
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/posts/${post.id}/`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+      toast.success('Post deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete post');
+    }
   };
 
   const handlePostEdit = (post: Post) => {
@@ -187,8 +245,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
   const handleEditSubmit = async (editedContent: string) => {
     if (!editingPost) return;
 
-    if (!editingPost.slug) {
-      console.error('Post slug is missing:', editingPost);
+    if (!editingPost.id) {
       toast.error('Cannot edit post: missing post identifier');
       return;
     }
@@ -199,11 +256,9 @@ export default function Homepage({ onComplete }: HomepageProps) {
     }
 
     try {
-      const response = await axios.put(
-        `https://api.varsigram.com/api/v1/posts/${editingPost.slug}/`,
-        {
-          content: editedContent,
-        },
+      await axios.put(
+        `${API_BASE_URL}/posts/${editingPost.id}/`,
+        { content: editedContent },
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -224,36 +279,83 @@ export default function Homepage({ onComplete }: HomepageProps) {
       setEditingPost(null);
       toast.success('Post updated successfully');
     } catch (error) {
-      console.error('Error updating post:', error);
       toast.error('Failed to update post');
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
-      </div>
-    );
-  }
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-red-500">{error}</p>
-      </div>
+  const handlePostLikeUpdate = (postId: string, like_count: number, has_liked: boolean) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, like_count, has_liked }
+          : post
+      )
     );
-  }
+  };
+
+  const handleLike = async (post: Post) => {
+    // Save previous state for revert
+    const prevLikeCount = post.like_count;
+    const prevHasLiked = post.has_liked;
+
+    // Optimistically update UI
+    handlePostLikeUpdate(
+      post.id,
+      post.has_liked ? post.like_count - 1 : post.like_count + 1,
+      !post.has_liked
+    );
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/posts/${post.id}/like/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Sync with backend response
+      handlePostLikeUpdate(post.id, response.data.like_count, response.data.has_liked);
+    } catch (error) {
+      // Revert on error
+      handlePostLikeUpdate(post.id, prevLikeCount, prevHasLiked);
+      console.error("Failed to like/unlike post:", error);
+    }
+  };
+
+
+  const handleMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !token) return;
+
+    try {
+      const publicUrl = await uploadPostMedia(file, token);
+      // Add this URL to your post's media_urls array
+      setMediaUrls(prev => [...prev, publicUrl]);
+    } catch (error) {
+      toast.error("Failed to upload media.");
+    }
+  };
+
+  // Debug: log the user object
+  console.log('Homepage user:', user);
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
-      <Sidebar1 onComplete={onComplete} currentPage="home" />
+      <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
         <div className="hidden lg:flex items-center justify-between">
           <div 
-            onClick={() => onComplete('user-profile')} 
+            onClick={() => {
+              if (user?.display_name_slug) {
+                navigate(`/user-profile/${user.display_name_slug}`);
+              } else {
+                toast.error("Profile link unavailable");
+              }
+            }}  
             className="hover:opacity-80 transition-opacity cursor-pointer"
           >
             <Text as="p" className="text-[24px] font-medium md:text-[22px]">
@@ -291,13 +393,26 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
             <div className="mt-5 lg:hidden flex flex-row justify-between items-center">
               <div 
-                onClick={() => onComplete('user-profile')} 
+                onClick={() => {
+                  if (user?.display_name_slug) {
+                    navigate(`/user-profile/${user.display_name_slug}`);
+                  } else {
+                    toast.error("Profile link unavailable");
+                  }
+                }} 
                 className="hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <Img 
                   src={user?.profile_pic_url || "images/user.png"} 
                   alt="Profile" 
                   className="h-[32px] w-[32px] rounded-[50%]" 
+                  onClick={() => {
+                    if (user?.display_name_slug) {
+                      navigate(`/user-profile/${user.display_name_slug}`);
+                    } else {
+                      toast.error("Profile link unavailable");
+                    }
+                  }}
                 />
               </div>
 
@@ -309,7 +424,7 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
               <div className='flex flex-row justify-between'>
                   <div 
-                    onClick={() => onComplete('settings')} 
+                    onClick={() => handleNavigation('settings')} 
                     className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
                   >
                    <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
@@ -326,7 +441,21 @@ export default function Homepage({ onComplete }: HomepageProps) {
 
             
 
-            {!isCreatePostOpen ? (
+            {isCreatePostOpen && (
+              <CreatePostModal
+                newPostContent={newPostContent}
+                setNewPostContent={setNewPostContent}
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
+                isUploading={isUploading}
+                onClose={handleCancelPost}
+                onSubmit={handleCreatePost}
+                handleFileChange={handleFileChange}
+                handleRemoveFile={handleRemoveFile}
+              />
+            )}
+
+            {!isCreatePostOpen && (
               <div 
                 className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => setIsCreatePostOpen(true)}
@@ -334,138 +463,104 @@ export default function Homepage({ onComplete }: HomepageProps) {
                 <input
                   type="text"
                   value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="What's on your mind?"
+                  placeholder="Create a vars..."
                   className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsCreatePostOpen(true);
-                  }}
                   readOnly
                 />
                 <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      fileInputRef.current?.click();
+                      setIsCreatePostOpen(true);
                     }}
                     className="cursor-pointer"
                   >
                     <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
                   </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col w-full p-4 bg-white rounded-[28px] shadow-sm">
-                <textarea
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="What's on your mind?"
-                  className="w-full p-2 text-[20px] font-normal text-gray-800 bg-transparent border-none outline-none focus:outline-none resize-none"
-                  rows={3}
-                />
-                {selectedFiles.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="absolute top-2 right-2 p-1 bg-gray-800 bg-opacity-50 rounded-full text-white hover:bg-opacity-75"
-                        >
-                          <CloseSVG />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 text-gray-500 hover:text-gray-700"
-                      disabled={selectedFiles.length >= 5}
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                    />
-                    {selectedFiles.length > 0 && (
-                      <span className="text-sm text-gray-500">
-                        {selectedFiles.length}/5 images
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleCancelPost}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleCreatePost}
-                      disabled={isUploading || (!newPostContent.trim() && selectedFiles.length === 0)}
-                      className="px-4 py-2 text-white bg-[#750015] rounded-lg hover:bg-[#8c001a] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isUploading ? 'Posting...' : 'Post'}
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
 
-          <div className="relative w-full">
-            <div 
-              className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full absolute'}`}
-            >
-              {activeTab === 'forYou' && (
-                <div className="space-y-6">
-                  {posts.map((post) => (
-                    <Post 
-                      key={post.id} 
-                      post={post} 
-                      onPostUpdate={handlePostUpdate}
-                      onPostDelete={handlePostDelete}
-                      onPostEdit={handlePostEdit}
-                      currentUserEmail={user?.email}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="w-full post-section">
+            {(isLoading || isAuthLoading) && (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
+              </div>
+            )}
 
-            <div 
-              className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'}`}
-            >
-              {activeTab === 'following' && (
-                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-                  <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                    Coming soon...
-                  </Text>
+            {error && !isLoading && !isAuthLoading && (
+              <div className="flex justify-center items-center py-20">
+                <p className="text-red-500 text-center">{error}</p>
+              </div>
+            )}
+
+            {!isLoading && !isAuthLoading && !error && (
+              <>
+                <div 
+                  className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100' : 'opacity-0'}`}
+                >
+                  {activeTab === 'forYou' && (
+                    <div className="space-y-6 w-full">
+                      {posts.map((post) => (
+                        <Post 
+                          key={post.id} 
+                          post={post} 
+                          onPostUpdate={(updatedPost) => {
+                            setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                          }}
+                          onPostDelete={(post) => {
+                            setPosts(prev => prev.filter(p => p.id !== post.id));
+                          }}
+                          onPostEdit={(post) => {
+                            // This is now handled internally by the Post component
+                          }}
+                          currentUserId={user?.id}
+                          currentUserEmail={user?.email}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                <div 
+                    className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'}`}
+                  >
+                  {activeTab === 'following' && (
+                    <div className="space-y-6">
+                      {isFeedLoading ? (
+                        <div className="flex justify-center items-center h-40">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                        </div>
+                      ) : feedPosts.length === 0 ? (
+                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                            No posts in your feed yet.
+                          </Text>
+                        </div>
+                      ) : (
+                        feedPosts.map((post) => (
+                          <Post 
+                            key={post.id} 
+                            post={post} 
+                            onPostUpdate={(updatedPost) => {
+                              setFeedPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                            }}
+                            onPostDelete={(post) => {
+                              setFeedPosts(prev => prev.filter(p => p.id !== post.id));
+                            }}
+                            onPostEdit={(post) => {
+                              // This is now handled internally by the Post component
+                            }}
+                            currentUserId={user?.id}
+                            currentUserEmail={user?.email}
+                          />
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -476,129 +571,15 @@ export default function Homepage({ onComplete }: HomepageProps) {
           
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
             <div className="overflow-hidden h-full">
-            <Input
-              name="search_seven"
-              placeholder="Search Varsigram"
-              value={searchBarValue}
-              onChange={(e) => setSearchBarValue(e.target.value)}
-              prefix={<Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />}
-              suffix={
-                searchBarValue?.length > 0 ? <CloseSVG onClick={handleClearSearch} fillColor="gray_800" /> : null
-              }
-              className="flex h-[48px] items-center rounded-[24px] border-[1.5px] border-[#e6e6e699] pl-[22px] pr-3 text-[14px] text-[#3a3a3a]"
-            />
-
-            <Text as="p" className="mt-5 text-[24px] font-medium md:text-[22px]">Who to follow</Text>
-            <div className="my-3 flex flex-col gap-5 h-full overflow-auto scrollbar-hide">
-              {/* <UserProfile1 />
-              <UserProfile1 /> */}
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-start gap-[7px]">
-                    <Text as="p" className="text-[16px] font-normal">
-                      Faculty of Arts Student<br />Association
-                    </Text>
-                    <Img src="images/vectors/verified.svg" alt="Verified" className="h-[16px] w-[16px] mt-0.5" />
-                  </div>
-                  <Text as="p" className="text-[14px] font-medium text-[#adacb2]">13.8K followers</Text>
-                </div>
-                <Text as="p" className="rounded bg-[#750015] px-3.5 py-0.5 text-[16px] font-normal text-white">
-                  Follow
-                </Text>
-              </div>
-            </div>
+              <WhoToFollowSidePanel />
             </div>
           </div>
         </div>
       </div>
 
-      <BottomNav onComplete={onComplete} currentPage="home" />
+      <BottomNav />
 
-      {isEditModalOpen && editingPost && (
-        <EditPostModal
-          post={editingPost}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setEditingPost(null);
-          }}
-          onSubmit={handleEditSubmit}
-        />
-      )}
+      
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -15,146 +15,265 @@ import BottomNav from "../../components/BottomNav/index.tsx";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../auth/AuthContext';
+import { ClickableUser } from "../../components/ClickableUser";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface User {
+  // Common fields
   email: string;
+  display_name_slug?: string; // Always present in full profile, may be missing in search results
+  is_verified?: boolean;
+  is_following?: boolean;
+  profile_pic_url?: string;
+  username?: string;
+  bio?: string;
+
+  // Student-specific fields
   name?: string;
-  organization_name?: string;
-  department?: string;
   faculty?: string;
-  is_verified: boolean;
-  is_following: boolean;
+  department?: string;
+  year?: string;
+  religion?: string;
+  phone_number?: string;
+  sex?: string;
+  university?: string;
+  date_of_birth?: string;
+
+  // Organization-specific fields
+  organization_name?: string;
+
+  // New fields
+  id: number;
+  account_type: "student" | "organization";
 }
 
-interface ConnectionspageProps {
-  onComplete: (page: string) => void;
+interface FollowingItem {
+  organization: {
+    display_name_slug: string;
+    organization_name: string;
+    user: {
+      email: string;
+      profile_pic_url?: string;
+      // add other fields if needed
+    };
+    bio?: string;
+    id?: number;
+  };
+  user: {
+    email: string;
+    profile_pic_url?: string;
+    // add other fields if needed
+  };
+  // add other fields if needed
 }
 
-export default function Connectionspage({ onComplete }: ConnectionspageProps) {
+export default function Connectionspage() {
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const [following, setFollowing] = useState<FollowingItem[]>([]);
+  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
+  const [followers, setFollowers] = useState<any[]>([]);
 
   const fetchUsers = async () => {
-    let usersResponse;
     try {
       if (!token) {
         toast.error('Please login to view connections');
         return;
       }
 
-      // First get all users
-      usersResponse = await axios.get('https://api.varsigram.com/api/v1/users/search/', {
+      const usersResponse = await axios.get(`${API_BASE_URL}/who-to-follow/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      // Get current user's email from the first user in the response
-      const currentUserEmail = usersResponse.data[0]?.email;
-      if (!currentUserEmail) {
-        setUsers(usersResponse.data);
-        return;
-      }
-
-      // Then get the current user's following list
-      const followingResponse = await axios.get(`https://api.varsigram.com/api/v1/users/${currentUserEmail}/following/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      // Create a set of followed usernames for quick lookup
-      const followingSet = new Set(followingResponse.data.map((user: any) => user.email));
-
-      // Mark users as followed if they're in the following list
-      const usersWithFollowingStatus = usersResponse.data.map((user: any) => ({
-        ...user,
-        is_following: followingSet.has(user.email)
-      }));
-
-      setUsers(usersWithFollowingStatus);
+      setUsers(usersResponse.data.map((u: any) => ({
+        ...u,
+        account_type: u.type,
+        id: u.id,
+      })));
+      console.log('who-to-follow output:', usersResponse.data);
     } catch (error) {
       console.error('Error fetching users:', error);
-      if (usersResponse) {
-        setUsers(usersResponse.data);
-      }
     } finally {
       setIsLoading(false);
     }
-  };
+  };  
 
   useEffect(() => {
     fetchUsers();
   }, [token]);
 
-  const handleFollow = async (email: string) => {
-    try {
-      const username = email.split('@')[0];
+  useEffect(() => {
+    if (activeTab === 'following' && token && user) {
+      setIsFollowingLoading(true);
+      axios.get(
+        `${API_BASE_URL}/users/following/?follower_type=${user.account_type}&follower_id=${user.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then(response => {
+        setFollowing(response.data);
+        console.log('Following fetched successfully:', response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching following:', error);
+        setFollowing([]);
+      })
+      .finally(() => {
+        setIsFollowingLoading(false);
+      });
+    }
+  }, [activeTab, token, user]);
 
+  const handleFollow = async (userToFollow: User) => {
+    if (!user || !token) {
+      toast.error('Please login to follow users.');
+      return;
+    }
+
+    const follower_id = user.id;
+    const follower_type = user.account_type;
+    const followee_id = userToFollow.id;
+    const followee_type = userToFollow.account_type;
+
+    // Log the IDs for debugging
+    console.log("FOLLOWER:", { id: follower_id, type: follower_type });
+    console.log("FOLLOWEE:", { id: followee_id, type: followee_type });
+
+    if (!follower_id || !followee_id) {
+      toast.error('Invalid follower or followee id');
+      return;
+    }
+
+    try {
       await axios.post(
-        `https://api.varsigram.com/api/v1/users/${username}/follow/`,
-        {},
+        `${API_BASE_URL}/users/follow/`,
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          follower_type,
+          follower_id,
+          followee_type,
+          followee_id,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      // Update the users list to mark the user as followed
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.email === email 
-            ? { ...user, is_following: true }
-            : user
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.email === userToFollow.email
+            ? { ...u, is_following: true }
+            : u
         )
       );
-
-      toast.success('Successfully followed user');
+      toast.success('Successfully followed');
     } catch (error) {
-      console.error('Error following user:', error);
-      toast.error('Failed to follow user');
+      toast.error('Failed to follow');
     }
   };
 
-  const handleUnfollow = async (email: string) => {
+  const handleUnfollow = async (userToUnfollow: User) => {
+    if (!user || !token) {
+      toast.error('Please login to unfollow users.');
+      return;
+    }
+    const follower_id = user.id;
+    const followee_id = userToUnfollow.id;
+
+    if (!follower_id || !followee_id) {
+      toast.error('Invalid follower or followee id');
+      return;
+    }
+
     try {
-      const username = email.split('@')[0];
-
-      await axios.delete(
-        `https://api.varsigram.com/api/v1/users/${username}/unfollow/`,
+      await axios.post(
+        `${API_BASE_URL}/users/unfollow/`,
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          follower_type: user.account_type,
+          follower_id,
+          followee_type: userToUnfollow.account_type,
+          followee_id,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      // Update the users list to mark the user as unfollowed
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.email === email 
-            ? { ...user, is_following: false }
-            : user
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.email === userToUnfollow.email
+            ? { ...u, is_following: false }
+            : u
         )
       );
-
-      toast.success('Successfully unfollowed user');
+      toast.success('Successfully unfollowed');
     } catch (error) {
-      console.error('Error unfollowing user:', error);
-      toast.error('Failed to unfollow user');
+      toast.error('Failed to unfollow');
     }
   };
 
-  const filteredUsers = activeTab === 'following' 
-    ? users.filter(user => user.is_following)
-    : users;
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
+
+  const handleUserClick = (user: User) => {
+    console.log('User object for navigation:', user);
+    console.log('display_name_slug:', user.display_name_slug);
+    console.log('username:', user.username);
+    console.log('email:', user.email);
+    
+    // First try to get the proper display_name_slug
+    const displayNameSlug = user.display_name_slug;
+    
+    if (displayNameSlug) {
+      navigate(`/user-profile/${displayNameSlug}`);
+    } else {
+      // If display_name_slug is not in the response, we need to fetch it first
+      axios.get(`${API_BASE_URL}/users/search/?email=${user.email}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      .then(response => {
+        const userData = response.data[0]; // Assuming the first result is the user we want
+        if (userData?.display_name_slug) {
+          navigate(`/user-profile/${userData.display_name_slug}`);
+        } else {
+          toast.error('User profile not found');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching user details:', error);
+        toast.error('Failed to load user profile');
+      });
+    }
+  };
+
+  const followedIds = new Set(following.map(f => {
+    const followeeOrg = f.followee_organization;
+    const followeeStudent = f.followee_student;
+    const followee = followeeOrg || followeeStudent;
+    if (!followee) return null;
+    return followee.id;
+  }));
+  const filteredUsers = users.filter(user => !followedIds.has(user.id));
+
+  const fetchFollowers = async (displayNameSlug: string) => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/users/${displayNameSlug}/followers/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setFollowers(response.data);
+    } catch (error) {
+      setFollowers([]);
+    }
+  };
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
-      <Sidebar1 onComplete={onComplete} currentPage="connections" />
+      <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
         <div className="mt-[0px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch overflow-scroll scrollbar-hide"> 
@@ -163,10 +282,19 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
 
           <div className="mt-5 lg:hidden flex flex-row justify-between">
               <div 
-                  onClick={() => onComplete('user-profile')} 
+                  onClick={() => {
+                    const displayNameSlug = user?.display_name_slug || user?.username || user?.email?.split('@')[0];
+                    navigate(`/user-profile/${displayNameSlug}`);
+                  }}  
                   className="hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <Img src="images/user-image.png" alt="File" className="h-[32px] w-[32px] rounded-[50%]" />
+                <Img 
+                  src={user?.profile_pic_url && user?.profile_pic_url.startsWith('http')
+                    ? user?.profile_pic_url
+                    : "images/user.png"} 
+                  alt="Profile" 
+                  className="h-[32px] w-[32px] rounded-[50%]" 
+                />
               </div>
 
               <div>
@@ -208,51 +336,121 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
             
 
             <div className="relative w-full">
-              {isLoading ? (
+              {isLoading && activeTab === 'forYou' ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                </div>
+              ) : activeTab === 'forYou' ? (
+                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                  {filteredUsers.map((user) => {
+                    console.log('Full user object:', user);
+                    return (
+                      <div key={user.email} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleUserClick(user)}
+                        >
+                          <Img
+                            src={user.profile_pic_url && user.profile_pic_url.startsWith('http')
+                              ? user.profile_pic_url
+                              : "images/user.png"}
+                            alt={user.name || user.organization_name || user.email}
+                            className="h-[48px] w-[48px] rounded-[50%] object-cover"
+                          />
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1">
+                              <Text className="font-semibold hover:underline">
+                                {user.name}
+                              </Text>
+                              <Img
+                                src="images/vectors/verified.svg"
+                                alt="verified"
+                                className="h-[16px] w-[16px]"
+                              />
+                            </div>
+                            <Text className="text-sm text-gray-500">{user.bio}</Text>
+                            {(user.department || user.faculty) && (
+                              <Text className="text-sm text-gray-500">
+                                {user.department && `${user.department}`}
+                                {user.department && user.faculty && ' • '}
+                                {user.faculty && `${user.faculty}`}
+                              </Text>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            user.is_following
+                              ? handleUnfollow(user)
+                              : handleFollow(user);
+                          }}
+                          className={`px-4 py-2 rounded-full transition-colors ${
+                            user.is_following 
+                              ? 'bg-gray-400 text-gray-600 hover:bg-gray-200' 
+                              : 'bg-[#750015] text-white hover:bg-[#8c0019]'
+                          }`}
+                        >
+                          {user.is_following ? 'Following' : 'Follow'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : isFollowingLoading ? (
                 <div className="flex justify-center items-center h-40">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
                 </div>
               ) : (
                 <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-                  {filteredUsers.map((user) => (
-                    <div key={user.email} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
-                      <div className="flex items-center gap-3">
-                        <Img
-                          src="images/user.png"
-                          alt={user.name || user.organization_name || user.email}
-                          className="h-[48px] w-[48px] rounded-[50%]"
-                        />
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1">
-                            <Text className="font-semibold">{user.name || user.organization_name || user.email}</Text>
+                  {following.length === 0 ? (
+                    <Text>No accounts followed yet.</Text>
+                  ) : (
+                    following.map((f, idx) => {
+                      const followeeOrg = f.followee_organization;
+                      const followeeStudent = f.followee_student;
+                      const followee = followeeOrg || followeeStudent;
+                      if (!followee) return null;
+                      const userInfo = followeeOrg ? followeeOrg.user : followeeStudent ? followeeStudent.user : null;
+                      return (
+                        <div key={idx} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
+                          <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
                             <Img
-                              src="images/vectors/verified.svg"
-                              alt="verified"
-                              className="h-[16px] w-[16px]"
+                              src={userInfo?.profile_pic_url && userInfo.profile_pic_url.startsWith('http')
+                                ? userInfo.profile_pic_url
+                                : "images/user.png"}
+                              alt={followeeOrg?.organization_name || followeeStudent?.name || "No name"}
+                              className="h-[48px] w-[48px] rounded-[50%] object-cover"
                             />
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1">
+                                <Text className="font-semibold hover:underline">
+                                  {followeeOrg?.organization_name || followeeStudent?.name || "No name"}
+                                </Text>
+                              </div>
+                              <Text className="text-sm text-gray-500">
+                                {userInfo?.bio || "No Bio"}
+                              </Text>
+                            </div>
                           </div>
-                          <Text className="text-sm text-gray-500">{user.email}</Text>
-                          {(user.department || user.faculty) && (
-                            <Text className="text-sm text-gray-500">
-                              {user.department && `${user.department}`}
-                              {user.department && user.faculty && ' • '}
-                              {user.faculty && `${user.faculty}`}
-                            </Text>
-                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnfollow({
+                                email: userInfo?.email,
+                                profile_pic_url: userInfo?.profile_pic_url,
+                                id: followee.id ?? 0,
+                                account_type: followeeOrg ? "organization" : "student",
+                              });
+                            }}
+                            className="px-4 py-2 rounded-full bg-gray-400 text-gray-600 hover:bg-gray-200 transition-colors"
+                          >
+                            Unfollow
+                          </button>
                         </div>
-                      </div>
-                      <button
-                        onClick={() => user.is_following ? handleUnfollow(user.email) : handleFollow(user.email)}
-                        className={`px-4 py-2 rounded-full transition-colors ${
-                          user.is_following 
-                            ? 'bg-gray-400 text-gray-600 hover:bg-gray-200' 
-                            : 'bg-[#750015] text-white hover:bg-[#8c0019]'
-                        }`}
-                      >
-                        {user.is_following ? 'Following' : 'Follow'}
-                      </button>
-                    </div>
-                  ))}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
@@ -265,7 +463,7 @@ export default function Connectionspage({ onComplete }: ConnectionspageProps) {
       </div>
 
 
-      <BottomNav onComplete={onComplete} currentPage="connections" />
+      <BottomNav />
     </div>
   );
 }
