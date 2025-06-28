@@ -185,6 +185,7 @@ export default function Homepage() {
       setSelectedFiles([]);
       setIsCreatePostOpen(false);
       toast.success('Post created successfully');
+      await refreshPosts();
     } catch (error) {
       console.error('Error creating post:', error);
       toast.error('Failed to create post. Please try again.');
@@ -232,6 +233,7 @@ export default function Homepage() {
 
       setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
       toast.success('Post deleted successfully');
+      await refreshPosts();
     } catch (error) {
       toast.error('Failed to delete post');
     }
@@ -278,6 +280,7 @@ export default function Homepage() {
       setIsEditModalOpen(false);
       setEditingPost(null);
       toast.success('Post updated successfully');
+      await refreshPosts();
     } catch (error) {
       toast.error('Failed to update post');
     }
@@ -335,6 +338,23 @@ export default function Homepage() {
       setMediaUrls(prev => [...prev, publicUrl]);
     } catch (error) {
       toast.error("Failed to upload media.");
+    }
+  };
+
+  const refreshPosts = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/posts/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      setPosts(response.data);
+    } catch (err) {
+      setError('Failed to fetch posts');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -465,7 +485,6 @@ export default function Homepage() {
                   value={newPostContent}
                   placeholder="Create a vars..."
                   className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-                  readOnly
                 />
                 <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
                   <button

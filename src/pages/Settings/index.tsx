@@ -20,8 +20,8 @@ import { getProfile } from '../../services/API';
 export default function Settings() {
   const navigate = useNavigate();
   const { logout, token } = useAuth();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [notifications] = useState(false);
+  const [darkMode] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
@@ -49,16 +49,6 @@ export default function Settings() {
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
-  };
-
-  const toggleNotifications = () => {
-    setNotifications(!notifications);
-    toast.success(`Notifications ${!notifications ? 'enabled' : 'disabled'}`);
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    toast.success(`Dark mode ${!darkMode ? 'enabled' : 'disabled'}`);
   };
 
   return (
@@ -132,7 +122,8 @@ export default function Settings() {
                     <XCircle className="text-red-500" size={22} />
                   )}
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
                   <Shield size={20} />
                   <Text>Privacy Settings</Text>
                 </button>
@@ -148,9 +139,15 @@ export default function Settings() {
                     <Bell size={20} />
                     <Text>Notifications</Text>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={notifications} onChange={toggleNotifications} />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#750015] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015]"></div>
+                  <label className="relative inline-flex items-center cursor-not-allowed">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={notifications}
+                      disabled
+                      readOnly
+                    />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015] opacity-50"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between p-3">
@@ -158,9 +155,15 @@ export default function Settings() {
                     <Moon size={20} />
                     <Text>Dark Mode</Text>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={darkMode} onChange={toggleDarkMode} />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#750015] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015]"></div>
+                  <label className="relative inline-flex items-center cursor-not-allowed">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={darkMode}
+                      disabled
+                      readOnly
+                    />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015] opacity-50"></div>
                   </label>
                 </div>
               </div>
@@ -180,7 +183,9 @@ export default function Settings() {
                 <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
                   <Text>Terms of Service</Text>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => navigate("/settings/privacy-policy")}
+                >
                   <Text>Privacy Policy</Text>
                 </button>
               </div>

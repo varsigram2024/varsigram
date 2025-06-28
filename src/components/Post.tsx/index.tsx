@@ -1,3 +1,4 @@
+// ... existing code ...
 import React, { useState } from 'react';
 import { Text } from '../Text';
 import { Img } from '../Img';
@@ -11,7 +12,6 @@ import { useNavigate } from 'react-router-dom';
 import CommentSection from '../CommentSection';
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from '../EditPostModal';
-
 
 interface Post {
   id: string;
@@ -33,6 +33,15 @@ interface Post {
   author_name?: string;
   is_shared?: boolean;
   original_post?: Post;
+  account_type: string;
+  is_verified: boolean;
+  exclusive: boolean;
+  organization?: {
+    user?: {
+      is_verified: boolean;
+    };
+    exclusive: boolean;
+  };
 }
 
 interface PostProps {
@@ -43,6 +52,8 @@ interface PostProps {
   currentUserId?: string;
   currentUserEmail?: string;
 }
+
+const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
 
 export const Post: React.FC<PostProps> = ({ 
   post, 
@@ -62,6 +73,11 @@ export const Post: React.FC<PostProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+
+  // Helper to determine if content is long
+  const isLong = post.content.length > MAX_LENGTH;
+  const displayContent = expanded ? post.content : post.content.slice(0, MAX_LENGTH);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -123,10 +139,27 @@ export const Post: React.FC<PostProps> = ({
           has_liked: response.data.has_liked,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       setLikeCount(post.like_count);
       setHasLiked(post.has_liked);
-      toast.error('Failed to update like status');
+
+      // Enhanced error handling
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const message = error.response?.data?.detail || error.response?.data?.message;
+
+        if (status === 403 && message?.toLowerCase().includes('verify')) {
+          toast.error('Please verify your email to like posts.');
+        } else if (status === 401) {
+          toast.error('You must be logged in to like posts.');
+        } else if (message) {
+          toast.error(message);
+        } else {
+          toast.error('Failed to update like status');
+        }
+      } else {
+        toast.error('Failed to update like status');
+      }
     } finally {
       setIsLiking(false);
     }
@@ -271,12 +304,20 @@ export const Post: React.FC<PostProps> = ({
 
   const isRevarsed = post.is_shared && post.original_post;
 
+  const mappedPost = {
+    ...post,
+    account_type: post.organization ? "organization" : "student",
+    is_verified: post.organization?.user?.is_verified ?? false,
+    exclusive: post.organization?.exclusive ?? false,
+    // ...other fields
+  };
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
-          <ClickableUser
+            <ClickableUser
               displayNameSlug={post.author_display_name_slug ?? ''}
               profilePicUrl={post.author_profile_pic_url}
               displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
@@ -317,9 +358,26 @@ export const Post: React.FC<PostProps> = ({
                 )}
               </div>
             )}
+
+
+               {post.account_type === "organization" &&
+                  post.is_verified &&
+                  post.exclusive && (
+                    <img
+                      src="/images/vectors/verified.svg"
+                      alt="verified"
+                      className="h-[16px] w-[16px]"
+                    />
+                )}
           </div>
 
-          <Text size="body_large_regular" as="p" className="text-[12px] lg:text-[20px] font-normal leading-[30px]">
+          <Text
+            as="p"
+            className={`w-full text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line ${
+              !expanded && isLong ? 'max-h-32 overflow-hidden' : ''
+            }`}
+            style={{ lineHeight: "1.6" }}
+          >
             {isRevarsed && (
               <div className="text-xs text-gray-500 mb-2">
                 <span>
@@ -328,16 +386,35 @@ export const Post: React.FC<PostProps> = ({
               </div>
             )}
             {isRevarsed ? (
-              <div className="border p-2 rounded bg-gray-50">
+              <div className="border p-2 rounded bg-gray-50 whitespace-pre-line">
                 <Text>{post.original_post?.content}</Text>
                 <div className="text-xs text-gray-400 mt-1">
                   by {post.original_post?.author_name || post.original_post?.author_display_name}
                 </div>
               </div>
             ) : (
-              post.content
+              displayContent
             )}
+            {!expanded && isLong && <span>...</span>}
           </Text>
+
+          {/* Read more/less button */}
+          {!expanded && isLong && (
+            <button
+              className="text-[#750015] font-semibold mt-2 hover:underline"
+              onClick={() => setExpanded(true)}
+            >
+              Read more
+            </button>
+          )}
+          {expanded && isLong && (
+            <button
+              className="text-[#750015] font-semibold mt-2 hover:underline"
+              onClick={() => setExpanded(false)}
+            >
+              Show less
+            </button>
+          )}
 
           {renderMedia()}
 
@@ -363,10 +440,10 @@ export const Post: React.FC<PostProps> = ({
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Img src="/images/vectors/revars.svg" alt="Share" className="h-[20px] w-[20px] cursor-pointer" onClick={handleShare} />
               <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
-            </div>
+            </div> */}
             <div className="relative">
               <Img
                 src="/images/vectors/share.svg"
@@ -410,3 +487,6 @@ export const Post: React.FC<PostProps> = ({
     </>
   );
 };
+
+
+
