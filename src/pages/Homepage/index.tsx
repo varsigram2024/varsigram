@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
@@ -67,6 +67,23 @@ interface SearchResult {
   posts: Post[];
 }
 
+const fetchPosts = async () => {
+  setIsLoading(true);
+  try {
+    const response = await axios.get(`${API_BASE_URL}/feed/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    setPosts(response.data);
+  } catch (err) {
+    setError('Failed to fetch posts');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
@@ -91,30 +108,38 @@ export default function Homepage() {
   const [searchType, setSearchType] = useState<'all' | 'student' | 'organization'>('all');
   const [searchFaculty, setSearchFaculty] = useState('');
   const [searchDepartment, setSearchDepartment] = useState('');
+  const postsContainerRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  useLayoutEffect(() => {
+    if (!isLoading && posts.length > 0 && postsContainerRef.current) {
+      const savedScroll = sessionStorage.getItem('homepageScroll');
+      if (savedScroll) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScroll, 10));
+          sessionStorage.removeItem('homepageScroll');
+        }, 0);
+      }
+    }
+  }, [isLoading, posts.length]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/feed/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        setPosts(response.data);
-        console.log('Posts:', response.data); // Log the fetched posts
-      } catch (err) {
-        setError('Failed to fetch posts');
-        console.error('Error fetching posts:', err);
-      } finally {
+    // Restore posts from sessionStorage if available
+    const cachedPosts = sessionStorage.getItem('homepagePosts');
+    if (cachedPosts) {
+      setPosts(JSON.parse(cachedPosts));
         setIsLoading(false);
-      }
-    };
-
-    if (token) {
+    } else if (token) {
       fetchPosts();
     }
   }, [token]);
+
+  // When posts change, update the cache
+  useEffect(() => {
+    if (posts.length > 0) {
+      sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
+    }
+  }, [posts]);
 
   useEffect(() => {
     if (activeTab === 'following' && token) {
@@ -449,6 +474,45 @@ export default function Homepage() {
     // eslint-disable-next-line
   }, [searchType, searchFaculty, searchDepartment]);
 
+  useEffect(() => {
+    console.log('Homepage mounted');
+  }, []);
+
+  useEffect(() => {
+    console.log('Posts loaded:', posts.length);
+  }, [posts]);
+
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('homepageScroll');
+    if (!savedScroll) return;
+
+    const restoreScroll = () => {
+      window.scrollTo(0, parseInt(savedScroll, 10));
+      sessionStorage.removeItem('homepageScroll');
+    };
+
+    // If posts are already rendered, restore immediately
+    if (postsContainerRef.current && postsContainerRef.current.children.length > 0) {
+      setTimeout(restoreScroll, 0);
+      return;
+    }
+
+    // Otherwise, observe for DOM changes
+    const observer = new MutationObserver(() => {
+      if (postsContainerRef.current && postsContainerRef.current.children.length > 0) {
+        restoreScroll();
+        observer.disconnect();
+      }
+    });
+
+    if (postsContainerRef.current) {
+      observer.observe(postsContainerRef.current, { childList: true });
+    }
+
+    // Cleanup
+    return () => observer.disconnect();
+  }, [posts.length, isLoading]);
+
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
       <Sidebar1 />
@@ -606,7 +670,7 @@ export default function Homepage() {
                   className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100' : 'opacity-0'}`}
                 >
                   {activeTab === 'forYou' && (
-                    <div className="space-y-6 w-full">
+                    <div className="space-y-6 w-full" ref={postsContainerRef}>
                       {posts.map((post) => (
                         <Post 
                           key={post.id} 
@@ -622,6 +686,11 @@ export default function Homepage() {
                           }}
                           currentUserId={user?.id}
                           currentUserEmail={user?.email}
+                          onClick={() => {
+                            sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+                            sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
+                            navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+                          }}
                         />
                       ))}
                     </div>
@@ -659,6 +728,11 @@ export default function Homepage() {
                             }}
                             currentUserId={user?.id}
                             currentUserEmail={user?.email}
+                            onClick={() => {
+                              sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+                              sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
+                              navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+                            }}
                           />
                         ))
                       )}
@@ -743,10 +817,10 @@ export default function Homepage() {
                   value={searchType}
                   onChange={e => setSearchType(e.target.value as any)}
                 >
-                  <option value="all">All Types</option>
+                  <option value="all">Select Types</option>
                   <option value="student">Student</option>
                   <option value="organization">Organization</option>
-                </select>
+                </select>r
                 {/* Faculty Filter */}
                 <select
                   className="border rounded px-2 py-1"
@@ -756,7 +830,7 @@ export default function Homepage() {
                     setSearchDepartment("");
                   }}
                 >
-                  <option value="">All Faculties</option>
+                  <option value="">Select Faculties</option>
                   {faculties.map(faculty => (
                     <option key={faculty} value={faculty}>{faculty}</option>
                   ))}
@@ -768,7 +842,7 @@ export default function Homepage() {
                   onChange={e => setSearchDepartment(e.target.value)}
                   disabled={!searchFaculty}
                 >
-                  <option value="">All Departments</option>
+                  <option value="">Select Departments</option>
                   {(facultyDepartments[searchFaculty] || []).map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
@@ -825,6 +899,11 @@ export default function Homepage() {
                             onPostEdit={handlePostEdit}
                             currentUserId={user?.id}
                             currentUserEmail={user?.email}
+                            onClick={() => {
+                              sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+                              sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
+                              navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+                            }}
                           />
                         ))}
                       </div>
@@ -846,6 +925,8 @@ export default function Homepage() {
           </div>
         </div>
       )}
+
+     
     </div>
   );
 }
