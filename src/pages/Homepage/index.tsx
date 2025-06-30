@@ -87,6 +87,9 @@ export default function Homepage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
   const [isSearching, setIsSearching] = useState(false);
+  const [searchType, setSearchType] = useState<'all' | 'student' | 'organization'>('all');
+  const [searchFaculty, setSearchFaculty] = useState('');
+  const [searchDepartment, setSearchDepartment] = useState('');
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -376,17 +379,54 @@ export default function Homepage() {
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
+      const params: any = {};
+      if (searchType !== 'all') params.type = searchType;
+      if (searchFaculty) params.faculty = searchFaculty;
+      if (searchDepartment) params.department = searchDepartment;
+      // Only add q if the user actually typed something
+      if (searchQuery.trim()) params.q = searchQuery.trim();
+
       const usersResponse = await axios.get(
-        `${API_BASE_URL}/users/search/?q=${encodeURIComponent(searchQuery)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/users/search/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params,
+        }
       );
-      console.log("Users search result:", usersResponse.data);
+
+      // Map backend response to frontend user object
+      const mappedUsers = usersResponse.data.map((user: any, idx: number) => {
+        if (user.name) {
+          // Student
+          return {
+            id: user.display_name_slug || user.email || idx,
+            email: user.email,
+            fullName: user.name,
+            profile_pic_url: user.profile_pic_url || "",
+            display_name_slug: user.display_name_slug,
+            type: "student",
+            faculty: user.faculty,
+            department: user.department,
+          };
+        } else if (user.organization_name) {
+          // Organization
+          return {
+            id: user.display_name_slug || user.email || idx,
+            email: user.email,
+            fullName: user.organization_name,
+            profile_pic_url: user.profile_pic_url || "",
+            display_name_slug: user.display_name_slug,
+            type: "organization",
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
       setSearchResults({
-        users: usersResponse.data.results || usersResponse.data,
-        posts: [], // No post search results
+        users: mappedUsers,
+        posts: [],
       });
     } catch (error) {
       console.error("Search error:", error);
@@ -399,6 +439,14 @@ export default function Homepage() {
 
   // Debug: log the user object
   console.log('Homepage user:', user);
+
+  useEffect(() => {
+    // Only trigger if the search modal is open
+    if (isSearchOpen) {
+      handleSearch();
+    }
+    // eslint-disable-next-line
+  }, [searchType, searchFaculty, searchDepartment]);
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
@@ -687,6 +735,42 @@ export default function Homepage() {
                   </button>
                 )}
               </div>
+              <div className="flex gap-3 mt-3">
+                {/* Type Filter */}
+                <select
+                  className="border rounded px-2 py-1"
+                  value={searchType}
+                  onChange={e => setSearchType(e.target.value as any)}
+                >
+                  <option value="all">All Types</option>
+                  <option value="student">Student</option>
+                  <option value="organization">Organization</option>
+                </select>
+                {/* Faculty Filter */}
+                <select
+                  className="border rounded px-2 py-1"
+                  value={searchFaculty}
+                  onChange={e => setSearchFaculty(e.target.value)}
+                >
+                  <option value="">All Faculties</option>
+                  {/* Replace with your actual faculty list */}
+                  <option value="Science">Science</option>
+                  <option value="Engineering">Engineering</option>
+                  {/* ... */}
+                </select>
+                {/* Department Filter */}
+                <select
+                  className="border rounded px-2 py-1"
+                  value={searchDepartment}
+                  onChange={e => setSearchDepartment(e.target.value)}
+                >
+                  <option value="">All Departments</option>
+                  {/* Replace with your actual department list */}
+                  <option value="Computer Science">Computer Science</option>
+                  <option value="Mechanical Engineering">Mechanical Engineering</option>
+                  {/* ... */}
+                </select>
+              </div>
             </div>
 
             {/* Search Results */}
@@ -703,22 +787,22 @@ export default function Homepage() {
                       <h3 className="text-lg font-semibold mb-3">People</h3>
                       <div className="space-y-4">
                         {searchResults.users.map((user) => (
-                          <ClickableUser
-                            key={user.id}
-                            user={{
-                              id: user.id,
-                              email: user.email,
-                              fullName: user.fullName,
-                              profile_pic_url: user.profile_pic_url,
-                              display_name_slug: user.display_name_slug,
-                            }}
-                            onClick={() => {
-                              if (user.display_name_slug) {
-                                navigate(`/user-profile/${user.display_name_slug}`);
-                                setIsSearchOpen(false);
-                              }
-                            }}
-                          />
+                          <div key={user.id} className="flex flex-col gap-1 cursor-pointer" onClick={() => {
+                            if (user.display_name_slug) {
+                              navigate(`/user-profile/${user.display_name_slug}`);
+                              setIsSearchOpen(false);
+                            }
+                          }}>
+                            <div className="font-semibold">{user.fullName}</div>
+                            {user.type === "student" && (
+                              <div className="text-xs text-gray-500">
+                                {user.faculty} {user.department && `- ${user.department}`}
+                              </div>
+                            )}
+                            {user.type === "organization" && (
+                              <div className="text-xs text-gray-500">Organization</div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>

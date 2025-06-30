@@ -1,0 +1,64 @@
+class UserSearchView(ListAPIView):
+    """ View for searching users (students or organizations) """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    serializer_class = None  # Set this to your UserSerializer if you have one
+
+    def get_queryset(self):
+        faculty = self.request.query_params.get('faculty')
+        department = self.request.query_params.get('department')
+        search_type = self.request.query_params.get('type')
+
+        users_query = User.objects.all()
+
+        if search_type == 'student':
+            if faculty:
+                users_query = users_query.filter(student__faculty__icontains=faculty)
+            if department:
+                users_query = users_query.filter(student__department__icontains=department)
+            users_query = users_query.filter(student__isnull=False)
+        elif search_type == 'organization':
+            users_query = users_query.filter(organization__isnull=False)
+        # else: all users
+
+        return users_query
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        search_type = request.query_params.get('type')
+        user_data = []
+
+        for user in queryset:
+            if search_type == 'student' and hasattr(user, 'student'):
+                student = user.student
+                user_data.append({
+                    'email': user.email,
+                    'faculty': student.faculty,
+                    'department': student.department,
+                    'name': student.name,
+                    'display_name_slug': student.display_name_slug
+                })
+            elif search_type == 'organization' and hasattr(user, 'organization'):
+                organization = user.organization
+                user_data.append({
+                    'email': user.email,
+                    'organization_name': organization.organization_name,
+                    'display_name_slug': organization.display_name_slug,
+                })
+            elif not search_type:
+                if hasattr(user, 'student'):
+                    student = user.student
+                    user_data.append({
+                        'email': user.email,
+                        'faculty': student.faculty,
+                        'department': student.department,
+                        'name': student.name,
+                    })
+                elif hasattr(user, 'organization'):
+                    organization = user.organization
+                    user_data.append({
+                        'email': user.email,
+                        'organization_name': organization.organization_name,
+                        'display_name_slug': organization.display_name_slug,
+                    })
+        return Response(user_data, status=status.HTTP_200_OK)
