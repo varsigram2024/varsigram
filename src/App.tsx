@@ -30,6 +30,7 @@ import { EmailVerificationBanner } from "./components/EmailVerificationBanner";
 import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
 import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
+import PostPage from "./pages/PostPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -88,6 +89,7 @@ function AppContent() {
         <Route path="/settings/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
         <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
         <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+        <Route path="/posts/:id" element={<PostPage />} />
 
         {/* Root route - redirect to welcome */}
         <Route path="/" element={<Navigate to="/welcome" replace />} />

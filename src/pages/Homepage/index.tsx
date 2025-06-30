@@ -53,6 +53,19 @@ interface User {
   display_name_slug?: string;
 }
 
+interface SearchResult {
+  users: {
+    id: string;
+    email: string;
+    fullName: string;
+    profile_pic_url?: string;
+    display_name_slug?: string;
+    bio?: string;
+    type: 'student' | 'organization';
+  }[];
+  posts: Post[];
+}
+
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
@@ -70,6 +83,10 @@ export default function Homepage() {
   const navigate = useNavigate();
   const [feedPosts, setFeedPosts] = useState<Post[]>([]);
   const [isFeedLoading, setIsFeedLoading] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -358,6 +375,44 @@ export default function Homepage() {
     }
   };
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      // Search for users
+      const usersResponse = await axios.get(
+        `${API_BASE_URL}/users/search/?q=${encodeURIComponent(searchQuery)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      // Search for posts (assuming there's a post search endpoint)
+      const postsResponse = await axios.get(
+        `${API_BASE_URL}/posts/search/?q=${encodeURIComponent(searchQuery)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      setSearchResults({
+        users: usersResponse.data,
+        posts: postsResponse.data,
+      });
+    } catch (error) {
+      toast.error('Failed to fetch search results');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   // Debug: log the user object
   console.log('Homepage user:', user);
 
@@ -382,7 +437,12 @@ export default function Homepage() {
               Welcome back, {user?.fullName || 'User'} 👋
             </Text>
           </div>
-          <Img src="/images/search.svg" alt="File" className="h-[24px] w-[24px]" />
+          <Img 
+            src="/images/search.svg" 
+            alt="Search" 
+            className="h-[24px] w-[24px] cursor-pointer" 
+            onClick={() => setIsSearchOpen(true)}
+          />
         </div>
         <div className="lg:mt-5 flex justify-between">
           <div 
@@ -444,7 +504,12 @@ export default function Homepage() {
                    <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
                   </div>
                 
-                  <Img src="/images/search.svg" alt="File" className="h-[24px] w-[24px]" />
+                  <Img 
+                    src="/images/search.svg" 
+                    alt="Search" 
+                    className="h-[24px] w-[24px] cursor-pointer" 
+                    onClick={() => setIsSearchOpen(true)}
+                  />
               </div>
             </div>
 
@@ -587,7 +652,125 @@ export default function Homepage() {
             
       <BottomNav />
 
-      
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center p-4"
+          onClick={() => {
+            setIsSearchOpen(false);
+            setSearchQuery("");
+            setSearchResults({ users: [], posts: [] });
+          }}
+        >
+          <div
+            className="bg-white rounded-[32px] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Search Header */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setSearchQuery("");
+                    setSearchResults({ users: [], posts: [] });
+                  }}
+                >
+                  <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
+                </div>
+                <input
+                  type="text"
+                  className="flex-1 text-lg border-none outline-none"
+                  placeholder="Search Varsigram..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    className="text-[#750015] font-medium"
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                  >
+                    Search
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Search Results */}
+            <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
+              {isSearching ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                </div>
+              ) : (
+                <div className="p-4">
+                  {/* Users Section */}
+                  {searchResults.users.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-3">People</h3>
+                      <div className="space-y-4">
+                        {searchResults.users.map((user) => (
+                          <ClickableUser
+                            key={user.id}
+                            user={{
+                              id: user.id,
+                              email: user.email,
+                              fullName: user.fullName,
+                              profile_pic_url: user.profile_pic_url,
+                              display_name_slug: user.display_name_slug,
+                            }}
+                            onClick={() => {
+                              if (user.display_name_slug) {
+                                navigate(`/user-profile/${user.display_name_slug}`);
+                                setIsSearchOpen(false);
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Posts Section */}
+                  {searchResults.posts.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Posts</h3>
+                      <div className="space-y-4">
+                        {searchResults.posts.map((post) => (
+                          <Post
+                            key={post.id}
+                            post={post}
+                            onPostUpdate={handlePostUpdate}
+                            onPostDelete={handlePostDelete}
+                            onPostEdit={handlePostEdit}
+                            currentUserId={user?.id}
+                            currentUserEmail={user?.email}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {searchQuery && 
+                   !isSearching && 
+                   searchResults.users.length === 0 && 
+                   searchResults.posts.length === 0 && (
+                    <div className="text-center py-10 text-gray-500">
+                      No results found for "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

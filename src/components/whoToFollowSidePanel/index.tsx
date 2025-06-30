@@ -26,7 +26,7 @@ export default function WhoToFollowSidePanel() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://api.varsigram.com/api/v1/users/search/", {
+        const response = await axios.get("https://api.varsigram.com/api/v1/who-to-follow/", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(response.data);

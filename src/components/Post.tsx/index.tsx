@@ -454,7 +454,7 @@ export const Post: React.FC<PostProps> = ({
           {!expanded && isLong && (
             <button
               className="text-[#750015] font-semibold mt-2 hover:underline"
-              onClick={() => setExpanded(true)}
+              onClick={() => navigate(`/posts/${post.id}`)}
             >
               Read more
             </button>
@@ -487,7 +487,7 @@ export const Post: React.FC<PostProps> = ({
               <span>{likeCount}</span>
             </div>
 
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowComments(true)}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(`/posts/${post.id}`)}>
               <Img src="/images/vectors/vars.svg" alt="Comment" className="h-[20px] w-[20px]" />
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
