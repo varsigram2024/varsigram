@@ -126,7 +126,7 @@ export default function Profile() {
           email: profile.user.email,
           username: profile.user.username,
           profile_pic_url: profile.user.profile_pic_url,
-          bio: profile.user?.bio,
+          bio: profile.user.bio,
           is_verified: profile.user?.is_verified || false,
           followers_count: typeof followers_count === "number" ? followers_count : 0,
           following_count: typeof following_count === "number" ? following_count : 0,
@@ -231,7 +231,7 @@ export default function Profile() {
           email: profile.user.email,
           username: profile.user.username,
           profile_pic_url: profile.user.profile_pic_url,
-          bio: profile_type === "organization" ? profile.user.bio : profile.bio,
+          bio: profile.user.bio,
           is_verified: profile.user?.is_verified || false,
           followers_count: typeof followers_count === "number" ? followers_count : 0,
           following_count: typeof following_count === "number" ? following_count : 0,
@@ -297,12 +297,26 @@ export default function Profile() {
   }, [followers]);
 
   const fetchPosts = async () => {
-    const response = await axios.get(
-      `${API_BASE_URL}/users/${user?.id}/posts/`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setPosts(response.data);
+    if (!userProfile?.id || !token) return;
+    
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/users/${userProfile.id}/posts/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPosts(response.data);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setPosts([]);
+    }
   };
+
+  // Add useEffect to fetch posts when userProfile changes
+  useEffect(() => {
+    if (userProfile?.id && token) {
+      fetchPosts();
+    }
+  }, [userProfile?.id, token]);
 
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100">
@@ -310,7 +324,7 @@ export default function Profile() {
         <Sidebar1 />
 
         <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row">
-          <div className="main lg:mt-[0px] w-full flex lg:flex-1 flex-col max-h-full items-center lg:items-end md:gap-[70px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-0 md:px-5 gap-[35px]">
+          <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
             {isLoading ? (
               <div className="flex justify-center items-center h-[300px] w-full">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
@@ -435,9 +449,7 @@ export default function Profile() {
                                 setIsEditingBio(false);
                                 if (bioInput !== userProfile.bio) {
                                   try {
-                                    const payload = userProfile.account_type === "organization"
-                                      ? { user: { bio: bioInput } }
-                                      : { user: { bio: bioInput } };
+                                    const payload = { user: { bio: bioInput } };
 
                                     await axios.patch(
                                       userProfile.account_type === "organization"
@@ -470,7 +482,6 @@ export default function Profile() {
                                 className="ml-1 p-1 hover:bg-gray-200 rounded"
                                 title="Edit bio"
                               >
-                                {/* Pen SVG icon */}
                                 <Pencil size={10} color="#750015" />
                               </button>
                             )}
@@ -548,14 +559,17 @@ export default function Profile() {
           </div>
 
           {/* Profile Side Panel */}
-          <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8">
-            <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
-              <ProfileOrganizationSection />
-            </div>
-            <div className="rounded-[32px] border border-solid overflow-hidden h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+          <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
+          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
+            <ProfileOrganizationSection />
+          </div>
+          
+          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+            <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
           </div>
+        </div>
         </div>
 
         <BottomNav />

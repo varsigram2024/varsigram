@@ -92,20 +92,68 @@ export const Post: React.FC<PostProps> = ({
 
   const renderMedia = () => {
     if (!post.media_urls || post.media_urls.length === 0) return null;
-    // Only show up to 4 images
+    
     const mediaToShow = post.media_urls.slice(0, 4);
-    return (
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {mediaToShow.map((url, index) => (
+    
+    // Different layouts based on number of images
+    if (mediaToShow.length === 1) {
+      return (
+        <div className="mt-4">
           <Img
-            key={index}
-            src={url}
-            alt={`Post media ${index + 1}`}
-            className="w-full h-40 object-cover rounded-lg"
+            src={mediaToShow[0]}
+            alt="Post media"
+            className="w-full max-h-96 object-cover rounded-lg"
           />
-        ))}
-      </div>
-    );
+        </div>
+      );
+    } else if (mediaToShow.length === 2) {
+      return (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {mediaToShow.map((url, index) => (
+            <Img
+              key={index}
+              src={url}
+              alt={`Post media ${index + 1}`}
+              className="w-full h-64 object-cover rounded-lg"
+            />
+          ))}
+        </div>
+      );
+    } else if (mediaToShow.length === 3) {
+      return (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Img
+            src={mediaToShow[0]}
+            alt="Post media 1"
+            className="w-full h-64 object-cover rounded-lg row-span-2"
+          />
+          <Img
+            src={mediaToShow[1]}
+            alt="Post media 2"
+            className="w-full h-32 object-cover rounded-lg"
+          />
+          <Img
+            src={mediaToShow[2]}
+            alt="Post media 3"
+            className="w-full h-32 object-cover rounded-lg"
+          />
+        </div>
+      );
+    } else {
+      // 4 images
+      return (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {mediaToShow.map((url, index) => (
+            <Img
+              key={index}
+              src={url}
+              alt={`Post media ${index + 1}`}
+              className="w-full h-48 object-cover rounded-lg"
+            />
+          ))}
+        </div>
+      );
+    }
   };
 
   const handleLike = async () => {
@@ -317,13 +365,18 @@ export const Post: React.FC<PostProps> = ({
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
-            <ClickableUser
-              displayNameSlug={post.author_display_name_slug ?? ''}
-              profilePicUrl={post.author_profile_pic_url}
-              displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
-              onUserClick={(slug) => navigate(`/user-profile/${slug}`)}
-              size="medium"
-            />
+            <div className="flex flex-col gap-1">
+              <ClickableUser
+                displayNameSlug={post.author_display_name_slug ?? ''}
+                profilePicUrl={post.author_profile_pic_url}
+                displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
+                onUserClick={(slug) => navigate(`/user-profile/${slug}`)}
+                size="medium"
+              />
+              <Text as="p" className="text-[12px] text-gray-500">
+                {formatTimestamp(post.timestamp)}
+              </Text>
+            </div>
 
             {isAuthor && (
               <div className="relative">
@@ -359,16 +412,15 @@ export const Post: React.FC<PostProps> = ({
               </div>
             )}
 
-
-               {post.account_type === "organization" &&
-                  post.is_verified &&
-                  post.exclusive && (
-                    <img
-                      src="/images/vectors/verified.svg"
-                      alt="verified"
-                      className="h-[16px] w-[16px]"
-                    />
-                )}
+            {post.account_type === "organization" &&
+               post.is_verified &&
+               post.exclusive && (
+                <img
+                  src="/images/vectors/verified.svg"
+                  alt="verified"
+                  className="h-[16px] w-[16px]"
+                />
+            )}
           </div>
 
           <Text

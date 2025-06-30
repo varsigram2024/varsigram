@@ -45,6 +45,7 @@ interface User {
   // New fields
   id: number;
   account_type: "student" | "organization";
+  user_id?: number; // Add this for organization users
 }
 
 interface FollowingItem {
@@ -97,25 +98,39 @@ export default function Connectionspage() {
       );
       setFollowing(response.data);
 
-      // Get followed IDs for filtering
+      // Get followed IDs for filtering - use user IDs, not organization IDs
       const followedIds = response.data.map((f: any) => {
         const followeeOrg = f.followee_organization;
         const followeeStudent = f.followee_student;
         const followee = followeeOrg || followeeStudent;
-        return followee?.id;
+        // Use the user ID, not the organization/student ID
+        return followee?.user?.id;
       }).filter(Boolean);
 
-      // Fetch recommended users and mark is_following
+      // Fetch recommended users from who-to-follow endpoint
       const usersResponse = await axios.get(`${API_BASE_URL}/who-to-follow/`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      setUsers(usersResponse.data.map((u: any) => ({
-        ...u,
-        account_type: u.type,
-        id: u.id,
-        is_following: followedIds.includes(u.id),
-      })));
+      
+      // Map the response according to API documentation
+      const mappedUsers = usersResponse.data.map((org: any) => ({
+        id: org.id, // This is the organization ID
+        user_id: org.user?.id, // This is the actual user ID we need for following
+        name: org.name, // organization name
+        organization_name: org.name, // for consistency
+        display_name_slug: org.display_name_slug,
+        profile_pic_url: org.profile_pic_url,
+        bio: org.bio,
+        email: org.email || '', // might not be included in who-to-follow response
+        account_type: "organization" as const, // who-to-follow only returns organizations
+        is_following: followedIds.includes(org.user?.id), // Use user ID for comparison
+        is_verified: org.is_verified || false,
+        exclusive: org.exclusive || false,
+      }));
+      
+      setUsers(mappedUsers);
     } catch (error) {
+      console.error('Error fetching data:', error);
       setFollowing([]);
       setUsers([]);
     } finally {
@@ -144,16 +159,30 @@ export default function Connectionspage() {
     }
     const follower_id = user.id;
     const follower_type = user.account_type;
-    const followee_id = userToFollow.id;
+    
+    // For organizations, use user_id if available, otherwise use id
+    const followee_id = userToFollow.user_id || userToFollow.id;
     const followee_type = userToFollow.account_type;
   
     try {
-      await axios.post(
+      console.log('=== FOLLOW DEBUG ===');
+      console.log('Current user:', user);
+      console.log('User to follow:', userToFollow);
+      console.log('Follower ID:', follower_id);
+      console.log('Follower type:', follower_type);
+      console.log('Followee ID:', followee_id);
+      console.log('Followee type:', followee_type);
+      console.log('Request payload:', { follower_type, follower_id, followee_type, followee_id });
+
+      const response = await axios.post(
         `${API_BASE_URL}/users/follow/`,
         { follower_type, follower_id, followee_type, followee_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      console.log('Follow response:', response.data);
       toast.success('Successfully followed');
+      
       // Update users array
       setUsers(prevUsers =>
         prevUsers.map(u =>
@@ -162,25 +191,40 @@ export default function Connectionspage() {
             : u
         )
       );
-      // Add to following array
+      
+      // Add to following array with proper structure
       setFollowing(prev => [
         ...prev,
         {
-          [userToFollow.account_type === "organization" ? "followee_organization" : "followee_student"]: {
-            ...userToFollow,
+          followee_organization: {
+            id: userToFollow.id, // organization ID
+            display_name_slug: userToFollow.display_name_slug || '',
+            organization_name: userToFollow.organization_name || userToFollow.name || '',
             user: {
+              id: followee_id, // user ID
               email: userToFollow.email,
               profile_pic_url: userToFollow.profile_pic_url,
             },
-            id: userToFollow.id,
+            bio: userToFollow.bio,
           },
           user: {
+            id: followee_id, // user ID
             email: userToFollow.email,
             profile_pic_url: userToFollow.profile_pic_url,
           }
         }
       ]);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('=== FOLLOW ERROR ===');
+      console.error('Error object:', error);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response headers:', error.response?.headers);
+      
+      if (error.response?.data) {
+        console.error('Server error details:', error.response.data);
+      }
       toast.error('Failed to follow');
     }
   };
@@ -191,15 +235,18 @@ export default function Connectionspage() {
       return;
     }
     const follower_id = user.id;
-    const followee_id = userToUnfollow.id;
+    // For organizations, use user_id if available, otherwise use id
+    const followee_id = userToUnfollow.user_id || userToUnfollow.id;
   
     try {
-      console.log({
+      console.log('Unfollowing request:', {
         follower_type: user.account_type,
         follower_id,
         followee_type: userToUnfollow.account_type,
         followee_id,
+        userToUnfollow: userToUnfollow
       });
+
       await axios.post(
         `${API_BASE_URL}/users/unfollow/`,
         {
@@ -211,6 +258,7 @@ export default function Connectionspage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Successfully unfollowed');
+      
       // Update users array
       setUsers(prevUsers =>
         prevUsers.map(u =>
@@ -219,16 +267,23 @@ export default function Connectionspage() {
             : u
         )
       );
-      // Remove from following array
+      
+      // Remove from following array - use user ID for comparison
       setFollowing(prev =>
         prev.filter(f => {
           const followeeOrg = f.followee_organization;
           const followeeStudent = f.followee_student;
-          const followeeUserId = followeeOrg?.user?.id ?? followeeStudent?.user?.id;
-          return followeeUserId !== userToUnfollow.id;
+          const followee = followeeOrg || followeeStudent;
+          // Use the user ID for comparison
+          const followeeUserId = followee?.user?.id;
+          return followeeUserId !== followee_id;
         })
       );
     } catch (error) {
+      console.error('Unfollow error:', error);
+      if (error.response?.data) {
+        console.error('Server error details:', error.response.data);
+      }
       toast.error('Failed to unfollow');
     }
   };
@@ -239,34 +294,14 @@ export default function Connectionspage() {
 
   const handleUserClick = (user: User) => {
     console.log('User object for navigation:', user);
-    console.log('display_name_slug:', user.display_name_slug);
-    console.log('username:', user.username);
-    console.log('email:', user.email);
     
-    // First try to get the proper display_name_slug
+    // Use display_name_slug directly since it's now properly mapped
     const displayNameSlug = user.display_name_slug;
     
     if (displayNameSlug) {
       navigate(`/user-profile/${displayNameSlug}`);
     } else {
-      // If display_name_slug is not in the response, we need to fetch it first
-      axios.get(`${API_BASE_URL}/users/search/?email=${user.email}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      .then(response => {
-        const userData = response.data[0]; // Assuming the first result is the user we want
-        if (userData?.display_name_slug) {
-          navigate(`/user-profile/${userData.display_name_slug}`);
-        } else {
-          toast.error('User profile not found');
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching user details:', error);
-        toast.error('Failed to load user profile');
-      });
+      toast.error('User profile not found');
     }
   };
 
@@ -275,9 +310,10 @@ export default function Connectionspage() {
     const followeeStudent = f.followee_student;
     const followee = followeeOrg || followeeStudent;
     if (!followee) return null;
-    return followee.id;
+    // Use the user ID for comparison
+    return followee.user?.id;
   }));
-  const filteredUsers = users.filter(user => !followedIds.has(user.id));
+  const filteredUsers = users.filter(user => !followedIds.has(user.user_id || user.id));
 
   const fetchFollowers = async (displayNameSlug: string) => {
     try {
@@ -365,7 +401,7 @@ export default function Connectionspage() {
                   {filteredUsers.map((user) => {
                     console.log('Full user object:', user);
                     return (
-                      <div key={user.email} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
+                      <div key={user.id} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
                         <div 
                           className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => handleUserClick(user)}
@@ -374,28 +410,23 @@ export default function Connectionspage() {
                             src={user.profile_pic_url && user.profile_pic_url.startsWith('http')
                               ? user.profile_pic_url
                               : "images/user.png"}
-                            alt={user.name || user.organization_name || user.email}
+                            alt={user.organization_name || user.name || user.email}
                             className="h-[48px] w-[48px] rounded-[50%] object-cover"
                           />
                           <div className="flex flex-col">
                             <div className="flex items-center gap-1">
                               <Text className="font-semibold hover:underline">
-                                {user.name}
+                                {user.organization_name || user.name}
                               </Text>
-                              {/* <Img
-                                src="images/vectors/verified.svg"
-                                alt="verified"
-                                className="h-[16px] w-[16px]"
-                              /> */}
+                              {user.is_verified && user.exclusive && (
+                                <Img
+                                  src="images/vectors/verified.svg"
+                                  alt="verified"
+                                  className="h-[16px] w-[16px]"
+                                />
+                              )}
                             </div>
-                            <Text className="text-sm text-gray-500">{user.bio}</Text>
-                            {(user.department || user.faculty) && (
-                              <Text className="text-sm text-gray-500">
-                                {user.department && `${user.department}`}
-                                {user.department && user.faculty && ' • '}
-                                {user.faculty && `${user.faculty}`}
-                              </Text>
-                            )}
+                            <Text className="text-sm text-gray-500">{user.bio || 'No bio available'}</Text>
                           </div>
                         </div>
                         <button
@@ -454,7 +485,7 @@ export default function Connectionspage() {
                               alt={followeeOrg?.organization_name || followeeStudent?.name || "No name"}
                               className="h-[48px] w-[48px] rounded-[50%] object-cover"
                             />
-                            <div className="flex flex-col">
+                            <div className="flex flex-col"> 
                               <div className="flex items-center gap-1">
                                 <Text className="font-semibold hover:underline">
                                   {followeeOrg?.organization_name || followeeStudent?.name || "No name"}
@@ -468,13 +499,18 @@ export default function Connectionspage() {
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              // Call unfollow API
-                              await handleUnfollow({
+                              // Create a proper user object for unfollow
+                              const userToUnfollow = {
+                                id: followeeOrg?.id || followeeStudent?.id || followeeOrg?.user?.id || followeeStudent?.user?.id,
                                 email: userInfo?.email || "",
                                 profile_pic_url: userInfo?.profile_pic_url || "",
-                                id: followeeOrg?.user?.id ?? followeeStudent?.user?.id ?? 0,
                                 account_type: followeeOrg ? "organization" : "student",
-                              });
+                                display_name_slug: followeeOrg?.display_name_slug || followeeStudent?.display_name_slug,
+                                organization_name: followeeOrg?.organization_name,
+                                name: followeeStudent?.name,
+                                bio: followeeOrg?.bio || followeeStudent?.bio,
+                              };
+                              await handleUnfollow(userToUnfollow);
                             }}
                             className="px-4 py-2 rounded-full bg-gray-400 text-gray-600 hover:bg-gray-200 transition-colors"
                           >

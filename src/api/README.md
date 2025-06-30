@@ -340,6 +340,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
   <!--
 
+
 - **`GET /posts/search/?q=<query>`**  [name='post-search']
 
   - Searches for posts based on a query string.

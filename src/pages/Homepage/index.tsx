@@ -74,7 +74,7 @@ export default function Homepage() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/posts/`, {
+        const response = await axios.get(`${API_BASE_URL}/feed/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export default function Homepage() {
   useEffect(() => {
     if (activeTab === 'following' && token) {
       setIsFeedLoading(true);
-      axios.get(`${API_BASE_URL}/feed/`, {
+      axios.get(`${API_BASE_URL}/official/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -344,7 +344,7 @@ export default function Homepage() {
   const refreshPosts = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/posts/`, {
+      const response = await axios.get(`${API_BASE_URL}/feed/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -382,13 +382,7 @@ export default function Homepage() {
               Welcome back, {user?.fullName || 'User'} 👋
             </Text>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
+          <Img src="/images/search.svg" alt="File" className="h-[24px] w-[24px]" />
         </div>
         <div className="lg:mt-5 flex justify-between">
           <div 
@@ -404,7 +398,7 @@ export default function Homepage() {
             onClick={() => setActiveTab('following')}
           >
             <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'following' ? '' : '!text-[#adacb2]'}`}>
-              Following
+              Official
             </Text>
           </div>
         </div>
@@ -450,12 +444,7 @@ export default function Homepage() {
                    <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
                   </div>
                 
-                <button
-                  onClick={logout}
-                  className="text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <LogOut size={20} />
-                </button>
+                  <Img src="/images/search.svg" alt="File" className="h-[24px] w-[24px]" />
               </div>
             </div>
 
@@ -553,7 +542,7 @@ export default function Homepage() {
                       ) : feedPosts.length === 0 ? (
                         <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
                           <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                            No posts in your feed yet.
+                            No Official post in your feed yet.
                           </Text>
                         </div>
                       ) : (
@@ -595,7 +584,7 @@ export default function Homepage() {
           </div>
         </div>
       </div>
-
+            
       <BottomNav />
 
       
