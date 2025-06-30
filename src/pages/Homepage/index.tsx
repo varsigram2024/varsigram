@@ -22,6 +22,7 @@ import { uploadPostMedia } from '../../utils/fileUpload';
 import { ClickableUser } from "../../components/ClickableUser";
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
 import CreatePostModal from '../../components/CreatePostModal';
+import { faculties, facultyDepartments } from "../../constants/academic";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -670,8 +671,8 @@ export default function Homepage() {
         </div>
 
         <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
-
-        <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+          
+          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
@@ -685,7 +686,7 @@ export default function Homepage() {
           
         </div>
       </div>
-            
+
       <BottomNav />
 
       {isSearchOpen && (
@@ -750,25 +751,27 @@ export default function Homepage() {
                 <select
                   className="border rounded px-2 py-1"
                   value={searchFaculty}
-                  onChange={e => setSearchFaculty(e.target.value)}
+                  onChange={e => {
+                    setSearchFaculty(e.target.value);
+                    setSearchDepartment("");
+                  }}
                 >
                   <option value="">All Faculties</option>
-                  {/* Replace with your actual faculty list */}
-                  <option value="Science">Science</option>
-                  <option value="Engineering">Engineering</option>
-                  {/* ... */}
+                  {faculties.map(faculty => (
+                    <option key={faculty} value={faculty}>{faculty}</option>
+                  ))}
                 </select>
                 {/* Department Filter */}
                 <select
                   className="border rounded px-2 py-1"
                   value={searchDepartment}
                   onChange={e => setSearchDepartment(e.target.value)}
+                  disabled={!searchFaculty}
                 >
                   <option value="">All Departments</option>
-                  {/* Replace with your actual department list */}
-                  <option value="Computer Science">Computer Science</option>
-                  <option value="Mechanical Engineering">Mechanical Engineering</option>
-                  {/* ... */}
+                  {(facultyDepartments[searchFaculty] || []).map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
                 </select>
               </div>
             </div>

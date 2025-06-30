@@ -30,27 +30,41 @@ export default function ProfileOrganizationSection() {
   const [searchBarValue1, setSearchBarValue1] = useState("");
   const [following, setFollowing] = useState<FollowingUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const [profile, setProfile] = useState<{ account_type: string, id: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/profile/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProfile({ account_type: response.data.profile_type, id: response.data.profile.id });
+      } catch (error) {
+        setProfile(null);
+      }
+    };
+    if (token) fetchProfile();
+  }, [token]);
+
+  useEffect(() => {
     const fetchFollowing = async () => {
+      if (!profile) return;
       try {
         const response = await axios.get(
           `${API_BASE_URL}/users/following/?follower_type=${profile.account_type}&follower_id=${profile.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setFollowing(response.data);
-        console.log("Following data:", response.data);
       } catch (error) {
-        console.error("Error fetching following:", error);
         setFollowing([]);
       } finally {
         setIsLoading(false);
       }
     };
-    if (token) fetchFollowing();
-  }, [token]);
+    if (token && profile) fetchFollowing();
+  }, [token, profile]);
 
   // Filter following based on search
   const filteredFollowing = following.filter(user => {
@@ -101,13 +115,14 @@ export default function ProfileOrganizationSection() {
               </div>
             ) : (
               filteredFollowing.map((user, index) => {
-                const displayName = user.organization?.organization_name || 
-                                  user.user?.display_name || 
-                                  user.display_name || 
-                                  user.username || 'Unknown User';
-                const profilePicUrl = user.organization?.display_name_slug ? 
-                                    user.organization?.user?.profile_pic_url : 
-                                    user.profile_pic_url;
+                const displayName = user.organization?.organization_name ||
+                                    user.user?.display_name ||
+                                    user.display_name ||
+                                    user.username || 'Unknown User';
+                const profilePicUrl = user.organization?.profile_pic_url ||
+                                      user.user?.profile_pic_url ||
+                                      user.profile_pic_url ||
+                                      "/images/user.png";
                 const username = user.organization?.user?.email || user.username;
 
                 return (
@@ -118,7 +133,7 @@ export default function ProfileOrganizationSection() {
                   >
                     <div className="flex-shrink-0">
                       <Img
-                        src={profilePicUrl || "/images/user.png"}
+                        src={profilePicUrl}
                         alt={displayName}
                         className="h-[40px] w-[40px] rounded-full object-cover"
                       />
