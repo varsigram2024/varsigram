@@ -53,6 +53,19 @@ interface User {
   display_name_slug?: string;
 }
 
+interface SearchResult {
+  users: {
+    id: string;
+    email: string;
+    fullName: string;
+    profile_pic_url?: string;
+    display_name_slug?: string;
+    bio?: string;
+    type: 'student' | 'organization';
+  }[];
+  posts: Post[];
+}
+
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
@@ -70,11 +83,15 @@ export default function Homepage() {
   const navigate = useNavigate();
   const [feedPosts, setFeedPosts] = useState<Post[]>([]);
   const [isFeedLoading, setIsFeedLoading] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/posts/`, {
+        const response = await axios.get(`${API_BASE_URL}/feed/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -98,7 +115,7 @@ export default function Homepage() {
   useEffect(() => {
     if (activeTab === 'following' && token) {
       setIsFeedLoading(true);
-      axios.get(`${API_BASE_URL}/feed/`, {
+      axios.get(`${API_BASE_URL}/official/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -344,7 +361,7 @@ export default function Homepage() {
   const refreshPosts = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/posts/`, {
+      const response = await axios.get(`${API_BASE_URL}/feed/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -355,6 +372,28 @@ export default function Homepage() {
       setError('Failed to fetch posts');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    try {
+      const usersResponse = await axios.get(
+        `${API_BASE_URL}/users/search/?q=${encodeURIComponent(searchQuery)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("Users search result:", usersResponse.data);
+      setSearchResults({
+        users: usersResponse.data.results || usersResponse.data,
+        posts: [], // No post search results
+      });
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error('Failed to fetch search results');
+      setSearchResults({ users: [], posts: [] });
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -382,13 +421,12 @@ export default function Homepage() {
               Welcome back, {user?.fullName || 'User'} 👋
             </Text>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
+          <Img 
+            src="/images/search.svg" 
+            alt="Search" 
+            className="h-[24px] w-[24px] cursor-pointer" 
+            onClick={() => setIsSearchOpen(true)}
+          />
         </div>
         <div className="lg:mt-5 flex justify-between">
           <div 
@@ -404,7 +442,7 @@ export default function Homepage() {
             onClick={() => setActiveTab('following')}
           >
             <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'following' ? '' : '!text-[#adacb2]'}`}>
-              Following
+              Official
             </Text>
           </div>
         </div>
@@ -450,12 +488,12 @@ export default function Homepage() {
                    <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
                   </div>
                 
-                <button
-                  onClick={logout}
-                  className="text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <LogOut size={20} />
-                </button>
+                  <Img 
+                    src="/images/search.svg" 
+                    alt="Search" 
+                    className="h-[24px] w-[24px] cursor-pointer" 
+                    onClick={() => setIsSearchOpen(true)}
+                  />
               </div>
             </div>
 
@@ -553,7 +591,7 @@ export default function Homepage() {
                       ) : feedPosts.length === 0 ? (
                         <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
                           <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                            No posts in your feed yet.
+                            No Official post in your feed yet.
                           </Text>
                         </div>
                       ) : (
@@ -584,21 +622,143 @@ export default function Homepage() {
         </div>
 
         <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
-          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
-            <ProfileOrganizationSection />
-          </div>
-          
-          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+
+        <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
           </div>
+
+          
+          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
+            <ProfileOrganizationSection />
+          </div>
+          
+          
         </div>
       </div>
-
+            
       <BottomNav />
 
-      
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center p-4"
+          onClick={() => {
+            setIsSearchOpen(false);
+            setSearchQuery("");
+            setSearchResults({ users: [], posts: [] });
+          }}
+        >
+          <div
+            className="bg-white rounded-[32px] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Search Header */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setSearchQuery("");
+                    setSearchResults({ users: [], posts: [] });
+                  }}
+                >
+                  <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
+                </div>
+                <input
+                  type="text"
+                  className="flex-1 text-lg border-none outline-none"
+                  placeholder="Search Varsigram..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    className="text-[#750015] font-medium"
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                  >
+                    Search
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Search Results */}
+            <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
+              {isSearching ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                </div>
+              ) : (
+                <div className="p-4">
+                  {/* Users Section */}
+                  {searchResults.users.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-3">People</h3>
+                      <div className="space-y-4">
+                        {searchResults.users.map((user) => (
+                          <ClickableUser
+                            key={user.id}
+                            user={{
+                              id: user.id,
+                              email: user.email,
+                              fullName: user.fullName,
+                              profile_pic_url: user.profile_pic_url,
+                              display_name_slug: user.display_name_slug,
+                            }}
+                            onClick={() => {
+                              if (user.display_name_slug) {
+                                navigate(`/user-profile/${user.display_name_slug}`);
+                                setIsSearchOpen(false);
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Posts Section */}
+                  {searchResults.posts.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Posts</h3>
+                      <div className="space-y-4">
+                        {searchResults.posts.map((post) => (
+                          <Post
+                            key={post.id}
+                            post={post}
+                            onPostUpdate={handlePostUpdate}
+                            onPostDelete={handlePostDelete}
+                            onPostEdit={handlePostEdit}
+                            currentUserId={user?.id}
+                            currentUserEmail={user?.email}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {searchQuery && 
+                   !isSearching && 
+                   searchResults.users.length === 0 && 
+                   searchResults.posts.length === 0 && (
+                    <div className="text-center py-10 text-gray-500">
+                      No results found for "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

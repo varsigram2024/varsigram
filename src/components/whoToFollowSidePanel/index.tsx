@@ -46,9 +46,7 @@ export default function WhoToFollowSidePanel() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUsers((prev) =>
-        prev.map((user) =>
-          user.email === email ? { ...user, is_following: true } : user
-        )
+        prev.filter((user) => user.email !== email)
       );
       toast.success("Followed!");
     } catch {
@@ -64,9 +62,7 @@ export default function WhoToFollowSidePanel() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUsers((prev) =>
-        prev.map((user) =>
-          user.email === email ? { ...user, is_following: false } : user
-        )
+        prev.filter((user) => user.email !== email)
       );
       toast.success("Unfollowed!");
     } catch {
@@ -112,13 +108,13 @@ export default function WhoToFollowSidePanel() {
                   <Text as="p" className="text-[16px] font-normal">
                     {user.organization_name || user.name || user.email}
                   </Text>
-                  {user.is_verified && (
+                  {/* {user.is_verified && (
                     <Img
                       src="/images/vectors/verified.svg"
                       alt="Verified"
                       className="h-[16px] w-[16px] mt-0.5"
                     />
-                  )}
+                  )} */}
                 </div>
                 <Text as="p" className="text-[14px] font-medium text-[#adacb2]">
                   {user.followers_count
