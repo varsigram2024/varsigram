@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Welcome } from './pages/Welcome';
@@ -46,6 +46,8 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 function AppContent() {
   const { signUp: originalSignUp } = useAuth();
+  const location = useLocation();
+  const state = location.state as { backgroundLocation?: Location };
   
   const adaptedSignUp = async (data: SignUpData) => {
     console.log('App received signup data:', data);
@@ -64,7 +66,7 @@ function AppContent() {
           },
         }}
       />
-      <Routes>
+      <Routes location={state?.backgroundLocation || location}>
         {/* Public Routes */}
         <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -97,6 +99,13 @@ function AppContent() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/welcome" replace />} />
       </Routes>
+
+      {/* Show the modal route if backgroundLocation is set */}
+      {state?.backgroundLocation && (
+        <Routes>
+          <Route path="/posts/:id" element={<PostPage isModal />} />
+        </Routes>
+      )}
     </SignUpProvider>
   );
 }

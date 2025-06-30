@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import CommentSection from '../CommentSection';
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from '../EditPostModal';
+import { Link } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -452,12 +453,18 @@ export const Post: React.FC<PostProps> = ({
 
           {/* Read more/less button */}
           {!expanded && isLong && (
-            <button
-              className="text-[#750015] font-semibold mt-2 hover:underline"
-              onClick={() => navigate(`/posts/${post.id}`)}
+            <Link
+              to={`/posts/${post.id}`}
+              onClick={() => {
+                sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+              }}
             >
-              Read more
-            </button>
+              <button
+                className="text-[#750015] font-semibold mt-2 hover:underline"
+              >
+                Read more
+              </button>
+            </Link>
           )}
           {expanded && isLong && (
             <button
