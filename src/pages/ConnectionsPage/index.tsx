@@ -45,7 +45,8 @@ interface User {
   // New fields
   id: number;
   account_type: "student" | "organization";
-  user_id?: number; // Add this for organization users
+  type?: "student" | "organization";
+  user_id?: number;
 }
 
 interface FollowingItem {
@@ -113,19 +114,12 @@ export default function Connectionspage() {
       });
       
       // Map the response according to API documentation
-      const mappedUsers = usersResponse.data.map((org: any) => ({
-        id: org.id, // This is the organization ID
-        user_id: org.user?.id, // This is the actual user ID we need for following
-        name: org.name, // organization name
-        organization_name: org.name, // for consistency
-        display_name_slug: org.display_name_slug,
-        profile_pic_url: org.profile_pic_url,
-        bio: org.bio,
-        email: org.email || '', // might not be included in who-to-follow response
-        account_type: "organization" as const, // who-to-follow only returns organizations
-        is_following: followedIds.includes(org.user?.id), // Use user ID for comparison
-        is_verified: org.is_verified || false,
-        exclusive: org.exclusive || false,
+      const mappedUsers = usersResponse.data.map((item: any) => ({
+        ...item,
+        account_type: item.type,
+        type: item.type,
+        user_id: item.user_id,
+        // ...other fields
       }));
       
       setUsers(mappedUsers);
@@ -157,74 +151,25 @@ export default function Connectionspage() {
       toast.error('Please login to follow users.');
       return;
     }
-    const follower_id = user.id;
-    const follower_type = user.account_type;
-    
-    // For organizations, use user_id if available, otherwise use id
-    const followee_id = userToFollow.user_id || userToFollow.id;
-    const followee_type = userToFollow.account_type;
-  
     try {
-      console.log('=== FOLLOW DEBUG ===');
-      console.log('Current user:', user);
-      console.log('User to follow:', userToFollow);
-      console.log('Follower ID:', follower_id);
-      console.log('Follower type:', follower_type);
-      console.log('Followee ID:', followee_id);
-      console.log('Followee type:', followee_type);
-      console.log('Request payload:', { follower_type, follower_id, followee_type, followee_id });
+      const follower_type = user.account_type;
+      const follower_id = user.id;
+      const followee_type = userToFollow.type;
+      const followee_id = userToFollow.user_id;
 
-      const response = await axios.post(
+      await axios.post(
         `${API_BASE_URL}/users/follow/`,
         { follower_type, follower_id, followee_type, followee_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      console.log('Follow response:', response.data);
       toast.success('Successfully followed');
-      
-      // Update users array
+      // Remove from Who to Follow list
       setUsers(prevUsers =>
-        prevUsers.map(u =>
-          u.id === userToFollow.id
-            ? { ...u, is_following: true }
-            : u
-        )
+        prevUsers.filter(u => u.user_id !== userToFollow.user_id)
       );
-      
-      // Add to following array with proper structure
-      setFollowing(prev => [
-        ...prev,
-        {
-          followee_organization: {
-            id: userToFollow.id, // organization ID
-            display_name_slug: userToFollow.display_name_slug || '',
-            organization_name: userToFollow.organization_name || userToFollow.name || '',
-            user: {
-              id: followee_id, // user ID
-              email: userToFollow.email,
-              profile_pic_url: userToFollow.profile_pic_url,
-            },
-            bio: userToFollow.bio,
-          },
-          user: {
-            id: followee_id, // user ID
-            email: userToFollow.email,
-            profile_pic_url: userToFollow.profile_pic_url,
-          }
-        }
-      ]);
+      // Optionally, you can also add to following state if you want instant UI update in "Following" tab
     } catch (error: any) {
-      console.error('=== FOLLOW ERROR ===');
-      console.error('Error object:', error);
-      console.error('Error response:', error.response);
-      console.error('Error response data:', error.response?.data);
-      console.error('Error response status:', error.response?.status);
-      console.error('Error response headers:', error.response?.headers);
-      
-      if (error.response?.data) {
-        console.error('Server error details:', error.response.data);
-      }
+      console.error('Follow error:', error?.response?.data || error);
       toast.error('Failed to follow');
     }
   };
@@ -234,56 +179,30 @@ export default function Connectionspage() {
       toast.error('Please login to unfollow users.');
       return;
     }
-    const follower_id = user.id;
-    // For organizations, use user_id if available, otherwise use id
-    const followee_id = userToUnfollow.user_id || userToUnfollow.id;
-  
     try {
-      console.log('Unfollowing request:', {
-        follower_type: user.account_type,
-        follower_id,
-        followee_type: userToUnfollow.account_type,
-        followee_id,
-        userToUnfollow: userToUnfollow
-      });
+      const follower_type = user.account_type;
+      const follower_id = user.id;
+      const followee_type = userToUnfollow.type || userToUnfollow.account_type;
+      const followee_id = userToUnfollow.user_id;
 
       await axios.post(
         `${API_BASE_URL}/users/unfollow/`,
-        {
-          follower_type: user.account_type,
-          follower_id,
-          followee_type: userToUnfollow.account_type,
-          followee_id,
-        },
+        { follower_type, follower_id, followee_type, followee_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Successfully unfollowed');
-      
-      // Update users array
-      setUsers(prevUsers =>
-        prevUsers.map(u =>
-          u.id === userToUnfollow.id
-            ? { ...u, is_following: false }
-            : u
-        )
-      );
-      
-      // Remove from following array - use user ID for comparison
-      setFollowing(prev =>
-        prev.filter(f => {
+      // Remove from Following list
+      setFollowing(prevFollowing =>
+        prevFollowing.filter(f => {
           const followeeOrg = f.followee_organization;
           const followeeStudent = f.followee_student;
           const followee = followeeOrg || followeeStudent;
-          // Use the user ID for comparison
-          const followeeUserId = followee?.user?.id;
-          return followeeUserId !== followee_id;
+          // Use user_id for comparison
+          return followee?.user?.id !== userToUnfollow.user_id;
         })
       );
-    } catch (error) {
-      console.error('Unfollow error:', error);
-      if (error.response?.data) {
-        console.error('Server error details:', error.response.data);
-      }
+    } catch (error: any) {
+      console.error('Unfollow error:', error?.response?.data || error);
       toast.error('Failed to unfollow');
     }
   };
@@ -501,7 +420,9 @@ export default function Connectionspage() {
                               e.stopPropagation();
                               // Create a proper user object for unfollow
                               const userToUnfollow = {
-                                id: followeeOrg?.id || followeeStudent?.id || followeeOrg?.user?.id || followeeStudent?.user?.id,
+                                id: followeeOrg?.id || followeeStudent?.id,
+                                user_id: userInfo?.id,
+                                type: followeeOrg ? "organization" : "student",
                                 email: userInfo?.email || "",
                                 profile_pic_url: userInfo?.profile_pic_url || "",
                                 account_type: followeeOrg ? "organization" : "student",

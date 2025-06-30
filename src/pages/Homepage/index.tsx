@@ -377,37 +377,21 @@ export default function Homepage() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
     setIsSearching(true);
     try {
-      // Search for users
       const usersResponse = await axios.get(
         `${API_BASE_URL}/users/search/?q=${encodeURIComponent(searchQuery)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // Search for posts (assuming there's a post search endpoint)
-      const postsResponse = await axios.get(
-        `${API_BASE_URL}/posts/search/?q=${encodeURIComponent(searchQuery)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
+      console.log("Users search result:", usersResponse.data);
       setSearchResults({
-        users: usersResponse.data,
-        posts: postsResponse.data,
+        users: usersResponse.data.results || usersResponse.data,
+        posts: [], // No post search results
       });
     } catch (error) {
+      console.error("Search error:", error);
       toast.error('Failed to fetch search results');
+      setSearchResults({ users: [], posts: [] });
     } finally {
       setIsSearching(false);
     }
@@ -638,15 +622,19 @@ export default function Homepage() {
         </div>
 
         <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
-          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
-            <ProfileOrganizationSection />
-          </div>
-          
-          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+
+        <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
           </div>
+
+          
+          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
+            <ProfileOrganizationSection />
+          </div>
+          
+          
         </div>
       </div>
             
