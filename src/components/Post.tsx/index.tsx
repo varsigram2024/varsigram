@@ -52,6 +52,8 @@ interface PostProps {
   onPostEdit?: (post: Post) => void;
   currentUserId?: string;
   currentUserEmail?: string;
+  onClick?: () => void;
+  showFullContent?: boolean;
 }
 
 const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
@@ -62,7 +64,9 @@ export const Post: React.FC<PostProps> = ({
   onPostDelete, 
   onPostEdit,
   currentUserId,
-  currentUserEmail
+  currentUserEmail,
+  onClick,
+  showFullContent = false
 }) => {
   const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
@@ -361,6 +365,8 @@ export const Post: React.FC<PostProps> = ({
     // ...other fields
   };
 
+  const shouldShowReadMore = post.content.length > 200;
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -453,18 +459,15 @@ export const Post: React.FC<PostProps> = ({
 
           {/* Read more/less button */}
           {!expanded && isLong && (
-            <Link
-              to={`/posts/${post.id}`}
-              onClick={() => {
-                sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+            <button
+              className="text-[#750015] font-semibold mt-2 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(true);
               }}
             >
-              <button
-                className="text-[#750015] font-semibold mt-2 hover:underline"
-              >
-                Read more
-              </button>
-            </Link>
+              Read more
+            </button>
           )}
           {expanded && isLong && (
             <button

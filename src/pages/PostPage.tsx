@@ -190,6 +190,7 @@ export default function PostPage({ isModal = false }) {
                   post={post}
                   currentUserId={user?.id}
                   currentUserEmail={user?.email}
+                  showFullContent={true}
                 />
               </div>
               <div className="w-full max-w-2xl bg-white p-2 mx-auto">
