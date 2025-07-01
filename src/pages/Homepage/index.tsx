@@ -68,8 +68,8 @@ interface SearchResult {
 }
 
 const fetchPosts = async () => {
+  setIsLoading(true);
   try {
-    setIsLoading(true);
     const response = await axios.get(`${API_BASE_URL}/feed/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -77,21 +77,22 @@ const fetchPosts = async () => {
       },
     });
 
-    // ✅ Guard: check if data is valid array
     if (Array.isArray(response.data)) {
       setPosts(response.data);
+      setError(null); // ✅ clear errors
     } else {
-      setError('Invalid post data received.');
+      setError("Invalid post data");
       setPosts([]);
     }
-
   } catch (err) {
-    setError('Failed to fetch posts');
+    console.error("Fetch error:", err);
+    setError("Failed to fetch posts");
     setPosts([]);
   } finally {
-    setIsLoading(false);
+    setIsLoading(false); // ✅ will always be hit
   }
 };
+
 
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
