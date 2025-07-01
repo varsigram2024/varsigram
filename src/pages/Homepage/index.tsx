@@ -67,22 +67,7 @@ interface SearchResult {
   posts: Post[];
 }
 
-const fetchPosts = async () => {
-  setIsLoading(true);
-  try {
-    const response = await axios.get(`${API_BASE_URL}/feed/`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    setPosts(response.data);
-  } catch (err) {
-    setError('Failed to fetch posts');
-  } finally {
-    setIsLoading(false);
-  }
-};
+
 
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
@@ -111,6 +96,33 @@ export default function Homepage() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
+  const fetchPosts = async () => {
+  setIsLoading(true);
+  try {
+    const response = await axios.get(`${API_BASE_URL}/feed/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (Array.isArray(response.data)) {
+      setPosts(response.data);
+      setError(null); // ✅ clear errors
+    } else {
+      setError("Invalid post data");
+      setPosts([]);
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
+    setError("Failed to fetch posts");
+    setPosts([]);
+  } finally {
+    setIsLoading(false); // ✅ will always be hit
+  }
+};
+      
+
   useLayoutEffect(() => {
     if (!isLoading && posts.length > 0 && postsContainerRef.current) {
       const savedScroll = sessionStorage.getItem('homepageScroll');
@@ -118,21 +130,28 @@ export default function Homepage() {
         setTimeout(() => {
           window.scrollTo(0, parseInt(savedScroll, 10));
           sessionStorage.removeItem('homepageScroll');
-        }, 0);
+        }, 100);
       }
     }
   }, [isLoading, posts.length]);
 
   useEffect(() => {
-    // Restore posts from sessionStorage if available
-    const cachedPosts = sessionStorage.getItem('homepagePosts');
-    if (cachedPosts) {
-      setPosts(JSON.parse(cachedPosts));
-        setIsLoading(false);
-    } else if (token) {
-      fetchPosts();
-    }
-  }, [token]);
+  if (!token && !isAuthLoading) {
+    setIsLoading(false);
+    setPosts([]);
+    return;
+  }
+
+  const cachedPosts = sessionStorage.getItem('homepagePosts');
+  if (cachedPosts) {
+    setPosts(JSON.parse(cachedPosts));
+    setIsLoading(false);
+  } else if (token) {
+    fetchPosts();
+  }
+}, [token, isAuthLoading]);
+
+
 
   // When posts change, update the cache
   useEffect(() => {
@@ -691,6 +710,7 @@ export default function Homepage() {
                             sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                             navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                           }}
+                          postsData={posts}
                         />
                       ))}
                     </div>
@@ -733,6 +753,7 @@ export default function Homepage() {
                               sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                               navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                             }}
+                            postsData={posts}
                           />
                         ))
                       )}

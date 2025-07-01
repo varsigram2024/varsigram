@@ -8,7 +8,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { ClickableUser } from '../ClickableUser';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CommentSection from '../CommentSection';
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from '../EditPostModal';
@@ -52,6 +52,9 @@ interface PostProps {
   onPostEdit?: (post: Post) => void;
   currentUserId?: string;
   currentUserEmail?: string;
+  onClick?: () => void;
+  showFullContent?: boolean;
+  postsData?: Post[];
 }
 
 const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
@@ -62,7 +65,10 @@ export const Post: React.FC<PostProps> = ({
   onPostDelete, 
   onPostEdit,
   currentUserId,
-  currentUserEmail
+  currentUserEmail,
+  onClick,
+  showFullContent = false,
+  postsData = []
 }) => {
   const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
@@ -75,6 +81,7 @@ export const Post: React.FC<PostProps> = ({
   const [showShareMenu, setShowShareMenu] = useState(false);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const location = useLocation();
 
   // Helper to determine if content is long
   const isLong = post.content.length > MAX_LENGTH;
@@ -361,6 +368,16 @@ export const Post: React.FC<PostProps> = ({
     // ...other fields
   };
 
+  const shouldShowReadMore = post.content.length > 200;
+
+  const handleCommentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log("Comment clicked");
+    sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+    sessionStorage.setItem('homepagePosts', JSON.stringify(postsData));
+    navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+  };
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -453,18 +470,15 @@ export const Post: React.FC<PostProps> = ({
 
           {/* Read more/less button */}
           {!expanded && isLong && (
-            <Link
-              to={`/posts/${post.id}`}
-              onClick={() => {
-                sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+            <button
+              className="text-[#750015] font-semibold mt-2 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(true);
               }}
             >
-              <button
-                className="text-[#750015] font-semibold mt-2 hover:underline"
-              >
-                Read more
-              </button>
-            </Link>
+              Read more
+            </button>
           )}
           {expanded && isLong && (
             <button
@@ -494,7 +508,7 @@ export const Post: React.FC<PostProps> = ({
               <span>{likeCount}</span>
             </div>
 
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(`/posts/${post.id}`)}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={handleCommentClick}>
               <Img src="/images/vectors/vars.svg" alt="Comment" className="h-[20px] w-[20px]" />
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
