@@ -134,14 +134,21 @@ export default function Homepage() {
   }, [isLoading, posts.length]);
 
   useEffect(() => {
+  if (!token && !isAuthLoading) {
+    setIsLoading(false);
+    setPosts([]);
+    return;
+  }
+
   const cachedPosts = sessionStorage.getItem('homepagePosts');
   if (cachedPosts) {
     setPosts(JSON.parse(cachedPosts));
-    setIsLoading(false);  // ✅ show posts right away
+    setIsLoading(false);
   } else if (token) {
-    fetchPosts();  // 🟢 only fetch fresh
+    fetchPosts();
   }
-}, [token]);
+}, [token, isAuthLoading]);
+
 
 
   // When posts change, update the cache
