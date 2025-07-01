@@ -68,17 +68,26 @@ interface SearchResult {
 }
 
 const fetchPosts = async () => {
-  setIsLoading(true);
   try {
+    setIsLoading(true);
     const response = await axios.get(`${API_BASE_URL}/feed/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
-    setPosts(response.data);
+
+    // ✅ Guard: check if data is valid array
+    if (Array.isArray(response.data)) {
+      setPosts(response.data);
+    } else {
+      setError('Invalid post data received.');
+      setPosts([]);
+    }
+
   } catch (err) {
     setError('Failed to fetch posts');
+    setPosts([]);
   } finally {
     setIsLoading(false);
   }
@@ -124,15 +133,15 @@ export default function Homepage() {
   }, [isLoading, posts.length]);
 
   useEffect(() => {
-    // Restore posts from sessionStorage if available
-    const cachedPosts = sessionStorage.getItem('homepagePosts');
-    if (cachedPosts) {
-      setPosts(JSON.parse(cachedPosts));
-        setIsLoading(false);
-    } else if (token) {
-      fetchPosts();
-    }
-  }, [token]);
+  const cachedPosts = sessionStorage.getItem('homepagePosts');
+  if (cachedPosts) {
+    setPosts(JSON.parse(cachedPosts));
+    setIsLoading(false);  // ✅ show posts right away
+  } else if (token) {
+    fetchPosts();  // 🟢 only fetch fresh
+  }
+}, [token]);
+
 
   // When posts change, update the cache
   useEffect(() => {
