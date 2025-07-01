@@ -118,7 +118,7 @@ export default function Homepage() {
         setTimeout(() => {
           window.scrollTo(0, parseInt(savedScroll, 10));
           sessionStorage.removeItem('homepageScroll');
-        }, 0);
+        }, 100);
       }
     }
   }, [isLoading, posts.length]);
@@ -691,6 +691,7 @@ export default function Homepage() {
                             sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                             navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                           }}
+                          postsData={posts}
                         />
                       ))}
                     </div>
@@ -733,6 +734,7 @@ export default function Homepage() {
                               sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                               navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                             }}
+                            postsData={posts}
                           />
                         ))
                       )}

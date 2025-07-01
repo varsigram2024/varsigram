@@ -109,12 +109,16 @@ export default function PostPage({ isModal = false }) {
   };
 
   const handleBack = () => {
-    if (window.history.length > 2) {
-      // There is a previous page in history, go back
+    if (isModal) {
+      // For modal, just go back in history
       navigate(-1);
     } else {
-      // No previous page (e.g., direct link or reload), go to homepage
-      navigate("/home");
+      // For full page, check history length
+      if (window.history.length > 2) {
+        navigate(-1);
+      } else {
+        navigate("/home");
+      }
     }
   };
 
@@ -173,8 +177,10 @@ export default function PostPage({ isModal = false }) {
             : {}
         }
       >
+
+        
         <div className="flex w-full items-start justify-center bg-[#ffff] min-h-screen relative h-auto overflow-hidden">
-          <Sidebar1 />
+          
 
           <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
             <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
@@ -257,25 +263,20 @@ export default function PostPage({ isModal = false }) {
                 </div>
               </div>
             </div>
-            <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
-              
-              <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
-                <div className="overflow-hidden h-full">
-                  <WhoToFollowSidePanel />
-                </div>
-              </div>
-
-              
-              <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
-                <ProfileOrganizationSection />
-              </div>
-              
-              
-            </div>
+            
           </div>
-          <BottomNav />
         </div>
-        <button onClick={() => navigate(-1)}>Close</button>
+
+
+
+        {isModal && (
+          <button 
+            onClick={() => navigate(-1)}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          >
+            ✕
+          </button>
+        )}
       </div>
     </div>
   );
