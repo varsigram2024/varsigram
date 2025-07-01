@@ -67,31 +67,6 @@ interface SearchResult {
   posts: Post[];
 }
 
-const fetchPosts = async () => {
-  setIsLoading(true);
-  try {
-    const response = await axios.get(`${API_BASE_URL}/feed/`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (Array.isArray(response.data)) {
-      setPosts(response.data);
-      setError(null); // ✅ clear errors
-    } else {
-      setError("Invalid post data");
-      setPosts([]);
-    }
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Failed to fetch posts");
-    setPosts([]);
-  } finally {
-    setIsLoading(false); // ✅ will always be hit
-  }
-};
 
 
 export default function Homepage() {
@@ -120,6 +95,33 @@ export default function Homepage() {
   const [searchDepartment, setSearchDepartment] = useState('');
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+
+  const fetchPosts = async () => {
+  setIsLoading(true);
+  try {
+    const response = await axios.get(`${API_BASE_URL}/feed/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (Array.isArray(response.data)) {
+      setPosts(response.data);
+      setError(null); // ✅ clear errors
+    } else {
+      setError("Invalid post data");
+      setPosts([]);
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
+    setError("Failed to fetch posts");
+    setPosts([]);
+  } finally {
+    setIsLoading(false); // ✅ will always be hit
+  }
+};
+      
 
   useLayoutEffect(() => {
     if (!isLoading && posts.length > 0 && postsContainerRef.current) {
