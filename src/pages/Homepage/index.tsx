@@ -99,7 +99,7 @@ export default function Homepage() {
   const fetchPosts = async () => {
   setIsLoading(true);
   try {
-    const response = await axios.get(`${API_BASE_URL}/feed/`, {
+    const response = await axios.get(`${API_BASE_URL}/posts/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -409,7 +409,7 @@ export default function Homepage() {
   const refreshPosts = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/feed/`, {
+      const response = await axios.get(`${API_BASE_URL}/posts/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
