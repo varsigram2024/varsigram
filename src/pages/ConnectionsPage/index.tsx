@@ -247,13 +247,13 @@ export default function Connectionspage() {
   };
 
   return (
-    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
+    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto">
+
       <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
-        <div className="mt-[0px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch overflow-scroll scrollbar-hide"> 
-          <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
-           
+        <div className="mt-[0px] lg:mt-[0px] flex flex-1 flex-col gap-[45px] md:flex-col md:self-stretch overflow-y-auto h-[100vh] scrollbar-hide">
+          <div className="w-full flex-1 flex flex-col px-4 py-6 overflow-y-auto scrollbar-hide">
 
           <div className="mt-5 lg:hidden flex flex-row justify-between">
               <div 

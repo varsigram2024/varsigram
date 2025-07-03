@@ -785,8 +785,9 @@ export default function Homepage() {
       <BottomNav />
 
       {isSearchOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center p-4"
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center md:items-center justify-center p-2 md:p-4"
+
           onClick={() => {
             setIsSearchOpen(false);
             setSearchQuery("");
@@ -794,9 +795,10 @@ export default function Homepage() {
           }}
         >
           <div
-            className="bg-white rounded-[32px] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-lg"
-            onClick={e => e.stopPropagation()}
-          >
+  className="bg-white rounded-t-2xl md:rounded-[32px] w-full h-full md:h-auto max-h-screen md:max-h-[80vh] overflow-y-auto shadow-lg p-4 md:p-6"
+  onClick={e => e.stopPropagation()}
+>
+
             {/* Search Header */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
@@ -831,7 +833,7 @@ export default function Homepage() {
                   </button>
                 )}
               </div>
-              <div className="flex gap-3 mt-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
                 {/* Type Filter */}
                 <select
                   className="border rounded px-2 py-1"
