@@ -42,6 +42,8 @@ interface Post {
       is_verified: boolean;
     };
     exclusive: boolean;
+    display_name_slug?: string;
+    organization_name?: string;
   };
 }
 
@@ -385,10 +387,24 @@ export const Post: React.FC<PostProps> = ({
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
               <ClickableUser
-                displayNameSlug={post.author_display_name_slug ?? ''}
+                displayNameSlug={
+                  post.account_type === "organization"
+                    ? post.organization?.display_name_slug
+                    : post.author_display_name_slug
+                }
                 profilePicUrl={post.author_profile_pic_url}
-                displayName={post.author_name || post.author_display_name || post.author_username || 'Unknown User'}
-                onUserClick={(slug) => navigate(`/user-profile/${slug}`)}
+                displayName={
+                  post.account_type === "organization"
+                    ? post.organization?.organization_name || post.author_display_name
+                    : post.author_name || post.author_display_name || post.author_username || 'Unknown User'
+                }
+                onUserClick={(slug) => {
+                  if (slug) {
+                    navigate(`/user-profile/${slug}`);
+                  } else {
+                    // Optionally show an error or fallback
+                  }
+                }}
                 size="medium"
               />
               <Text as="p" className="text-[12px] text-gray-500">

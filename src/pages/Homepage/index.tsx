@@ -533,12 +533,12 @@ export default function Homepage() {
   }, [posts.length, isLoading]);
 
   return (
-    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden">
+    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden animate-fade-in">
       <Sidebar1 />
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
+      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
-        <div className="hidden lg:flex items-center justify-between">
+        <div className="hidden lg:flex items-center justify-between animate-fade-in">
           <div 
             onClick={() => {
               if (user?.display_name_slug) {
@@ -560,7 +560,7 @@ export default function Homepage() {
             onClick={() => setIsSearchOpen(true)}
           />
         </div>
-        <div className="lg:mt-5 flex justify-between">
+        <div className="lg:mt-5 flex justify-between animate-slide-up">
           <div 
             className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
             onClick={() => setActiveTab('forYou')}
@@ -581,7 +581,7 @@ export default function Homepage() {
           
 
 
-            <div className="mt-5 lg:hidden flex flex-row justify-between items-center">
+            <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
               <div 
                 onClick={() => {
                   if (user?.display_name_slug) {
@@ -632,22 +632,24 @@ export default function Homepage() {
             
 
             {isCreatePostOpen && (
-              <CreatePostModal
-                newPostContent={newPostContent}
-                setNewPostContent={setNewPostContent}
-                selectedFiles={selectedFiles}
-                setSelectedFiles={setSelectedFiles}
-                isUploading={isUploading}
-                onClose={handleCancelPost}
-                onSubmit={handleCreatePost}
-                handleFileChange={handleFileChange}
-                handleRemoveFile={handleRemoveFile}
-              />
+              <div className="animate-slide-up">
+                <CreatePostModal
+                  newPostContent={newPostContent}
+                  setNewPostContent={setNewPostContent}
+                  selectedFiles={selectedFiles}
+                  setSelectedFiles={setSelectedFiles}
+                  isUploading={isUploading}
+                  onClose={handleCancelPost}
+                  onSubmit={handleCreatePost}
+                  handleFileChange={handleFileChange}
+                  handleRemoveFile={handleRemoveFile}
+                />
+              </div>
             )}
 
             {!isCreatePostOpen && (
               <div 
-                className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors animate-fade-in"
                 onClick={() => setIsCreatePostOpen(true)}
               >
                 <input
@@ -672,13 +674,13 @@ export default function Homepage() {
 
           <div className="w-full post-section">
             {(isLoading || isAuthLoading) && (
-              <div className="flex justify-center items-center py-20">
+              <div className="flex justify-center items-center py-20 animate-fade-in">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
               </div>
             )}
 
             {error && !isLoading && !isAuthLoading && (
-              <div className="flex justify-center items-center py-20">
+              <div className="flex justify-center items-center py-20 animate-fade-in">
                 <p className="text-red-500 text-center">{error}</p>
               </div>
             )}
@@ -686,62 +688,19 @@ export default function Homepage() {
             {!isLoading && !isAuthLoading && !error && (
               <>
                 <div 
-                  className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100' : 'opacity-0'}`}
+                  className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100' : 'opacity-0'} animate-fade-in`}
                 >
                   {activeTab === 'forYou' && (
                     <div className="space-y-6 w-full" ref={postsContainerRef}>
-                      {posts.map((post) => (
-                        <Post 
-                          key={post.id} 
-                          post={post} 
-                          onPostUpdate={(updatedPost) => {
-                            setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                          }}
-                          onPostDelete={(post) => {
-                            setPosts(prev => prev.filter(p => p.id !== post.id));
-                          }}
-                          onPostEdit={(post) => {
-                            // This is now handled internally by the Post component
-                          }}
-                          currentUserId={user?.id}
-                          currentUserEmail={user?.email}
-                          onClick={() => {
-                            sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                            sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
-                            navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
-                          }}
-                          postsData={posts}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div 
-                    className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'}`}
-                  >
-                  {activeTab === 'following' && (
-                    <div className="space-y-6">
-                      {isFeedLoading ? (
-                        <div className="flex justify-center items-center h-40">
-                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
-                        </div>
-                      ) : feedPosts.length === 0 ? (
-                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                            No Official post in your feed yet.
-                          </Text>
-                        </div>
-                      ) : (
-                        feedPosts.map((post) => (
+                      {posts.map((post, idx) => (
+                        <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
                           <Post 
-                            key={post.id} 
                             post={post} 
                             onPostUpdate={(updatedPost) => {
-                              setFeedPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                              setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
                             }}
                             onPostDelete={(post) => {
-                              setFeedPosts(prev => prev.filter(p => p.id !== post.id));
+                              setPosts(prev => prev.filter(p => p.id !== post.id));
                             }}
                             onPostEdit={(post) => {
                               // This is now handled internally by the Post component
@@ -755,6 +714,51 @@ export default function Homepage() {
                             }}
                             postsData={posts}
                           />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div 
+                    className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'} animate-fade-in`}
+                  >
+                  {activeTab === 'following' && (
+                    <div className="space-y-6">
+                      {isFeedLoading ? (
+                        <div className="flex justify-center items-center h-40 animate-fade-in">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                        </div>
+                      ) : feedPosts.length === 0 ? (
+                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                            No Official post in your feed yet.
+                          </Text>
+                        </div>
+                      ) : (
+                        feedPosts.map((post, idx) => (
+                          <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
+                            <Post 
+                              post={post} 
+                              onPostUpdate={(updatedPost) => {
+                                setFeedPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                              }}
+                              onPostDelete={(post) => {
+                                setFeedPosts(prev => prev.filter(p => p.id !== post.id));
+                              }}
+                              onPostEdit={(post) => {
+                                // This is now handled internally by the Post component
+                              }}
+                              currentUserId={user?.id}
+                              currentUserEmail={user?.email}
+                              onClick={() => {
+                                sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+                                sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
+                                navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+                              }}
+                              postsData={posts}
+                            />
+                          </div>
                         ))
                       )}
                     </div>
@@ -765,16 +769,16 @@ export default function Homepage() {
           </div>
         </div>
 
-        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
+        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
           
-          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
+          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
           </div>
 
           
-          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
+          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
             <ProfileOrganizationSection />
           </div>
           
@@ -843,7 +847,7 @@ export default function Homepage() {
                   <option value="all">Select Types</option>
                   <option value="student">Student</option>
                   <option value="organization">Organization</option>
-                </select>r
+                </select>
                 {/* Faculty Filter */}
                 <select
                   className="border rounded px-2 py-1"

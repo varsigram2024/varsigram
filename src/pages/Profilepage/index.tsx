@@ -319,24 +319,24 @@ export default function Profile() {
   }, [userProfile?.id, token]);
 
   return (
-    <div className="flex flex-col items-center justify-start w-full bg-gray-100">
+    <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
       <div className="flex w-full items-start justify-center bg-white">
         <Sidebar1 />
 
-        <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row">
+        <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row animate-slide-up">
           <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
             {isLoading ? (
-              <div className="flex justify-center items-center h-[300px] w-full">
+              <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
               </div>
             ) : !userProfile ? (
-              <div className="flex justify-center items-center h-[300px] w-full">
+              <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
                 <Text>User not found</Text>
               </div>
             ) : (
               <>
                 {/* Cover photo section */}
-                <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full">
+                <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full animate-fade-in">
                   <div className="flex w-full flex-col self-stretch gap-2.5">
                     <div className="flex h-[170px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5" style={{ backgroundImage: `url(${userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http') ? userProfile.profile_pic_url : '/images/cover-photo-bg.svg'})`, backgroundSize: 'cover' }}>
                       {/* <Text as="h4" className="text-[28px] font-semibold text-white md:text-[26px] sm:text-[24px]">
@@ -520,7 +520,7 @@ export default function Profile() {
 
                 {/* Posts Section */}
                 {!user?.is_verified ? (
-                  <div className="w-full flex flex-col items-center justify-center bg-yellow-50 border border-yellow-300 rounded-lg p-4 my-4">
+                  <div className="w-full flex flex-col items-center justify-center bg-yellow-50 border border-yellow-300 rounded-lg p-4 my-4 animate-slide-up">
                     <Text className="text-yellow-800 font-semibold mb-2">
                       Kindly go to SETTINGS to Verify your Email, in order to engage with content. THANK YOU!!!
                     </Text>
@@ -534,22 +534,23 @@ export default function Profile() {
                 ) : (
                   (userProfile.display_name_slug || userProfile.email) && token && (
                     <div className="w-full">
-                      {posts.map((post) => (
-                        <Post
-                          key={post.id}
-                          post={post}
-                          onPostUpdate={(updatedPost) => {
-                            setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                          }}
-                          onPostDelete={(post) => {
-                            setPosts(prev => prev.filter(p => p.id !== post.id));
-                          }}
-                          onPostEdit={(post) => {
-                            // This is now handled internally by the Post component
-                          }}
-                          currentUserId={user?.id}
-                          currentUserEmail={user?.email}
-                        />
+                      {posts.map((post, idx) => (
+                        <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
+                          <Post
+                            post={post}
+                            onPostUpdate={(updatedPost) => {
+                              setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                            }}
+                            onPostDelete={(post) => {
+                              setPosts(prev => prev.filter(p => p.id !== post.id));
+                            }}
+                            onPostEdit={(post) => {
+                              // This is now handled internally by the Post component
+                            }}
+                            currentUserId={user?.id}
+                            currentUserEmail={user?.email}
+                          />
+                        </div>
                       ))}
                     </div>
                   )
@@ -559,17 +560,16 @@ export default function Profile() {
           </div>
 
           {/* Profile Side Panel */}
-          <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide">
-          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white">
-            <ProfileOrganizationSection />
-          </div>
-          
-          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5">
-            <div className="overflow-hidden h-full">
-              <WhoToFollowSidePanel />
+          <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
+            <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
+              <ProfileOrganizationSection />
+            </div>
+            <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
+              <div className="overflow-hidden h-full">
+                <WhoToFollowSidePanel />
+              </div>
             </div>
           </div>
-        </div>
         </div>
 
         <BottomNav />

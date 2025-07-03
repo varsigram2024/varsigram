@@ -52,7 +52,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
+    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative animate-fade-in">
       <Sidebar1 onComplete={handleNavigation} currentPage="settings" />
 
       {/* Edit Profile Side Panel (desktop only) */}
@@ -63,10 +63,10 @@ export default function Settings() {
         />
       </div>
 
-      <div className="flex w-full lg:w-[85%] pb-5 items-start justify-center  flex-row">
+      <div className="flex w-full lg:w-[85%] pb-5 items-start justify-center  flex-row animate-slide-up">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
           {/* Mobile Header */}
-          <div className="mt-5 lg:hidden flex flex-row justify-between">
+          <div className="mt-5 lg:hidden flex flex-row justify-between animate-fade-in">
             <div onClick={() => handleNavigation('user-profile')} className="hover:opacity-80 transition-opacity cursor-pointer">
               <Img
                 src={
@@ -88,10 +88,10 @@ export default function Settings() {
 
           {/* Settings Content */}
           <div className="flex flex-col gap-6">
-            <Text className="text-2xl font-bold">Settings</Text>
+            <Text className="text-2xl font-bold animate-slide-up">Settings</Text>
 
             {/* Account Settings */}
-            <div className="bg-white rounded-xl p-6">
+            <div className="bg-white rounded-xl p-6 animate-fade-in">
               <Text className="text-xl font-semibold mb-4">Account</Text>
               <div className="space-y-4">
                 <button
@@ -131,7 +131,7 @@ export default function Settings() {
             </div>
 
             {/* Preferences */}
-            <div className="bg-white rounded-xl p-6">
+            <div className="bg-white rounded-xl p-6 animate-fade-in">
               <Text className="text-xl font-semibold mb-4">Preferences</Text>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3">
@@ -170,7 +170,7 @@ export default function Settings() {
             </div>
 
             {/* Support */}
-            <div className="bg-white rounded-xl p-6">
+            <div className="bg-white rounded-xl p-6 animate-fade-in">
               <Text className="text-xl font-semibold mb-4">Support</Text>
               <div className="space-y-4">
                 <button className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 rounded-lg transition-colors">
@@ -194,14 +194,14 @@ export default function Settings() {
             {/* Logout Button */}
             <button 
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+              className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors animate-slide-up"
             >
               <LogOut size={20} />
               <Text>Logout</Text>
             </button>
             {/* Deactivate Button */}
             <button
-              className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+              className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors animate-slide-up"
             >
               <UserX size={20} />
               <Text>Deactivate</Text>

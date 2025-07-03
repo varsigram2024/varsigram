@@ -247,15 +247,15 @@ export default function Connectionspage() {
   };
 
   return (
-    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto">
+    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto animate-fade-in">
 
       <Sidebar1 />
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
+      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
         <div className="mt-[0px] lg:mt-[0px] flex flex-1 flex-col gap-[45px] md:flex-col md:self-stretch overflow-y-auto h-[100vh] scrollbar-hide">
-          <div className="w-full flex-1 flex flex-col px-4 py-6 overflow-y-auto scrollbar-hide">
+          <div className="w-full flex-1 flex gap-5 flex-col px-4 py-4 overflow-hidden">
 
-          <div className="mt-5 lg:hidden flex flex-row justify-between">
+            <div className="mt-5 lg:hidden flex flex-row justify-between animate-fade-in">
               <div 
                   onClick={() => {
                     const displayNameSlug = user?.display_name_slug || user?.username || user?.email?.split('@')[0];
@@ -282,8 +282,7 @@ export default function Connectionspage() {
 
             </div>
 
-
-            <div className="lg:mt-5 flex justify-between">
+            <div className="lg:mt-5 flex justify-between animate-slide-up">
               <div 
                 className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
                 onClick={() => setActiveTab('forYou')}
@@ -302,25 +301,21 @@ export default function Connectionspage() {
               </div>
             </div>
           
-
-
-            
-
-            
-
-            
-
-            <div className="relative w-full">
+            <div className="relative w-full h-full overflow-y-auto scrollbar-hide">
               {isLoading && activeTab === 'forYou' ? (
-                <div className="flex justify-center items-center h-40">
+                <div className="flex justify-center items-center h-40 animate-fade-in">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
                 </div>
               ) : activeTab === 'forYou' ? (
-                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
-                  {filteredUsers.map((user) => {
+                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                  {filteredUsers.map((user, idx) => {
                     console.log('Full user object:', user);
                     return (
-                      <div key={user.id} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0 animate-slide-up"
+                        style={{ animationDelay: `${idx * 60}ms` }}
+                      >
                         <div 
                           className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => handleUserClick(user)}
@@ -368,11 +363,11 @@ export default function Connectionspage() {
                   })}
                 </div>
               ) : isFollowingLoading ? (
-                <div className="flex justify-center items-center h-40">
+                <div className="flex justify-center items-center h-40 animate-fade-in">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
                 </div>
               ) : (
-                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff]">
+                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
                   {following.length === 0 ? (
                     <Text>No accounts followed yet.</Text>
                   ) : (
@@ -383,7 +378,11 @@ export default function Connectionspage() {
                       if (!followee) return null;
                       const userInfo = followeeOrg ? followeeOrg.user : followeeStudent ? followeeStudent.user : null;
                       return (
-                        <div key={idx} className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0">
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between w-full py-4 border-b border-gray-100 last:border-b-0 animate-slide-up"
+                          style={{ animationDelay: `${idx * 60}ms` }}
+                        >
                           <div
                             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => {
@@ -446,12 +445,7 @@ export default function Connectionspage() {
             </div>
           </div>
         </div>
-
-        
-
-
       </div>
-
 
       <BottomNav />
     </div>
