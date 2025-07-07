@@ -304,6 +304,7 @@ export default function Profile() {
         `${API_BASE_URL}/users/${userProfile.id}/posts/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log("Fetched posts for profile:", response.data);
       setPosts(response.data);
     } catch (error) {
       console.error('Error fetching posts:', error);

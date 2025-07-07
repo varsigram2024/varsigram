@@ -97,30 +97,30 @@ export default function Homepage() {
   const location = useLocation();
 
   const fetchPosts = async () => {
-  setIsLoading(true);
-  try {
-    const response = await axios.get(`${API_BASE_URL}/posts/`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/posts/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    if (Array.isArray(response.data)) {
-      setPosts(response.data);
-      setError(null); // ✅ clear errors
-    } else {
-      setError("Invalid post data");
+      if (Array.isArray(response.data)) {
+        setPosts(response.data);
+        setError(null);
+      } else {
+        setError("Invalid post data");
+        setPosts([]);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Failed to fetch posts");
       setPosts([]);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Failed to fetch posts");
-    setPosts([]);
-  } finally {
-    setIsLoading(false); // ✅ will always be hit
-  }
-};
+  };
       
 
   useLayoutEffect(() => {
@@ -136,29 +136,15 @@ export default function Homepage() {
   }, [isLoading, posts.length]);
 
   useEffect(() => {
-  if (!token && !isAuthLoading) {
-    setIsLoading(false);
-    setPosts([]);
-    return;
-  }
-
-  const cachedPosts = sessionStorage.getItem('homepagePosts');
-  if (cachedPosts) {
-    setPosts(JSON.parse(cachedPosts));
-    setIsLoading(false);
-  } else if (token) {
-    fetchPosts();
-  }
-}, [token, isAuthLoading]);
-
-
-
-  // When posts change, update the cache
-  useEffect(() => {
-    if (posts.length > 0) {
-      sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
+    if (!token && !isAuthLoading) {
+      setIsLoading(false);
+      setPosts([]);
+      return;
     }
-  }, [posts]);
+    if (token) {
+      fetchPosts();
+    }
+  }, [token, isAuthLoading]);
 
   useEffect(() => {
     if (activeTab === 'following' && token) {
@@ -289,16 +275,11 @@ export default function Homepage() {
     try {
       await axios.delete(
         `${API_BASE_URL}/posts/${post.id}/`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
-
+      await refreshPosts();
       setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
       toast.success('Post deleted successfully');
-      await refreshPosts();
     } catch (error) {
       toast.error('Failed to delete post');
     }
@@ -532,6 +513,11 @@ export default function Homepage() {
     return () => observer.disconnect();
   }, [posts.length, isLoading]);
 
+  console.log("isLoading:", isLoading);
+  console.log("isAuthLoading:", isAuthLoading);
+  console.log("error:", error);
+  console.log("posts:", posts);
+
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden animate-fade-in">
       <Sidebar1 />
@@ -709,7 +695,6 @@ export default function Homepage() {
                             currentUserEmail={user?.email}
                             onClick={() => {
                               sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                              sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                               navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                             }}
                             postsData={posts}
@@ -753,7 +738,6 @@ export default function Homepage() {
                               currentUserEmail={user?.email}
                               onClick={() => {
                                 sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                                sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                                 navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                               }}
                               postsData={posts}
@@ -928,7 +912,6 @@ export default function Homepage() {
                             currentUserEmail={user?.email}
                             onClick={() => {
                               sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                              sessionStorage.setItem('homepagePosts', JSON.stringify(posts));
                               navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                             }}
                           />

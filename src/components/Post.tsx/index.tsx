@@ -60,6 +60,7 @@ interface PostProps {
 }
 
 const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const Post: React.FC<PostProps> = ({ 
   post, 
@@ -117,18 +118,18 @@ export const Post: React.FC<PostProps> = ({
         </div>
       );
     } else if (mediaToShow.length === 2) {
-      return (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {mediaToShow.map((url, index) => (
-            <Img
-              key={index}
-              src={url}
-              alt={`Post media ${index + 1}`}
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {mediaToShow.map((url, index) => (
+          <Img
+            key={index}
+            src={url}
+            alt={`Post media ${index + 1}`}
               className="w-full h-64 object-cover rounded-lg"
-            />
-          ))}
-        </div>
-      );
+          />
+        ))}
+      </div>
+    );
     } else if (mediaToShow.length === 3) {
       return (
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -180,7 +181,7 @@ export const Post: React.FC<PostProps> = ({
       setHasLiked(prev => !prev);
 
       const response = await axios.post(
-        `https://api.varsigram.com/api/v1/posts/${post.id}/like/`,
+        `${API_BASE_URL}/posts/${post.id}/like/`,
         {},
         {
           headers: {
@@ -216,7 +217,7 @@ export const Post: React.FC<PostProps> = ({
           toast.error('Failed to update like status');
         }
       } else {
-        toast.error('Failed to update like status');
+      toast.error('Failed to update like status');
       }
     } finally {
       setIsLiking(false);
@@ -224,6 +225,8 @@ export const Post: React.FC<PostProps> = ({
   };
 
   const handlePostDelete = async (postToDelete: Post) => {
+    console.log('Deleting post:', postToDelete);
+    console.log('Token being used:', token);
     if (!postToDelete.id) {
       toast.error('Cannot delete post: missing post identifier');
       return;
@@ -236,7 +239,7 @@ export const Post: React.FC<PostProps> = ({
 
     try {
       await axios.delete(
-        `https://api.varsigram.com/api/v1/posts/${postToDelete.id}/`,
+        `${API_BASE_URL}/posts/${postToDelete.id}/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -274,7 +277,7 @@ export const Post: React.FC<PostProps> = ({
 
     try {
       const response = await axios.put(
-        `https://api.varsigram.com/api/v1/posts/${editingPost.id}/`,
+        `${API_BASE_URL}/posts/${editingPost.id}/`,
         { content: editedContent },
         {
           headers: {
@@ -346,7 +349,7 @@ export const Post: React.FC<PostProps> = ({
     }
     try {
       await axios.post(
-        `https://api.varsigram.com/api/v1/posts/${post.id}/share/`,
+        `${API_BASE_URL}/posts/${post.id}/share/`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -374,11 +377,15 @@ export const Post: React.FC<PostProps> = ({
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Comment clicked");
-    sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-    sessionStorage.setItem('homepagePosts', JSON.stringify(postsData));
-    navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+    const postPagePath = `/posts/${post.id}`;
+    if (location.pathname !== postPagePath) {
+      navigate(postPagePath, { state: { backgroundLocation: location } });
+    } else {
+      setShowComments(true);
+    }
   };
+
+  console.log("Post props in Post.tsx:", post);
 
   return (
     <>
@@ -386,27 +393,30 @@ export const Post: React.FC<PostProps> = ({
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
-              <ClickableUser
-                displayNameSlug={
-                  post.account_type === "organization"
-                    ? post.organization?.display_name_slug
-                    : post.author_display_name_slug
+          <div className="flex items-center gap-2">
+            <Img
+              src={post.author_profile_pic_url || "/images/user.png"}
+              alt="Profile"
+              className="h-10 w-10 rounded-full object-cover cursor-pointer"
+              onClick={() => {
+                console.log("Clicked name", post.author_display_name_slug);
+                if (post.author_display_name_slug) {
+                  navigate(`/user-profile/${post.author_display_name_slug}`);
                 }
-                profilePicUrl={post.author_profile_pic_url}
-                displayName={
-                  post.account_type === "organization"
-                    ? post.organization?.organization_name || post.author_display_name
-                    : post.author_name || post.author_display_name || post.author_username || 'Unknown User'
+              }}
+            />
+            <span
+              className="font-semibold text-[#750015] cursor-pointer hover:underline"
+              onClick={() => {
+                console.log("Clicked name", post.author_display_name_slug);
+                if (post.author_display_name_slug) {
+                  navigate(`/user-profile/${post.author_display_name_slug}`);
                 }
-                onUserClick={(slug) => {
-                  if (slug) {
-                    navigate(`/user-profile/${slug}`);
-                  } else {
-                    // Optionally show an error or fallback
-                  }
-                }}
-                size="medium"
-              />
+              }}
+            >
+              {post.author_name || post.author_display_name}
+            </span>
+          </div>
               <Text as="p" className="text-[12px] text-gray-500">
                 {formatTimestamp(post.timestamp)}
               </Text>

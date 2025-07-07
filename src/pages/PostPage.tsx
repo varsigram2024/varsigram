@@ -110,10 +110,8 @@ export default function PostPage({ isModal = false }) {
 
   const handleBack = () => {
     if (isModal) {
-      // For modal, just go back in history
       navigate(-1);
     } else {
-      // For full page, check history length
       if (window.history.length > 2) {
         navigate(-1);
       } else {
@@ -153,7 +151,6 @@ export default function PostPage({ isModal = false }) {
               left: 0,
               width: "100vw",
               height: "100vh",
-              background: "rgba(0,0,0,0.5)",
               zIndex: 1000,
               display: "flex",
               alignItems: "center",
@@ -162,6 +159,20 @@ export default function PostPage({ isModal = false }) {
           : {}
       }
     >
+      {/* Overlay for modal: clicking it closes the modal */}
+      {isModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
+          onClick={handleBack}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 1000,
+          }}
+        />
+      )}
+      {/* Modal content */}
       <div
         style={
           isModal
@@ -173,15 +184,14 @@ export default function PostPage({ isModal = false }) {
                 width: "100%",
                 maxHeight: "90vh",
                 overflowY: "auto",
+                zIndex: 1001,
+                position: "relative",
               }
             : {}
         }
+        onClick={isModal ? (e) => e.stopPropagation() : undefined}
       >
-
-        
         <div className="flex w-full items-start justify-center bg-[#ffff] min-h-screen relative h-auto overflow-hidden">
-          
-
           <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row">
             <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
               <button
@@ -263,16 +273,13 @@ export default function PostPage({ isModal = false }) {
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
-
-
-
         {isModal && (
           <button 
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            style={{ zIndex: 1002 }}
           >
             ✕
           </button>
