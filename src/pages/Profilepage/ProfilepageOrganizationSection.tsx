@@ -115,20 +115,43 @@ export default function ProfileOrganizationSection() {
               </div>
             ) : (
               filteredFollowing.map((user, index) => {
-                const displayName = user.organization?.organization_name ||
-                                    user.user?.display_name ||
-                                    user.display_name ||
-                                    user.username || 'Unknown User';
-                const profilePicUrl = user.organization?.profile_pic_url ||
-                                      user.user?.profile_pic_url ||
-                                      user.profile_pic_url ||
-                                      "/images/user.png";
-                const username = user.organization?.user?.email || user.username;
+                // Determine display name
+                const displayName =
+                  user.organization?.organization_name ||
+                  user.user?.display_name ||
+                  user.display_name ||
+                  user.username ||
+                  'Unknown User';
+
+                // Determine profile picture
+                const profilePicUrl =
+                  user.organization?.profile_pic_url ||
+                  user.user?.profile_pic_url ||
+                  user.profile_pic_url ||
+                  "/images/user.png";
+
+                // Determine slug for navigation
+                const displayNameSlug =
+                  user.organization?.display_name_slug ||
+                  user.user?.display_name_slug ||
+                  user.display_name_slug ||
+                  user.username;
+
+                // Determine username for display (for @username)
+                const atUsername =
+                  user.organization?.display_name_slug ||
+                  user.user?.display_name_slug ||
+                  user.display_name_slug ||
+                  user.username;
 
                 return (
-                  <div 
+                  <div
                     key={`${user.id}-${index}`}
-                    onClick={() => handleUserClick(user)}
+                    onClick={() => {
+                      if (displayNameSlug) {
+                        navigate(`/user-profile/${displayNameSlug}`);
+                      }
+                    }}
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <div className="flex-shrink-0">
@@ -143,7 +166,7 @@ export default function ProfileOrganizationSection() {
                         {displayName}
                       </Text>
                       <Text as="p" className="text-[12px] font-normal text-gray-500 truncate">
-                        @{username}
+                        @{atUsername}
                       </Text>
                     </div>
                   </div>
