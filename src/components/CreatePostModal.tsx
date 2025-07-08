@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import ReactDOM from "react-dom";
 import { Text } from './Text';
 import { Button } from './Button';
 import { CloseSVG } from './Input/close';
@@ -28,9 +29,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg relative">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-[9999]"
+        onClick={onClose}
+      />
+      <div className="relative z-[10000] bg-white rounded-lg p-6 w-full max-w-lg shadow-2xl">
         <button
           className="absolute top-2 right-2 p-1"
           onClick={onClose}
@@ -101,7 +106,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

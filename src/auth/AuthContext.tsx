@@ -36,26 +36,64 @@ const API = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Add response interceptor to handle token expiration
-API.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 403 || error.response?.status === 401) {
-      // Clear invalid token
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login'; // Redirect to login page
-    }
-    return Promise.reject(error);
-  }
-);
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
+function storeTokens(access: string, refresh: string) {
+  localStorage.setItem(ACCESS_TOKEN_KEY, access);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+}
+
+function clearTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+function getAccessToken() {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+function getRefreshToken() {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+// Request: Attach access token
 API.interceptors.request.use(config => {
-  const token = localStorage.getItem('auth_token');
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// Response: Handle 401/403 by trying refresh
+API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refresh = getRefreshToken();
+      if (refresh) {
+        try {
+          const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/token/refresh/`, { refresh });
+          const { access } = res.data;
+          storeTokens(access, refresh);
+          API.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+          originalRequest.headers['Authorization'] = `Bearer ${access}`;
+          return API(originalRequest);
+        } catch (refreshError) {
+          clearTokens();
+          window.location.href = '/login';
+        }
+      } else {
+        clearTokens();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -156,8 +194,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const token = response.data.token;
         if (token) {
           localStorage.setItem('auth_token', token);
-          toast.success('Sign up successful! Welcome to Varsigram');
-          navigate('/home');
+          toast.success('Sign up successful! Please verify your email.');
+          navigate('/settings/email-verification');
         }
         return response.data;
       }
@@ -194,79 +232,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      
-      console.log('Attempting login with:', { email });
-      
-      const loginResponse = await API.post('/login/', {
-        email,
-        password
-      });
-
-      console.log('Login response:', loginResponse.data);
-
-      const { token } = loginResponse.data;
-      
-      if (!token) {
-        throw new Error('No authentication token received');
-      }
-
-      // Clear any existing token first
-      localStorage.removeItem('auth_token');
-      
-      // Store new token
-      localStorage.setItem('auth_token', token);
-      setToken(token);
-      API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
+  
+      // Try with email
+      let tokenResponse;
       try {
-        const profileResponse = await API.get('/profile/');
-        console.log('Profile response:', profileResponse.data);
-        
-        const userData = profileResponse.data;
-        const profile = userData.profile || {};
-        const user = profile.user || {};
-
-        setUser({
-          id: user.id,
-          email: user.email,
-          fullName: user.display_name || profile.name || user.name || user.email,
-          profile_pic_url: user.profile_pic_url,
-          username: user.username,
-          is_verified: user.is_verified,
-          bio: user.bio,
-          account_type: userData.profile_type,
-          following_count: user.following_count,
-          followers_count: user.followers_count,
-          display_name_slug: profile.display_name_slug
+        tokenResponse = await API.post('/login/', {
+          email: email,
+          password: password,
         });
-
-        toast.success('Login successful! Welcome back');
-        navigate('/home');
-      } catch (profileError: any) {
-        console.error('Profile fetch failed:', profileError);
-        if (profileError.response?.status === 403 || profileError.response?.status === 401) {
-          localStorage.removeItem('auth_token');
-          setToken(null);
-          setUser(null);
-          throw new Error('Failed to fetch user profile');
+      } catch (error: any) {
+        // If 400 and non_field_errors, try with username
+        if (error.response?.data?.non_field_errors) {
+          tokenResponse = await API.post('/login/', {
+            username: email,
+            password: password,
+          });
+        } else {
+          throw error;
         }
       }
+  
+      const { token, access, refresh } = tokenResponse.data;
+
+      if (token) {
+        // Old style: single token
+        localStorage.setItem('auth_token', token);
+        setToken(token);
+        API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } else if (access && refresh) {
+        // JWT style
+        storeTokens(access, refresh);
+        setToken(access);
+        API.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+      } else {
+        throw new Error('No authentication token received');
+      }
+  
+      // 3. Get user profile
+      const profileResponse = await API.get('/profile/');
+      const userData = profileResponse.data;
+      const profile = userData.profile || {};
+      const user = profile.user || {};
+  
+      const userIsVerified = user.is_verified;
+
+      setUser({
+        id: user.id,
+        email: user.email,
+        fullName: user.display_name || profile.name || user.name || user.email,
+        profile_pic_url: user.profile_pic_url,
+        username: user.username,
+        is_verified: user.is_verified,
+        bio: user.bio,
+        account_type: userData.profile_type,
+        following_count: user.following_count,
+        followers_count: user.followers_count,
+        display_name_slug: profile.display_name_slug
+      });
+  
+      if (!userIsVerified) {
+        toast('Please verify your email to continue.');
+        navigate('/settings/email-verification');
+      } else {
+        toast.success('Login successful! Welcome back');
+        navigate('/home');
+      }
     } catch (error: any) {
-      console.error('Login failed:', error.response?.data || error);
-      
-      // Clear any invalid token
-      localStorage.removeItem('auth_token');
+      console.error("Login failed:", error.response?.data || error);
+      if (error.response?.data?.non_field_errors) {
+        console.error("Backend says:", error.response.data.non_field_errors[0]);
+      }
+      clearTokens();
       setToken(null);
       setUser(null);
-      
-      if (error.response?.data?.non_field_errors) {
-        toast.error(error.response.data.non_field_errors[0]);
+  
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
       } else if (error.response?.status === 401) {
         toast.error('Invalid email or password');
-      } else if (error.response?.status === 403) {
-        toast.error('Access denied. Please try logging in again.');
-      } else if (error.response?.status === 500) {
-        toast.error('Server error. Please try again later.');
       } else {
         toast.error('Login failed. Please try again later.');
       }
@@ -277,15 +320,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    try {
-      localStorage.removeItem('auth_token');
-      setToken(null);
-      setUser(null);
-      navigate('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      throw error;
-    }
+    clearTokens();
+    setToken(null);
+    setUser(null);
+    navigate('/');
   };
 
   const updateUser = (updatedUser: User) => {

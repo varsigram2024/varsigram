@@ -31,6 +31,7 @@ import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
 import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import PostPage from "./pages/PostPage";
+import { VerifiedRoute } from './components/VerifiedRoute';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -77,9 +78,9 @@ function AppContent() {
         <Route path="/academic-level" element={<PublicRoute><AcademicLevel /></PublicRoute>} />
 
         {/* Protected Routes */}
-        <Route path="/home" element={<ProtectedRoute><Homepage /></ProtectedRoute>} />
-        <Route path="/chat" element={<ProtectedRoute><Chatpage /></ProtectedRoute>} />
-        <Route path="/connections" element={<ProtectedRoute><Connectionspage /></ProtectedRoute>} />
+        <Route path="/home" element={<VerifiedRoute><Homepage /></VerifiedRoute>} />
+        <Route path="/chat" element={<VerifiedRoute><Chatpage /></VerifiedRoute>} />
+        <Route path="/connections" element={<VerifiedRoute><Connectionspage /></VerifiedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/user-profile/:display_name_slug" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

@@ -25,6 +25,7 @@ export const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    console.log("Submitting login with:", formData);
     try {
       await login(formData.email, formData.password);
     } catch (error: any) {
