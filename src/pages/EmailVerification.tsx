@@ -4,33 +4,76 @@ import { ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
-import { sendOtp, verifyOtp, checkVerification } from "../services/API";
+import { sendOtp, verifyOtp } from "../services/API";
 import { toast } from "react-toastify";
+
+const SignupProgress = () => (
+  <div className="flex items-center justify-center mb-8">
+    <div className="flex items-center space-x-4">
+      <div className="flex items-center">
+        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm">✓</div>
+        <span className="ml-2 text-sm text-gray-600">Account Created</span>
+      </div>
+      <div className="w-8 h-1 bg-gray-300"></div>
+      <div className="flex items-center">
+        <div className="w-8 h-8 bg-[#750015] rounded-full flex items-center justify-center text-white text-sm">2</div>
+        <span className="ml-2 text-sm font-medium text-[#750015]">Verify Email</span>
+      </div>
+      <div className="w-8 h-1 bg-gray-300"></div>
+      <div className="flex items-center">
+        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm">3</div>
+        <span className="ml-2 text-sm text-gray-600">Welcome!</span>
+      </div>
+    </div>
+  </div>
+);
 
 export const EmailVerification = () => {
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { token, user, login } = useAuth();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const sentRef = useRef(false);
+  const [userCredentials, setUserCredentials] = useState<{email: string, password: string} | null>(null);
+  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
+  // Get credentials from sessionStorage (set during signup)
+  useEffect(() => {
+    const credentials = sessionStorage.getItem('signup_credentials');
+    if (credentials) {
+      setUserCredentials(JSON.parse(credentials));
+    }
+  }, []);
+
+  // Send OTP on component mount
   useEffect(() => {
     if (token && !sentRef.current) {
       sentRef.current = true;
-      sendOtp(token)
-        .then(() => toast.success("OTP sent to your email"))
-        .catch(() => toast.error("Failed to send OTP"));
+      sendOtpToUser();
     }
   }, [token]);
 
+  // Timer for resend button
   useEffect(() => {
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     }
   }, [timeLeft]);
+
+  const sendOtpToUser = async () => {
+    try {
+      await sendOtp(token || "");
+      toast.success(`OTP sent to ${user?.email}`);
+    } catch (error) {
+      console.error('Failed to send OTP:', error);
+      toast.error("Failed to send OTP. Please try again.");
+    }
+  };
 
   const handleChange = (index: number, value: string) => {
     if (value.length <= 1) {
@@ -55,26 +98,72 @@ export const EmailVerification = () => {
   };
 
   const handleResend = async () => {
-    setTimeLeft(30);
-    if (token) {
-      try {
-        await sendOtp(token);
-        toast.success("OTP resent to your email");
-      } catch {
-        toast.error("Failed to resend OTP");
-      }
+    if (timeLeft > 0) return;
+    
+    setIsResending(true);
+    try {
+      await sendOtp(token || "");
+      setTimeLeft(30);
+      toast.success(`OTP resent to ${user?.email}`);
+    } catch (error) {
+      console.error('Failed to resend OTP:', error);
+      toast.error("Failed to resend OTP. Please try again.");
+    } finally {
+      setIsResending(false);
     }
   };
 
   const handleVerify = async () => {
+    if (otp.some(digit => !digit)) {
+      toast.error("Please enter the complete 6-digit code");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const code = otp.join("");
       await verifyOtp(code, token || "");
-      toast.success("Email verified!");
-      navigate("/settings");
+      
+      // Show success state
+      setIsVerified(true);
+      toast.success("Email verified successfully!");
+      
+      // Wait a moment for user to see success, then auto-login
+      setTimeout(async () => {
+        if (userCredentials) {
+          setIsAutoLoggingIn(true);
+          try {
+            await login(userCredentials.email, userCredentials.password);
+            sessionStorage.removeItem('signup_credentials');
+            toast.success("Welcome to Varsigram! 🎉");
+            navigate("/home");
+          } catch (loginError) {
+            console.error('Auto-login failed:', loginError);
+            
+            // More user-friendly fallback
+            toast.info("Email verified! Please log in to continue.");
+            navigate("/login", { 
+              state: { 
+                message: "Email verified successfully! Please log in to continue.",
+                email: userCredentials.email 
+              } 
+            });
+          } finally {
+            setIsAutoLoggingIn(false);
+          }
+        } else {
+          toast.info("Email verified! Please log in to continue.");
+          navigate("/login", { 
+            state: { 
+              message: "Email verified successfully! Please log in to continue." 
+            } 
+          });
+        }
+      }, 1500); // 1.5 second delay to show success
+      
     } catch (err: any) {
-      toast.error("Invalid OTP. Please try again.");
+      console.error('Verification failed:', err);
+      toast.error("Invalid OTP. Please check your code and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -95,13 +184,35 @@ export const EmailVerification = () => {
       </header>
 
       <div className="max-w-[398px] mx-auto px-6 mt-12">
+        <SignupProgress />
+        
         <h1 className="text-[28px] sm:text-[32px] font-semibold mb-4 animate-fade-in">
           Enter the code
         </h1>
+        
         <p className="text-base text-[#4D4D4D] mb-8 animate-slide-up">
           Enter the 6 digit code sent to{" "}
-          <span className="font-medium">{user?.email || "your email"}</span>
+          <span className="font-medium text-[#750015]">{user?.email || "your email"}</span>
         </p>
+
+        {/* Email Troubleshooting Info */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-blue-800 text-sm font-medium mb-1">Can't find the email?</p>
+              <ul className="text-blue-700 text-xs space-y-1">
+                <li>• Check your spam/junk folder</li>
+                <li>• Make sure you're checking the correct email</li>
+                <li>• Wait a few minutes for delivery</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
         <div className="flex gap-4 mb-6 animate-slide-up">
           {otp.map((digit, index) => (
@@ -121,23 +232,57 @@ export const EmailVerification = () => {
         <div className="flex justify-between items-center mb-8 animate-slide-up">
           <button
             onClick={handleResend}
-            disabled={timeLeft > 0}
-            className={`text-sm ${
-              timeLeft > 0 ? "text-[#ADACB2]" : "text-[#750015] hover:underline"
-            }`}>
-            {timeLeft > 0 ? `Resend in ${timeLeft}s` : "Resend"}
+            disabled={timeLeft > 0 || isResending}
+            className={`text-sm transition-colors ${
+              timeLeft > 0 || isResending
+                ? "text-[#ADACB2] cursor-not-allowed"
+                : "text-[#750015] hover:underline cursor-pointer"
+            }`}
+          >
+            {isResending ? (
+              "Sending..."
+            ) : timeLeft > 0 ? (
+              `Resend in ${timeLeft}s`
+            ) : (
+              "Resend code"
+            )}
           </button>
         </div>
 
         <Button
           fullWidth
           onClick={handleVerify}
-          loading={isLoading}
-          disabled={otp.some((digit) => !digit)}
-          className="animate-slide-up">
-          Verify
+          loading={isLoading || isAutoLoggingIn}
+          disabled={otp.some((digit) => !digit) || isLoading || isAutoLoggingIn}
+          className="animate-slide-up"
+        >
+          {isLoading ? "Verifying..." : isAutoLoggingIn ? "Logging you in..." : "Verify Email"}
         </Button>
+
+        {/* Alternative Actions */}
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigate("/login")}
+            className="text-[#750015] text-sm hover:underline"
+          >
+            Already verified? Sign in
+          </button>
+        </div>
       </div>
+
+      {isVerified && (
+        <div className="fixed inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-green-800 mb-2">Email Verified!</h3>
+            <p className="text-green-600">Logging you in...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
