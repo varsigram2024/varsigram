@@ -92,7 +92,7 @@ function AppContent() {
         <Route path="/settings/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
         <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
         <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
-        <Route path="/posts/:id" element={<PostPage />} />
+        <Route path="/posts/:id" element={<ProtectedRoute><PostPage /></ProtectedRoute>} />
 
         {/* Root route - redirect to welcome */}
         <Route path="/" element={<Navigate to="/welcome" replace />} />

@@ -36,59 +36,40 @@ const API = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
+// UNIFIED TOKEN STORAGE - Single source of truth
+const AUTH_TOKEN_KEY = 'auth_token';
 
-function storeTokens(access: string, refresh: string) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+function storeToken(token: string) {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
-function clearTokens() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+function clearToken() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
-function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+function getToken() {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
-function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-// Request: Attach access token
+// Request: Attach token
 API.interceptors.request.use(config => {
-  const token = getAccessToken();
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Response: Handle 401/403 by trying refresh
+// Response: Handle 401/403 by redirecting to login
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refresh = getRefreshToken();
-      if (refresh) {
-        try {
-          const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/token/refresh/`, { refresh });
-          const { access } = res.data;
-          storeTokens(access, refresh);
-          API.defaults.headers.common['Authorization'] = `Bearer ${access}`;
-          originalRequest.headers['Authorization'] = `Bearer ${access}`;
-          return API(originalRequest);
-        } catch (refreshError) {
-          clearTokens();
-          window.location.href = '/login';
-        }
-      } else {
-        clearTokens();
-        window.location.href = '/login';
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear token and redirect to login
+      clearToken();
+      // Don't redirect if already on login/welcome page
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/welcome')) {
+        window.location.href = '/welcome';
       }
     }
     return Promise.reject(error);
@@ -98,13 +79,13 @@ API.interceptors.response.use(
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const [token, setToken] = useState<string | null>(getToken());
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('auth_token');
+        const storedToken = getToken();
         if (storedToken) {
           setToken(storedToken);
           API.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
@@ -132,7 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } catch (profileError: any) {
             console.error('Profile fetch failed:', profileError);
             if (profileError.response?.status === 403 || profileError.response?.status === 401) {
-              localStorage.removeItem('auth_token');
+              clearToken();
               setToken(null);
               setUser(null);
             }
@@ -141,7 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error: any) {
         console.error('Auth check failed:', error);
         if (error.response?.status === 403 || error.response?.status === 401) {
-          localStorage.removeItem('auth_token');
+          clearToken();
           setToken(null);
           setUser(null);
         }
@@ -152,13 +133,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     checkAuth();
   }, []);
 
-  
   const signUp = async (email: string, password: string, fullName: string, signUpData: any) => {
     let requestData;
     try {
       setIsLoading(true);
       
-      // First, let's log the incoming data
       console.log('Incoming signUpData:', signUpData);
       
       requestData = {
@@ -179,28 +158,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         organization: null
       };
 
-      // Log the exact data being sent
       console.log('Full request data:', JSON.stringify(requestData, null, 2));
 
-      // Make the API call
-      const response = await API.post(
-        '/register/',
-        requestData
-      );
+      const response = await API.post('/register/', requestData);
 
       console.log('API Response:', response.data);
 
       if (response.data) {
         const token = response.data.token;
         if (token) {
-          localStorage.setItem('auth_token', token);
+          storeToken(token); // Use unified storage
+          setToken(token);
           toast.success('Sign up successful! Please verify your email.');
           navigate('/settings/email-verification');
         }
         return response.data;
       }
     } catch (error: any) {
-      // More detailed error logging
       console.error('Full error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       console.error('Error headers:', error.response?.headers);
@@ -211,7 +185,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('API Error Message:', errorMessage);
         toast.error(errorMessage);
       } else if (error.response?.data) {
-        // Log each field error
         Object.entries(error.response.data).forEach(([field, errors]) => {
           console.error(`${field} errors:`, errors);
         });
@@ -233,7 +206,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
   
-      // Try with email
       let tokenResponse;
       try {
         tokenResponse = await API.post('/login/', {
@@ -241,7 +213,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           password: password,
         });
       } catch (error: any) {
-        // If 400 and non_field_errors, try with username
         if (error.response?.data?.non_field_errors) {
           tokenResponse = await API.post('/login/', {
             username: email,
@@ -254,21 +225,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
       const { token, access, refresh } = tokenResponse.data;
 
+      let finalToken = null;
       if (token) {
-        // Old style: single token
-        localStorage.setItem('auth_token', token);
-        setToken(token);
-        API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Single token style
+        finalToken = token;
       } else if (access && refresh) {
-        // JWT style
-        storeTokens(access, refresh);
-        setToken(access);
-        API.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+        // JWT style - use access token
+        finalToken = access;
       } else {
         throw new Error('No authentication token received');
       }
+
+      // Store token using unified method
+      storeToken(finalToken);
+      setToken(finalToken);
+      API.defaults.headers.common['Authorization'] = `Bearer ${finalToken}`;
   
-      // 3. Get user profile
+      // Get user profile
       const profileResponse = await API.get('/profile/');
       const userData = profileResponse.data;
       const profile = userData.profile || {};
@@ -302,7 +275,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error.response?.data?.non_field_errors) {
         console.error("Backend says:", error.response.data.non_field_errors[0]);
       }
-      clearTokens();
+      clearToken();
       setToken(null);
       setUser(null);
   
@@ -320,7 +293,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    clearTokens();
+    clearToken();
     setToken(null);
     setUser(null);
     navigate('/');
