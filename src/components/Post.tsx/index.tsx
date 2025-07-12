@@ -431,7 +431,7 @@ export const Post: React.FC<PostProps> = ({
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Img
               src={post.author_profile_pic_url || "/images/user.png"}
               alt="Profile"
@@ -443,6 +443,7 @@ export const Post: React.FC<PostProps> = ({
                 }
               }}
             />
+            <div className='flex flex-col'>
             <span
               className="font-semibold lg:text-[20px] text-[16px] text-[#750015] cursor-pointer hover:underline"
               onClick={() => {
@@ -454,10 +455,12 @@ export const Post: React.FC<PostProps> = ({
             >
               {post.author_name || post.author_display_name}
             </span>
-          </div>
-              <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
+            <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
                 {formatTimestamp(post.timestamp)}
               </Text>
+            </div>
+          </div>
+              
             </div>
 
             {isAuthor && (
