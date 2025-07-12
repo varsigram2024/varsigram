@@ -56,18 +56,45 @@ export default function PostPage({ isModal = false }) {
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setError("Post ID is required");
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!token) {
+      setError("Authentication required");
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
+    setError(null);
+    
     axios
       .get(`${API_BASE_URL}/posts/${id}/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setPost(res.data))
-      .catch(() => toast.error("Failed to load post"))
+      .then((res) => {
+        console.log('Post data received:', res.data);
+        setPost(res.data);
+      })
+      .catch((err) => {
+        console.error('Failed to load post:', err);
+        if (err.response?.status === 404) {
+          setError("Post not found");
+        } else if (err.response?.status === 401) {
+          setError("Authentication required");
+        } else {
+          setError("Failed to load post");
+        }
+        toast.error("Failed to load post");
+      })
       .finally(() => setIsLoading(false));
   }, [id, token]);
 
@@ -133,6 +160,20 @@ export default function PostPage({ isModal = false }) {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-gray-500 mb-4">{error}</div>
+        <button 
+          onClick={() => navigate('/home')}
+          className="bg-[#750015] text-white px-4 py-2 rounded-lg"
+        >
+          Go Home
+        </button>
       </div>
     );
   }
