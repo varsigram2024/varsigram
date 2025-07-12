@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import background from "../public/background img.png";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "../components/Logo";
@@ -7,9 +7,11 @@ import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
 import API from "../services/API";
+import { toast } from "react-toastify";
 
 export const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,6 +19,20 @@ export const Login = () => {
     password: "",
   });
   const { login, signInWithGoogle } = useAuth();
+
+  // Pre-fill email if coming from email verification
+  useEffect(() => {
+    if (location.state?.email) {
+      setFormData(prev => ({ ...prev, email: location.state.email }));
+    }
+  }, [location.state]);
+
+  // Show success message if coming from verification
+  useEffect(() => {
+    if (location.state?.message) {
+      toast.success(location.state.message);
+    }
+  }, [location.state]);
 
   const handleSignUp = () => {
     navigate('/signup');

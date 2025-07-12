@@ -13,6 +13,7 @@ import CommentSection from '../CommentSection';
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from '../EditPostModal';
 import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
 interface Post {
   id: string;
@@ -57,6 +58,7 @@ interface PostProps {
   onClick?: () => void;
   showFullContent?: boolean;
   postsData?: Post[];
+  isPublicView?: boolean; // Add this prop
 }
 
 const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
@@ -71,7 +73,8 @@ export const Post: React.FC<PostProps> = ({
   currentUserEmail,
   onClick,
   showFullContent = false,
-  postsData = []
+  postsData = [],
+  isPublicView = false // Add this prop
 }) => {
   const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
@@ -85,6 +88,40 @@ export const Post: React.FC<PostProps> = ({
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
+
+  // Add refs for share menu
+  const shareMenuRef = React.useRef<HTMLDivElement>(null);
+  const shareButtonRef = React.useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+  // Add click outside handler
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+
+    if (showShareMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showShareMenu]);
+
+  // Calculate menu position when opening
+  const handleShareClick = () => {
+    if (shareButtonRef.current) {
+      const rect = shareButtonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right - 160
+      });
+    }
+    setShowShareMenu((prev) => !prev);
+  };
 
   // Helper to determine if content is long
   const isLong = post.content.length > MAX_LENGTH;
@@ -171,7 +208,8 @@ export const Post: React.FC<PostProps> = ({
     if (isLiking) return;
 
     if (!token) {
-      toast.error('Please login to like posts');
+      toast.error('Please sign up to like posts');
+      navigate('/welcome');
       return;
     }
 
@@ -344,7 +382,7 @@ export const Post: React.FC<PostProps> = ({
 
   const handleShare = async () => {
     if (!token) {
-      toast.error('Please login to revers posts');
+      toast.error('Please revers posts');
       return;
     }
     try {
@@ -406,7 +444,7 @@ export const Post: React.FC<PostProps> = ({
               }}
             />
             <span
-              className="font-semibold text-[#750015] cursor-pointer hover:underline"
+              className="font-semibold lg:text-[20px] text-[16px] text-[#750015] cursor-pointer hover:underline"
               onClick={() => {
                 console.log("Clicked name", post.author_display_name_slug);
                 if (post.author_display_name_slug) {
@@ -417,7 +455,7 @@ export const Post: React.FC<PostProps> = ({
               {post.author_name || post.author_display_name}
             </span>
           </div>
-              <Text as="p" className="text-[12px] text-gray-500">
+              <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
                 {formatTimestamp(post.timestamp)}
               </Text>
             </div>
@@ -469,7 +507,7 @@ export const Post: React.FC<PostProps> = ({
 
           <Text
             as="p"
-            className={`w-full text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line ${
+            className={`w-full text-[14px] lg:text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line ${
               !expanded && isLong ? 'max-h-32 overflow-hidden' : ''
             }`}
             style={{ lineHeight: "1.6" }}
@@ -518,7 +556,13 @@ export const Post: React.FC<PostProps> = ({
           {renderMedia()}
 
           <div className="flex justify-between items-center border-t pt-4">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={handleLike}>
+            <div 
+              className={`flex items-center gap-2 ${token ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} 
+              onClick={token ? handleLike : () => {
+                toast.error('Please sign up to like posts');
+                navigate('/welcome');
+              }}
+            >
               {isLiking ? (
                 <svg className="animate-spin h-4 w-4 text-[#750015]" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -534,44 +578,83 @@ export const Post: React.FC<PostProps> = ({
               <span>{likeCount}</span>
             </div>
 
-            <div className="flex items-center gap-2 cursor-pointer" onClick={handleCommentClick}>
+            <div 
+              className={`flex items-center gap-2 ${token ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} 
+              onClick={token ? handleCommentClick : () => {
+                toast.error('Please sign up to view comments');
+                navigate('/welcome');
+              }}
+            >
               <Img src="/images/vectors/vars.svg" alt="Comment" className="h-[20px] w-[20px]" />
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
-            {/* <div className="flex items-center gap-2">
-              <Img src="/images/vectors/revars.svg" alt="Share" className="h-[20px] w-[20px] cursor-pointer" onClick={handleShare} />
-              <Text as="p" className="text-[14px] font-normal">{post.share_count}</Text>
-            </div> */}
-            <div className="relative">
+            <div className="relative" ref={shareButtonRef}>
               <Img
                 src="/images/vectors/share.svg"
                 alt="Share"
                 className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
-                onClick={() => setShowShareMenu((prev) => !prev)}
+                onClick={handleShareClick}
               />
-              {showShareMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg py-2 z-20">
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
-                  >
-                    <span>Copy Link</span>
-                  </button>
-                  <button
-                    onClick={handleWebShare}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100"
-                  >
-                    <span>Share...</span>
-                  </button>
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Show sign-up prompt for public viewers */}
+          {isPublicView && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-blue-800 text-sm font-medium">
+                    Join Varsigram to like, comment, and share posts!
+                  </p>
+                  <p className="text-blue-600 text-xs mt-1">
+                    Connect with your university community
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/welcome')}
+                  className="bg-[#750015] text-white px-3 py-1 rounded-full text-sm font-medium hover:bg-[#5a0010] transition-colors"
+                >
+                  Sign Up
+                </button>
+              </div>
+            </div>
+          )}
 
           <CommentSection open={showComments} onClose={() => setShowComments(false)} postId={post.id} />
         </div>
       </div>
+
+      {/* Render share menu as portal */}
+      {showShareMenu && createPortal(
+        <div
+          ref={shareMenuRef}
+          className="fixed bg-white rounded-lg shadow-xl py-2 z-[9999] border border-gray-200 min-w-[160px]"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+          }}
+        >
+          <button
+            onClick={handleCopyLink}
+            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm"
+          >
+            <span>Copy Link</span>
+          </button>
+          <button
+            onClick={handleWebShare}
+            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm"
+          >
+            <span>Share...</span>
+          </button>
+        </div>,
+        document.body
+      )}
 
       {isEditModalOpen && editingPost && (
         <EditPostModal

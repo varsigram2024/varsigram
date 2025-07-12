@@ -167,8 +167,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (response.data) {
         const token = response.data.token;
         if (token) {
-          storeToken(token); // Use unified storage
+          storeToken(token);
           setToken(token);
+          
+          // Store credentials for auto-login after verification
+          sessionStorage.setItem('signup_credentials', JSON.stringify({
+            email,
+            password
+          }));
+          
           toast.success('Sign up successful! Please verify your email.');
           navigate('/settings/email-verification');
         }
