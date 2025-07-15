@@ -310,6 +310,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(updatedUser);
   };
 
+  const refreshUserProfile = async () => {
+    try {
+      const response = await API.get('/profile/');
+      const data = response.data;
+      const profile = data.profile || {};
+      const user = profile.user || {};
+
+      setUser({
+        id: user.id,
+        email: user.email,
+        fullName: user.display_name || profile.name || user.name || user.email,
+        profile_pic_url: user.profile_pic_url,
+        username: user.username,
+        is_verified: user.is_verified,
+        bio: user.bio,
+        account_type: data.profile_type,
+        following_count: user.following_count,
+        followers_count: user.followers_count,
+        display_name_slug: profile.display_name_slug
+      });
+    } catch (error: any) {
+      console.error('Failed to refresh user profile:', error);
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        clearToken();
+        setToken(null);
+        setUser(null);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{

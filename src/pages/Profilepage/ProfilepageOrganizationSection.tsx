@@ -56,6 +56,7 @@ export default function ProfileOrganizationSection() {
           `${API_BASE_URL}/users/following/?follower_type=${profile.account_type}&follower_id=${profile.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        console.log("Following API response:", response.data);
         setFollowing(response.data);
       } catch (error) {
         setFollowing([]);
@@ -115,41 +116,30 @@ export default function ProfileOrganizationSection() {
               </div>
             ) : (
               filteredFollowing.map((user, index) => {
-                // Determine display name
+                const followee = user.followee_student || user.followee_organization;
+
                 const displayName =
-                  user.organization?.organization_name ||
-                  user.user?.display_name ||
-                  user.display_name ||
-                  user.username ||
+                  followee?.name ||
+                  followee?.organization_name ||
+                  followee?.user?.display_name ||
+                  followee?.user?.username ||
                   'Unknown User';
 
-                // Determine profile picture
                 const profilePicUrl =
-                  user.organization?.profile_pic_url ||
-                  user.user?.profile_pic_url ||
-                  user.profile_pic_url ||
+                  followee?.user?.profile_pic_url ||
                   "/images/user.png";
 
-                // Determine slug for navigation
-                const displayNameSlug =
-                  user.organization?.display_name_slug ||
-                  user.user?.display_name_slug ||
-                  user.display_name_slug ||
-                  user.username;
-
-                // Determine username for display (for @username)
+                // Use email for @
                 const atUsername =
-                  user.organization?.display_name_slug ||
-                  user.user?.display_name_slug ||
-                  user.display_name_slug ||
-                  user.username;
+                  followee?.user?.email ||
+                  '';
 
                 return (
                   <div
                     key={`${user.id}-${index}`}
                     onClick={() => {
-                      if (displayNameSlug) {
-                        navigate(`/user-profile/${displayNameSlug}`);
+                      if (followee?.display_name_slug) {
+                        navigate(`/user-profile/${followee.display_name_slug}`);
                       }
                     }}
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"

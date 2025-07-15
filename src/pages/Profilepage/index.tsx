@@ -112,12 +112,14 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!display_name_slug || !token) return;
+      if (!display_name_slug) return;
       setIsLoading(true);
       try {
+        const headers: any = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         const profileResponse = await axios.get(
           `${API_BASE_URL}/profile/${display_name_slug}/`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
+          { headers }
         );
         const { profile_type, profile, is_following, followers_count, following_count } = profileResponse.data;
     
@@ -491,7 +493,7 @@ export default function Profile() {
                       </div>
                       
                       {/* Follow button - only show if not viewing own profile */}
-                      {user?.email !== userProfile.email && (
+                      {token && user?.email !== userProfile.email && (
                         <Button
                           onClick={handleFollow}
                           className={`px-6 py-2 rounded-full font-semibold transition-colors ${
@@ -520,20 +522,21 @@ export default function Profile() {
                 </div>
 
                 {/* Posts Section */}
-                {!user?.is_verified ? (
-                  <div className="w-full flex flex-col items-center justify-center bg-yellow-50 border border-yellow-300 rounded-lg p-4 my-4 animate-slide-up">
-                    <Text className="text-yellow-800 font-semibold mb-2">
-                      Kindly go to SETTINGS to Verify your Email, in order to engage with content. THANK YOU!!!
-                    </Text>
-                    <Button
-                      onClick={() => navigate("/settings/email-verification")}
-                      className="bg-[#750015] text-white px-4 py-2 rounded"
-                    >
-                      Go to Email Verification
-                    </Button>
+                {!token && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <p className="text-blue-800 text-sm">
+                      💡 <strong>Want to engage with this user?</strong>
+                      <button 
+                        onClick={() => navigate('/welcome')}
+                        className="text-blue-600 underline ml-1"
+                      >
+                        Sign up to follow, message, or comment
+                      </button>
+                    </p>
                   </div>
-                ) : (
-                  (userProfile.display_name_slug || userProfile.email) && token && (
+                )}
+                {token && (
+                  (userProfile.display_name_slug || userProfile.email) && (
                     <div className="w-full">
                       {posts.map((post, idx) => (
                         <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
