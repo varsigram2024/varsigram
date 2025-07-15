@@ -46,9 +46,11 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function AppContent() {
-  const { signUp: originalSignUp } = useAuth();
+  const { signUp: originalSignUp, isLoading } = useAuth();
   const location = useLocation();
   const state = location.state as { backgroundLocation?: Location };
+
+  if (isLoading) return <div>Loading...</div>;
   
   const adaptedSignUp = async (data: SignUpData) => {
     console.log('App received signup data:', data);
@@ -82,7 +84,7 @@ function AppContent() {
         <Route path="/chat" element={<VerifiedRoute><Chatpage /></VerifiedRoute>} />
         <Route path="/connections" element={<VerifiedRoute><Connectionspage /></VerifiedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/user-profile/:display_name_slug" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/user-profile/:display_name_slug" element={<ProfilePage />} />
         <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/settings/edit-profile" element={<EditProfile />} />
         <Route path="/settings/change-password" element={<ChangePassword />} />
