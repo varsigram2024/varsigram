@@ -30,7 +30,7 @@ const SignupProgress = () => (
 
 export const EmailVerification = () => {
   const navigate = useNavigate();
-  const { token, user, login } = useAuth();
+  const { token, user, refreshUserProfile } = useAuth();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -124,41 +124,16 @@ export const EmailVerification = () => {
       const code = otp.join("");
       await verifyOtp(code, token || "");
       
+      // Force profile refresh here
+      await refreshUserProfile();
+
       // Show success state
       setIsVerified(true);
       toast.success("Email verified successfully!");
       
       // Wait a moment for user to see success, then auto-login
-      setTimeout(async () => {
-        if (userCredentials) {
-          setIsAutoLoggingIn(true);
-          try {
-            await login(userCredentials.email, userCredentials.password);
-            sessionStorage.removeItem('signup_credentials');
-            toast.success("Welcome to Varsigram! 🎉");
-            navigate("/home");
-          } catch (loginError) {
-            console.error('Auto-login failed:', loginError);
-            
-            // More user-friendly fallback
-            toast.info("Email verified! Please log in to continue.");
-            navigate("/login", { 
-              state: { 
-                message: "Email verified successfully! Please log in to continue.",
-                email: userCredentials.email 
-              } 
-            });
-          } finally {
-            setIsAutoLoggingIn(false);
-          }
-        } else {
-          toast.info("Email verified! Please log in to continue.");
-          navigate("/login", { 
-            state: { 
-              message: "Email verified successfully! Please log in to continue." 
-            } 
-          });
-        }
+      setTimeout(() => {
+        navigate("/home");
       }, 1500); // 1.5 second delay to show success
       
     } catch (err: any) {

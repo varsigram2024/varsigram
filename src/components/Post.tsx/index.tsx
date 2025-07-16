@@ -510,7 +510,7 @@ export const Post: React.FC<PostProps> = ({
 
           <Text
             as="p"
-            className={`w-full text-[14px] lg:text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line ${
+            className={`w-full text-[14px] lg:text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
               !expanded && isLong ? 'max-h-32 overflow-hidden' : ''
             }`}
             style={{ lineHeight: "1.6" }}
