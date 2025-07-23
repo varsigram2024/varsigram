@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useLayoutEffect, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
 import debounce from "lodash/debounce";
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
@@ -58,14 +58,35 @@ interface SearchResult {
   posts: Post[];
 }
 
+const useIntersectionObserver = (
+  callback: () => void,
+  options = { threshold: 0, rootMargin: '300px' }
+) => {
+  const observerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      const [entry] = entries;
+      if (entry.isIntersecting && entry.intersectionRatio > 0) {
+        callback();
+      }
+    }, options);
+
+    const currentElement = observerRef.current;
+    if (currentElement) observer.observe(currentElement);
+
+    return () => {
+      if (currentElement) observer.unobserve(currentElement);
+    };
+  }, [callback, options.threshold, options.rootMargin]);
+
+  return observerRef;
+};
 
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
-  const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [activeTab, setActiveTab] = useState<'forYou' | 'official'>('forYou');
   const [isLoading, setIsLoading] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { token, user, logout, isLoading: isAuthLoading } = useAuth();
@@ -77,14 +98,16 @@ export default function Homepage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
+ 
+  // Separate state for each feed type
   const [feedPosts, setFeedPosts] = useState<Post[]>([]);
-  const [nextFeedPage, setNextFeedPage] = useState(`${API_BASE_URL}/posts/?page=1`);
-  const [nextOfficialPage, setNextOfficialPage] = useState(`${API_BASE_URL}/official/?page=1`);  const [isFeedLoading, setIsFeedLoading] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [officialPosts, setOfficialPosts] = useState<Post[]>([]);
-  const [isOfficialLoading, setIsOfficialLoading] = useState(false);
+  const [feedNextCursor, setFeedNextCursor] = useState<string | null>(null);
   const [officialNextCursor, setOfficialNextCursor] = useState<string | null>(null);
-  const [hasMoreOfficial, setHasMoreOfficial] = useState(true);
+  const [feedHasMore, setFeedHasMore] = useState(true);
+  const [officialHasMore, setOfficialHasMore] = useState(true);
+ 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
   const [isSearching, setIsSearching] = useState(false);
@@ -94,112 +117,110 @@ export default function Homepage() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  const fetchPaginatedPosts = async (type: "feed" | "official") => {
-    if (!token) return;
-  
-    const nextPageUrl = type === "feed" ? nextFeedPage : nextOfficialPage;
-    if (!nextPageUrl) return;
-  
+  // Get current posts based on active tab
+  const currentPosts = useMemo(() => {
+    return activeTab === 'forYou' ? feedPosts : officialPosts;
+  }, [activeTab, feedPosts, officialPosts]);
+
+  const currentHasMore = useMemo(() => {
+    return activeTab === 'forYou' ? feedHasMore : officialHasMore;
+  }, [activeTab, feedHasMore, officialHasMore]);
+
+  const currentNextCursor = useMemo(() => {
+    return activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
+  }, [activeTab, feedNextCursor, officialNextCursor]);
+
+  // Update the fetchPosts function to properly append posts
+  const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
+    if (!token || isLoading) return;
+
     setIsLoading(true);
     try {
-      const response = await axios.get(nextPageUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-  
-      const { results, next } = response.data;
-  
-      if (type === "feed") {
-        setFeedPosts(prev => [...prev, ...results]);
-        setNextFeedPage(next);
-      } else {
-        setOfficialPosts(prev => [...prev, ...results]);
-        setNextOfficialPage(next);
-      }
-  
-      setHasMore(!!next);
-    } catch (error) {
-      console.error(`Failed to fetch ${type} posts`, error);
-      setHasMore(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
+      const endpoint = type === 'feed' ? '/posts/' : '/official/';
 
-  const fetchPosts = async (startAfter: string | null = null) => {
-    if (!token) return;
-  
-    setIsLoading(true);
-    try {
-      const params: any = { page_size: 10 };
-      if (startAfter) params.start_after = startAfter;
-  
-      const response = await axios.get(`${API_BASE_URL}/posts/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        params,
-      });
-  
-      const { results, next_cursor } = response.data;
-  
-      if (Array.isArray(results)) {
-        setFeedPosts(prev => [...prev, ...results]);
-        setNextCursor(next_cursor);
-        setHasMore(!!next_cursor);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Failed to fetch feed posts", error);
-      setHasMore(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-
-  const fetchOfficialPosts = async (startAfter: string | null = null) => {
-    if (!token) return;
-  
-    setIsOfficialLoading(true);
-    try {
-      const params: any = { page_size: 6 };
-      if (startAfter) params.start_after = startAfter;
-  
-      const response = await axios.get(`${API_BASE_URL}/official/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        params,
-      });
-  
-      const { results, next_cursor } = response.data;
-  
-      if (Array.isArray(results)) {
-        setOfficialPosts(prev => [...prev, ...results]);
-        setOfficialNextCursor(next_cursor);
-        setHasMoreOfficial(!!next_cursor);
-      } else {
-        setHasMoreOfficial(false);
-      }
-    } catch (error) {
-      console.error("Error fetching official posts:", error);
-      setHasMoreOfficial(false);
-    } finally {
-      setIsOfficialLoading(false);
-    }
-  };
-  
+      const params: any = { 
+        page_size: 10,
+        start_after: startAfter
+      };
       
+      const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        params,
+      });
 
+      const { results, next_cursor } = response.data;
+      
+      if (Array.isArray(results) && results.length > 0) {
+        if (type === 'feed') {
+          // CHANGE: Append posts instead of replacing them
+          setFeedPosts(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          });
+          setFeedNextCursor(next_cursor);
+          setFeedHasMore(!!next_cursor);
+        } else {
+          // Same for official posts
+          setOfficialPosts(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          });
+          setOfficialNextCursor(next_cursor);
+          setOfficialHasMore(!!next_cursor);
+        }
+      }
+    } catch (error) {
+      if (type === 'feed') setFeedHasMore(false);
+      else setOfficialHasMore(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update loadMorePosts to properly use the cursor
+  const loadMorePosts = async () => {
+    if (isLoading || !currentHasMore) return;
+
+    const type = activeTab === 'forYou' ? 'feed' : 'official';
+    const cursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
+
+    try {
+      setIsLoading(true);
+      await fetchPosts(type, cursor);
+    } catch (error) {
+      console.error('Failed to load more posts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial load based on active tab
+  useEffect(() => {
+    if (!token) return;
+
+    if (activeTab === 'forYou' && feedPosts.length === 0) {
+      fetchPosts('feed', null);
+    } else if (activeTab === 'official' && officialPosts.length === 0) {
+      fetchPosts('official', null);
+    }
+  }, [activeTab, token]);
+
+  const loadMoreCallback = useCallback(() => {
+    if (!isLoading && currentHasMore && token) {
+      loadMorePosts();
+    }
+  }, [isLoading, currentHasMore, token, currentPosts.length, loadMorePosts]);
+
+  const loadingRef = useIntersectionObserver(loadMoreCallback);
+
+  // Scroll restoration
   useLayoutEffect(() => {
-    if (!isLoading && posts.length > 0 && postsContainerRef.current) {
+    if (!isLoading && currentPosts.length > 0 && postsContainerRef.current) {
       const savedScroll = sessionStorage.getItem('homepageScroll');
       if (savedScroll) {
         setTimeout(() => {
@@ -208,31 +229,7 @@ export default function Homepage() {
         }, 100);
       }
     }
-  }, [isLoading, posts.length]);
-
-  useEffect(() => {
-    if (activeTab === "forYou") {
-      setPosts(feedPosts);
-    } else if (activeTab === "official") {
-      setPosts(officialPosts);
-    }
-  }, [feedPosts, officialPosts, activeTab]);
-
-  
-  useEffect(() => {
-    console.log("ActiveTab:", activeTab);
-    console.log("FeedPosts:", feedPosts.length);
-    console.log("OfficialPosts:", officialPosts.length);
-    console.log("Current posts:", posts.length);
-  }, [feedPosts, officialPosts, activeTab, posts]);
-  
-
-  useEffect(() => {
-    if (activeTab === "following" && token && officialPosts.length === 0) {
-      fetchOfficialPosts();
-    }
-  }, [activeTab, token]);
-  
+  }, [isLoading, currentPosts.length]);
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -250,7 +247,7 @@ export default function Homepage() {
       return true;
     });
 
-    setSelectedFiles(prev => [...prev, ...validFiles].slice(0, 5)); // Limit to 5 files
+    setSelectedFiles(prev => [...prev, ...validFiles].slice(0, 5));
   };
 
   const handleRemoveFile = (index: number) => {
@@ -262,14 +259,14 @@ export default function Homepage() {
       toast.error('Please enter some content or select at least one image');
       return;
     }
-  
+
     try {
       setIsUploading(true);
-  
+
       const mediaUrls = await Promise.all(
         selectedFiles.map(file => uploadPostMedia(file, token))
       );
-  
+
       const postData = {
         content: newPostContent,
         author_username: user?.email || '',
@@ -284,18 +281,17 @@ export default function Homepage() {
         last_engagement_at: null,
         author_display_name: user?.fullName?.split(' ')[0] || 'Unknown User'
       };
-  
+
       const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-  
-      // 💡 Add post immediately to feed and view
-      setFeedPosts((prev) => [response.data, ...prev]);
-      setPosts((prev) => [response.data, ...prev]);
-  
+
+      // Add to feed posts and refresh if needed
+      setFeedPosts(prev => [response.data, ...prev]);
+
       setNewPostContent('');
       setSelectedFiles([]);
       setIsCreatePostOpen(false);
@@ -307,7 +303,6 @@ export default function Homepage() {
       setIsUploading(false);
     }
   };
-  
 
   const handleCancelPost = () => {
     setNewPostContent('');
@@ -316,13 +311,17 @@ export default function Homepage() {
   };
 
   const handlePostUpdate = (updatedPost: Post) => {
-    setPosts(prevPosts =>
+    setFeedPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
+    );
+    setOfficialPosts(prevPosts =>
       prevPosts.map(post =>
         post.id === updatedPost.id ? updatedPost : post
       )
     );
   };
-  
 
   const handlePostDelete = async (post: Post) => {
     if (!post.id) {
@@ -340,8 +339,9 @@ export default function Homepage() {
         `${API_BASE_URL}/posts/${post.id}/`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      await refreshPosts();
-      setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+     
+      setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+      setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
       toast.success('Post deleted successfully');
     } catch (error) {
       toast.error('Failed to delete post');
@@ -354,17 +354,7 @@ export default function Homepage() {
   };
 
   const handleEditSubmit = async (editedContent: string) => {
-    if (!editingPost) return;
-
-    if (!editingPost.id) {
-      toast.error('Cannot edit post: missing post identifier');
-      return;
-    }
-
-    if (!token) {
-      toast.error('Please login to edit posts');
-      return;
-    }
+    if (!editingPost || !editingPost.id || !token) return;
 
     try {
       await axios.put(
@@ -378,18 +368,12 @@ export default function Homepage() {
         }
       );
 
-      setPosts(prevPosts => 
-        prevPosts.map(post => 
-          post.id === editingPost.id 
-            ? { ...post, content: editedContent }
-            : post
-        )
-      );
+      const updatedPost = { ...editingPost, content: editedContent };
+      handlePostUpdate(updatedPost);
 
       setIsEditModalOpen(false);
       setEditingPost(null);
       toast.success('Post updated successfully');
-      await refreshPosts();
     } catch (error) {
       toast.error('Failed to update post');
     }
@@ -400,7 +384,14 @@ export default function Homepage() {
   };
 
   const handlePostLikeUpdate = (postId: string, like_count: number, has_liked: boolean) => {
-    setPosts((prevPosts) =>
+    setFeedPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, like_count, has_liked }
+          : post
+      )
+    );
+    setOfficialPosts((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId
           ? { ...post, like_count, has_liked }
@@ -410,11 +401,9 @@ export default function Homepage() {
   };
 
   const handleLike = async (post: Post) => {
-    // Save previous state for revert
     const prevLikeCount = post.like_count;
     const prevHasLiked = post.has_liked;
 
-    // Optimistically update UI
     handlePostLikeUpdate(
       post.id,
       post.has_liked ? post.like_count - 1 : post.like_count + 1,
@@ -427,56 +416,27 @@ export default function Homepage() {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Sync with backend response
       handlePostLikeUpdate(post.id, response.data.like_count, response.data.has_liked);
     } catch (error) {
-      // Revert on error
       handlePostLikeUpdate(post.id, prevLikeCount, prevHasLiked);
       console.error("Failed to like/unlike post:", error);
     }
   };
 
-
-  const handleMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !token) return;
-
-    try {
-      const publicUrl = await uploadPostMedia(file, token);
-      // Add this URL to your post's media_urls array
-      setMediaUrls(prev => [...prev, publicUrl]);
-    } catch (error) {
-      toast.error("Failed to upload media.");
-    }
-  };
-
   const refreshPosts = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(`${API_BASE_URL}/posts/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      const { results, next_cursor } = response.data;
-  
-      if (Array.isArray(results)) {
-        setFeedPosts(results); // this is your main post feed
-        setNextCursor(next_cursor);
-        setHasMore(!!next_cursor);
-      } else {
-        throw new Error("Invalid post response format");
-      }
-    } catch (err) {
-      setError('Failed to fetch posts');
-    } finally {
-      setIsLoading(false);
+    setError(null);
+    if (activeTab === 'forYou') {
+      setFeedPosts([]);
+      setFeedNextCursor(null);
+      setFeedHasMore(true);
+      await fetchPosts('feed', null);
+    } else {
+      setOfficialPosts([]);
+      setOfficialNextCursor(null);
+      setOfficialHasMore(true);
+      await fetchPosts('official');
     }
   };
-  
-  
 
   const handleSearch = async () => {
     setIsSearching(true);
@@ -486,7 +446,7 @@ export default function Homepage() {
       if (searchFaculty) params.faculty = searchFaculty;
       if (searchDepartment) params.department = searchDepartment;
       if (searchQuery.trim()) params.query = searchQuery.trim();
-  
+
       const usersResponse = await axios.get(
         `${API_BASE_URL}/users/search/`,
         {
@@ -494,7 +454,7 @@ export default function Homepage() {
           params,
         }
       );
-  
+
       const mappedUsers = usersResponse.data.map((user: any, idx: number) => {
         if (user.name) {
           return {
@@ -519,12 +479,11 @@ export default function Homepage() {
         }
         return null;
       }).filter(Boolean);
-  
-      // ✅ Sort results alphabetically
+
       mappedUsers.sort((a, b) =>
         a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase())
       );
-  
+
       setSearchResults({
         users: mappedUsers,
         posts: [],
@@ -537,358 +496,254 @@ export default function Homepage() {
       setIsSearching(false);
     }
   };
-  
 
   useEffect(() => {
-    // Only trigger if the search modal is open
     if (isSearchOpen) {
       handleSearch();
     }
-    // eslint-disable-next-line
   }, [searchType, searchFaculty, searchDepartment]);
-
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
-  
     debouncedSearch();
-  
-    // Cancel debounce on unmount
     return () => {
       debouncedSearch.cancel();
     };
   }, [searchQuery, searchType, searchFaculty, searchDepartment]);
-  
-  // Debounced version of handleSearch
-  const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [
-    handleSearch,
-  ]);
-  
 
-  useEffect(() => {
-    const savedScroll = sessionStorage.getItem('homepageScroll');
-    if (!savedScroll) return;
-
-    const restoreScroll = () => {
-      window.scrollTo(0, parseInt(savedScroll, 10));
-      sessionStorage.removeItem('homepageScroll');
-    };
-
-    // If posts are already rendered, restore immediately
-    if (postsContainerRef.current && postsContainerRef.current.children.length > 0) {
-      setTimeout(restoreScroll, 0);
-      return;
-    }
-
-    // Otherwise, observe for DOM changes
-    const observer = new MutationObserver(() => {
-      if (postsContainerRef.current && postsContainerRef.current.children.length > 0) {
-        restoreScroll();
-        observer.disconnect();
-      }
-    });
-
-    if (postsContainerRef.current) {
-      observer.observe(postsContainerRef.current, { childList: true });
-    }
-
-    // Cleanup
-    return () => observer.disconnect();
-  }, [posts.length, isLoading]);
-
-  // ⚠️ FIX THIS FIRST
-useEffect(() => {
-  const handleScroll = () => {
-    if (
-      window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 &&
-      !isLoading &&
-      hasMore
-    ) {
-      if (activeTab === "forYou") {
-        fetchPaginatedPosts("feed");
-      } else if (activeTab === "official") {
-        fetchPaginatedPosts("official");
-      }
-    }
-  };
-
-  window.addEventListener("scroll", handleScroll);
-  return () => window.removeEventListener("scroll", handleScroll);
-}, [isLoading, hasMore, activeTab, nextFeedPage, nextOfficialPage]);
-
-// ✅ Put this separately
-useEffect(() => {
-  if (token) {
-    if (activeTab === "forYou" && feedPosts.length === 0) {
-      fetchPaginatedPosts("feed");
-    } else if (activeTab === "official" && officialPosts.length === 0) {
-      fetchPaginatedPosts("official");
-    }
-  }
-}, [activeTab, token]);
-
-  
-  
-  
+  const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [handleSearch]);
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden animate-fade-in">
       <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
-        <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
-        <div className="hidden lg:flex items-center justify-between animate-fade-in">
-          <div 
-            onClick={() => {
-              if (user?.display_name_slug) {
-                navigate(`/user-profile/${user.display_name_slug}`);
-              } else {
-                toast.error("Profile link unavailable");
-              }
-            }}  
-            className="hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            <Text as="p" className="text-[24px] font-medium md:text-[22px]">
-              Welcome back, {user?.fullName || 'User'} 👋
-            </Text>
+        <div 
+          className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col"
+          ref={postsContainerRef}
+          style={{ 
+            overflowY: 'auto',
+            height: '100vh',
+            maxHeight: 'calc(100vh - 120px)',
+            paddingBottom: '20px',
+            WebkitOverflowScrolling: 'touch',
+            scrollBehavior: 'smooth' // CHANGE: Add smooth scrolling
+          }}
+        >
+          <div className="hidden lg:flex items-center justify-between animate-fade-in">
+            <div
+              onClick={() => {
+                if (user?.display_name_slug) {
+                  navigate(`/user-profile/${user.display_name_slug}`);
+                } else {
+                  toast.error("Profile link unavailable");
+                }
+              }}  
+              className="hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <Text as="p" className="text-[24px] font-medium md:text-[22px]">
+                Welcome back, {user?.fullName || 'User'} 👋
+              </Text>
+            </div>
+            <Img
+              src="/images/search.svg"
+              alt="Search"
+              className="h-[24px] w-[24px] cursor-pointer"
+              onClick={() => setIsSearchOpen(true)}
+            />
           </div>
-          <Img 
-            src="/images/search.svg" 
-            alt="Search" 
-            className="h-[24px] w-[24px] cursor-pointer" 
-            onClick={() => setIsSearchOpen(true)}
-          />
-        </div>
-        <div className="lg:mt-5 flex justify-between animate-slide-up">
-          <div 
-            className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
-            onClick={() => setActiveTab('forYou')}
-          >
-            <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
-              For you
-            </Text>
-          </div>
-          <div 
-            className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'following' ? 'border-[#750015]' : 'border-transparent'}`}
-            onClick={() => setActiveTab('following')}
-          >
-            <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'following' ? '' : '!text-[#adacb2]'}`}>
-              Official
-            </Text>
-          </div>
-        </div>
-          
-
-
-            <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
-              <div 
-                onClick={() => {
-                  if (user?.display_name_slug) {
-                    navigate(`/user-profile/${user.display_name_slug}`);
-                  } else {
-                    toast.error("Profile link unavailable");
-                  }
-                }} 
-                className="hover:opacity-80 transition-opacity cursor-pointer"
+         
+          <div className="lg:mt-5 flex justify-between animate-slide-up">
+            <div
+              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
+              onClick={() => setActiveTab('forYou')}
+            >
+              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
+                For you
+              </Text>
+            </div>
+            <div
+              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
+              onClick={() => setActiveTab('official')}
+            >
+              <Text
+                as="p"
+                className={`text-[14px] font-medium md:text-[22px] ${
+                  activeTab === 'official' ? '' : '!text-[#adacb2]'
+                }`}
               >
-                <Img 
-                  src={user?.profile_pic_url || "images/user.png"} 
-                  alt="Profile" 
-                  className="h-[32px] w-[32px] rounded-[50%]" 
-                  onClick={() => {
-                    if (user?.display_name_slug) {
-                      navigate(`/user-profile/${user.display_name_slug}`);
-                    } else {
-                      toast.error("Profile link unavailable");
-                    }
-                  }}
-                />
-              </div>
+                Official
+              </Text>
+            </div>
+          </div>
 
-              <div>
-                <Text className="font-semibold text-xl">Varsigram</Text>
-              </div>
-
-        
-
-              <div className='flex flex-row justify-between'>
-                  <div 
-                    onClick={() => handleNavigation('settings')} 
-                    className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
-                  >
-                   <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
-                  </div>
-                
-                  <Img 
-                    src="/images/search.svg" 
-                    alt="Search" 
-                    className="h-[24px] w-[24px] cursor-pointer" 
-                    onClick={() => setIsSearchOpen(true)}
-                  />
-              </div>
+          <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
+            <div
+              onClick={() => {
+                if (user?.display_name_slug) {
+                  navigate(`/user-profile/${user.display_name_slug}`);
+                } else {
+                  toast.error("Profile link unavailable");
+                }
+              }}
+              className="hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <Img
+                src={user?.profile_pic_url || "/public/images/user.png"}
+                alt="Profile"
+                className="h-[32px] w-[32px] rounded-[50%]"
+              />
             </div>
 
-            
+            <div>
+              <Text className="font-semibold text-xl">Varsigram</Text>
+            </div>
 
-            {isCreatePostOpen && (
-              <div className="animate-slide-up">
-                <CreatePostModal
-                  newPostContent={newPostContent}
-                  setNewPostContent={setNewPostContent}
-                  selectedFiles={selectedFiles}
-                  setSelectedFiles={setSelectedFiles}
-                  isUploading={isUploading}
-                  onClose={handleCancelPost}
-                  onSubmit={handleCreatePost}
-                  handleFileChange={handleFileChange}
-                  handleRemoveFile={handleRemoveFile}
-                />
-              </div>
-            )}
-
-            {!isCreatePostOpen && (
-              <div 
-                className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors animate-fade-in"
-                onClick={() => setIsCreatePostOpen(true)}
+            <div className='flex flex-row justify-between'>
+              <div
+                onClick={() => handleNavigation('settings')}
+                className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
               >
-                <input
-                  type="text"
-                  value={newPostContent}
-                  placeholder="Create a vars..."
-                  className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-                />
-                <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsCreatePostOpen(true);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
-                  </button>
-                </div>
+               <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
               </div>
-            )}
+           
+              <Img
+                src="/images/search.svg"
+                alt="Search"
+                className="h-[24px] w-[24px] cursor-pointer"
+                onClick={() => setIsSearchOpen(true)}
+              />
+            </div>
+          </div>
+
+          {isCreatePostOpen && (
+            <div className="animate-slide-up">
+              <CreatePostModal
+                newPostContent={newPostContent}
+                setNewPostContent={setNewPostContent}
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
+                isUploading={isUploading}
+                onClose={handleCancelPost}
+                onSubmit={handleCreatePost}
+                handleFileChange={handleFileChange}
+                handleRemoveFile={handleRemoveFile}
+              />
+            </div>
+          )}
+
+          {!isCreatePostOpen && (
+            <div
+              className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors animate-fade-in"
+              onClick={() => setIsCreatePostOpen(true)}
+            >
+              <input
+                type="text"
+                value={newPostContent}
+                placeholder="Create a vars..."
+                className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
+              />
+              <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCreatePostOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="w-full post-section">
-            {isLoading && (
+            {isLoading && currentPosts.length === 0 && (
               <div className="flex justify-center items-center py-20 animate-fade-in">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
               </div>
             )}
 
             {error && !isLoading && !isAuthLoading && (
-              <div className="flex justify-center items-center py-20 animate-fade-in">
-                <p className="text-red-500 text-center">{error}</p>
+              <div className="flex flex-col justify-center items-center py-20 animate-fade-in">
+                <p className="text-red-500 text-center mb-4">{error}</p>
+                <button
+                  onClick={refreshPosts}
+                  className="px-4 py-2 bg-[#750015] text-white rounded hover:bg-[#600012] transition-colors"
+                >
+                  Try Again
+                </button>
               </div>
             )}
 
-            {!isLoading && !isAuthLoading && !error && (
-              <>
-                <div 
-                  className={`transition-all duration-300 ease-in-out ${activeTab === 'forYou' ? 'opacity-100' : 'opacity-0'} animate-fade-in`}
-                >
-                  {activeTab === 'forYou' && (
-                    <div className="space-y-6 w-full" ref={postsContainerRef}>
-                      {posts.map((post, idx) => (
-                        <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
-                          <Post 
-                            post={post} 
-                            onPostUpdate={(updatedPost) => {
-                              setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                            }}
-                            onPostDelete={(post) => {
-                              setPosts(prev => prev.filter(p => p.id !== post.id));
-                            }}
-                            onPostEdit={(post) => {
-                              // This is now handled internally by the Post component
-                            }}
-                            currentUserId={user?.id}
-                            currentUserEmail={user?.email}
-                            onClick={() => {
-                              sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                              navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
-                            }}
-                            postsData={posts}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            {!isLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
+              <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                  No {activeTab === 'forYou' ? 'posts' : 'official posts'} in your feed yet.
+                </Text>
+              </div>
+            )}
 
-                <div 
-                    className={`transition-all duration-300 ease-in-out ${activeTab === 'following' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full absolute'} animate-fade-in`}
-                  >
-                  {activeTab === 'following' && (
-                    <div className="space-y-6">
-                      {isFeedLoading ? (
-                        <div className="flex justify-center items-center h-40 animate-fade-in">
-                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
-                        </div>
-                      ) : feedPosts.length === 0 ? (
-                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                            No Official post in your feed yet.
-                          </Text>
-                        </div>
-                      ) : (
-                        officialPosts.map((post, idx) => (
-                          <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
-                            <Post 
-                              post={post} 
-                              onPostUpdate={(updatedPost) => {
-                                setFeedPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                              }}
-                              onPostDelete={(post) => {
-                                setFeedPosts(prev => prev.filter(p => p.id !== post.id));
-                              }}
-                              onPostEdit={(post) => {
-                                // This is now handled internally by the Post component
-                              }}
-                              currentUserId={user?.id}
-                              currentUserEmail={user?.email}
-                              onClick={() => {
-                                sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                                navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
-                              }}
-                              postsData={posts}
-                            />
-                          </div>
-                        ))
-                      )}
+            {!isAuthLoading && currentPosts.length > 0 && (
+              <div className="space-y-6 w-full">
+                {currentPosts.map((post, idx) => {
+                  // Add unique composite key
+                  const uniqueKey = `${post.id}-${idx}`;
+                  return (
+                    <div 
+                      key={uniqueKey}
+                      className="animate-slide-up" 
+                      style={{ animationDelay: `${idx * 60}ms` }}
+                    >
+                      <Post
+                        post={post}
+                        onPostUpdate={handlePostUpdate}
+                        onPostDelete={handlePostDelete}
+                        onPostEdit={handlePostEdit}
+                        currentUserId={user?.id}
+                        currentUserEmail={user?.email}
+                        onClick={() => {
+                          sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+                          navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
+                        }}
+                        postsData={feedPosts}
+                      />
                     </div>
+                  );
+                })}
+                
+                {/* Loading trigger */}
+                <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
+                  {isLoading && (
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
+                  )}
+                  {!currentHasMore && currentPosts.length > 0 && (
+                    <div className="text-gray-500">No more posts to load</div>
                   )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
 
         <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
-          
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
           </div>
 
-          
           <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
             <ProfileOrganizationSection />
           </div>
-          
-          
         </div>
       </div>
 
       <BottomNav />
 
       {isSearchOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center md:items-center justify-center p-2 md:p-4"
-
           onClick={() => {
             setIsSearchOpen(false);
             setSearchQuery("");
@@ -896,14 +751,12 @@ useEffect(() => {
           }}
         >
           <div
-  className="bg-white rounded-t-2xl md:rounded-[32px] w-full h-full md:h-auto max-h-screen md:max-h-[80vh] overflow-y-auto shadow-lg p-4 md:p-6"
-  onClick={e => e.stopPropagation()}
->
-
-            {/* Search Header */}
+            className="bg-white rounded-t-2xl md:rounded-[32px] w-full h-full md:h-auto max-h-screen md:max-h-[80vh] overflow-y-auto shadow-lg p-4 md:p-6"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div 
+                <div
                   className="cursor-pointer"
                   onClick={() => {
                     setIsSearchOpen(false);
@@ -935,7 +788,6 @@ useEffect(() => {
                 )}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
-                {/* Type Filter */}
                 <select
                   className="border rounded px-2 py-1"
                   value={searchType}
@@ -945,7 +797,6 @@ useEffect(() => {
                   <option value="student">Student</option>
                   <option value="organization">Organization</option>
                 </select>
-                {/* Faculty Filter */}
                 <select
                   className="border rounded px-2 py-1"
                   value={searchFaculty}
@@ -959,7 +810,6 @@ useEffect(() => {
                     <option key={faculty} value={faculty}>{faculty}</option>
                   ))}
                 </select>
-                {/* Department Filter */}
                 <select
                   className="border rounded px-2 py-1"
                   value={searchDepartment}
@@ -1048,8 +898,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-     
     </div>
   );
 }
