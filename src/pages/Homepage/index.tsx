@@ -73,7 +73,9 @@ export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'following'>('forYou');
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { token, user, logout, isLoading: isAuthLoading } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -96,27 +98,26 @@ export default function Homepage() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (startAfter: string | null = null) => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/posts/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (Array.isArray(response.data)) {
-        setPosts(response.data);
-        setError(null);
-      } else {
+      const params: any = { page_size: 10 };
+      if (startAfter) params.start_after = startAfter;
+      const headers: any = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const response = await axios.get(`${API_BASE_URL}/feed/`, { params, headers });
+      const { results, next_cursor } = response.data;
+      if (!Array.isArray(results)) {
         setError("Invalid post data");
-        setPosts([]);
+        setHasMore(false);
+        return;
       }
+      setPosts(prev => [...prev, ...results]);
+      setNextCursor(next_cursor);
+      setHasMore(!!next_cursor);
     } catch (err) {
-      console.error("Fetch error:", err);
       setError("Failed to fetch posts");
-      setPosts([]);
+      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
@@ -136,20 +137,16 @@ export default function Homepage() {
   }, [isLoading, posts.length]);
 
   useEffect(() => {
-    if (!token && !isAuthLoading) {
-      setIsLoading(false);
-      setPosts([]);
-      return;
-    }
-    if (token) {
-      fetchPosts();
-    }
-  }, [token, isAuthLoading]);
+    setPosts([]);
+    setNextCursor(null);
+    setHasMore(true);
+    fetchPosts();
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'following' && token) {
       setIsFeedLoading(true);
-      axios.get(`${API_BASE_URL}/official/`, {
+      axios.get(`${API_BASE_URL}/offical/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -157,7 +154,6 @@ export default function Homepage() {
       })
       .then(response => {
         setFeedPosts(response.data);
-        console.log('Feed posts:', response.data);
       })
       .catch(error => {
         console.error('Error fetching feed:', error);
@@ -261,7 +257,6 @@ export default function Homepage() {
   
 
   const handlePostDelete = async (post: Post) => {
-    console.log('Deleting post:', post);
     if (!post.id) {
       toast.error('Cannot delete post: missing post identifier');
       return;
@@ -463,9 +458,6 @@ export default function Homepage() {
     }
   };
 
-  // Debug: log the user object
-  console.log('Homepage user:', user);
-
   useEffect(() => {
     // Only trigger if the search modal is open
     if (isSearchOpen) {
@@ -473,14 +465,6 @@ export default function Homepage() {
     }
     // eslint-disable-next-line
   }, [searchType, searchFaculty, searchDepartment]);
-
-  useEffect(() => {
-    console.log('Homepage mounted');
-  }, []);
-
-  useEffect(() => {
-    console.log('Posts loaded:', posts.length);
-  }, [posts]);
 
   useEffect(() => {
     const savedScroll = sessionStorage.getItem('homepageScroll');
@@ -513,10 +497,19 @@ export default function Homepage() {
     return () => observer.disconnect();
   }, [posts.length, isLoading]);
 
-  console.log("isLoading:", isLoading);
-  console.log("isAuthLoading:", isAuthLoading);
-  console.log("error:", error);
-  console.log("posts:", posts);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop
+        >= document.documentElement.offsetHeight - 300 &&
+        hasMore && !isLoading
+      ) {
+        fetchPosts(nextCursor);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, isLoading, nextCursor]);
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden animate-fade-in">
@@ -659,7 +652,7 @@ export default function Homepage() {
             )}
 
           <div className="w-full post-section">
-            {(isLoading || isAuthLoading) && (
+            {isLoading && (
               <div className="flex justify-center items-center py-20 animate-fade-in">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
               </div>

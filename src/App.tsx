@@ -50,7 +50,45 @@ function AppContent() {
   const location = useLocation();
   const state = location.state as { backgroundLocation?: Location };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-full bg-white">
+        <div className="flex flex-col items-center space-y-4">
+          <svg
+            width="64"
+            height="45"
+            viewBox="0 0 64 45"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-16 w-16 md:h-20 md:w-20"
+          >
+            <path
+              d="M31.8142 40.3235C28.8059 38.1083 28.163 33.8738 30.3782 30.8655L48.3636 6.44121C50.9834 2.88345 55.9913 2.12312 59.5491 4.74295L64.0013 8.02142L41.2723 38.8876C39.0571 41.8959 34.8225 42.5388 31.8142 40.3235Z"
+              fill="#750015"
+              className="animate-pulse delay-[0ms]"
+            />
+            <path
+              d="M18.157 32.0453C15.2635 29.9147 14.6452 25.8419 16.7758 22.9485L27.0562 8.98768C29.676 5.42992 34.684 4.66958 38.2417 7.28941L42.2778 10.2615L27.2538 30.6642C25.1232 33.5576 21.0504 34.176 18.157 32.0453Z"
+              fill="#750015"
+              className="animate-pulse delay-[300ms]"
+            />
+            <path
+              d="M6.94957 20.7166C5.79993 19.0374 5.58672 16.8876 6.38412 15.0152L7.20593 13.0856C9.18517 8.43821 14.9826 6.85431 19.0499 9.8497L22.7724 12.5911L16.6651 20.8839C14.2323 24.1873 9.2671 24.1017 6.94957 20.7166Z"
+              fill="#750015"
+              className="animate-pulse delay-[600ms]"
+            />
+          </svg>
+  
+          <p className="text-[#750015] text-lg md:text-xl font-semibold tracking-wide">
+            Loading Varsigram...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  
+  
   
   const adaptedSignUp = async (data: SignUpData) => {
     console.log('App received signup data:', data);
