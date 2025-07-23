@@ -4,23 +4,13 @@ import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
-import { Input } from "../../components/Input/index.tsx";
-import { Heading } from "../../components/Heading/index.tsx";
-import { CloseSVG } from "../../components/Input/close.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
-import { Button } from "../../components/Button";
-import CreateConversation from "../../modals/createCONVERSATION";
 import BottomNav from "../../components/BottomNav";
-import { LogOut } from "lucide-react";
 import { toast } from 'react-hot-toast';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase/config.ts';
 import { uploadPostMedia } from '../../utils/fileUpload';
-import { ClickableUser } from "../../components/ClickableUser";
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
 import CreatePostModal from '../../components/CreatePostModal';
 import { faculties, facultyDepartments } from "../../constants/academic";
@@ -88,8 +78,13 @@ export default function Homepage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
   const [feedPosts, setFeedPosts] = useState<Post[]>([]);
-  const [isFeedLoading, setIsFeedLoading] = useState(false);
+  const [nextFeedPage, setNextFeedPage] = useState(`${API_BASE_URL}/posts/?page=1`);
+  const [nextOfficialPage, setNextOfficialPage] = useState(`${API_BASE_URL}/official/?page=1`);  const [isFeedLoading, setIsFeedLoading] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [officialPosts, setOfficialPosts] = useState<Post[]>([]);
+  const [isOfficialLoading, setIsOfficialLoading] = useState(false);
+  const [officialNextCursor, setOfficialNextCursor] = useState<string | null>(null);
+  const [hasMoreOfficial, setHasMoreOfficial] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
   const [isSearching, setIsSearching] = useState(false);
@@ -99,30 +94,108 @@ export default function Homepage() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  const fetchPosts = async (startAfter: string | null = null) => {
+  const fetchPaginatedPosts = async (type: "feed" | "official") => {
+    if (!token) return;
+  
+    const nextPageUrl = type === "feed" ? nextFeedPage : nextOfficialPage;
+    if (!nextPageUrl) return;
+  
     setIsLoading(true);
     try {
-      const params: any = { page_size: 10 };
-      if (startAfter) params.start_after = startAfter;
-      const headers: any = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const response = await axios.get(`${API_BASE_URL}/feed/`, { params, headers });
-      const { results, next_cursor } = response.data;
-      if (!Array.isArray(results)) {
-        setError("Invalid post data");
-        setHasMore(false);
-        return;
+      const response = await axios.get(nextPageUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      const { results, next } = response.data;
+  
+      if (type === "feed") {
+        setFeedPosts(prev => [...prev, ...results]);
+        setNextFeedPage(next);
+      } else {
+        setOfficialPosts(prev => [...prev, ...results]);
+        setNextOfficialPage(next);
       }
-      setPosts(prev => [...prev, ...results]);
-      setNextCursor(next_cursor);
-      setHasMore(!!next_cursor);
-    } catch (err) {
-      setError("Failed to fetch posts");
+  
+      setHasMore(!!next);
+    } catch (error) {
+      console.error(`Failed to fetch ${type} posts`, error);
       setHasMore(false);
     } finally {
       setIsLoading(false);
     }
   };
+  
+
+  const fetchPosts = async (startAfter: string | null = null) => {
+    if (!token) return;
+  
+    setIsLoading(true);
+    try {
+      const params: any = { page_size: 10 };
+      if (startAfter) params.start_after = startAfter;
+  
+      const response = await axios.get(`${API_BASE_URL}/posts/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        params,
+      });
+  
+      const { results, next_cursor } = response.data;
+  
+      if (Array.isArray(results)) {
+        setFeedPosts(prev => [...prev, ...results]);
+        setNextCursor(next_cursor);
+        setHasMore(!!next_cursor);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch feed posts", error);
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+
+  const fetchOfficialPosts = async (startAfter: string | null = null) => {
+    if (!token) return;
+  
+    setIsOfficialLoading(true);
+    try {
+      const params: any = { page_size: 6 };
+      if (startAfter) params.start_after = startAfter;
+  
+      const response = await axios.get(`${API_BASE_URL}/official/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        params,
+      });
+  
+      const { results, next_cursor } = response.data;
+  
+      if (Array.isArray(results)) {
+        setOfficialPosts(prev => [...prev, ...results]);
+        setOfficialNextCursor(next_cursor);
+        setHasMoreOfficial(!!next_cursor);
+      } else {
+        setHasMoreOfficial(false);
+      }
+    } catch (error) {
+      console.error("Error fetching official posts:", error);
+      setHasMoreOfficial(false);
+    } finally {
+      setIsOfficialLoading(false);
+    }
+  };
+  
       
 
   useLayoutEffect(() => {
@@ -138,33 +211,28 @@ export default function Homepage() {
   }, [isLoading, posts.length]);
 
   useEffect(() => {
-    setPosts([]);
-    setNextCursor(null);
-    setHasMore(true);
-    fetchPosts();
-  }, []);
+    if (activeTab === "forYou") {
+      setPosts(feedPosts);
+    } else if (activeTab === "official") {
+      setPosts(officialPosts);
+    }
+  }, [feedPosts, officialPosts, activeTab]);
+
+  
+  useEffect(() => {
+    console.log("ActiveTab:", activeTab);
+    console.log("FeedPosts:", feedPosts.length);
+    console.log("OfficialPosts:", officialPosts.length);
+    console.log("Current posts:", posts.length);
+  }, [feedPosts, officialPosts, activeTab, posts]);
+  
 
   useEffect(() => {
-    if (activeTab === 'following' && token) {
-      setIsFeedLoading(true);
-      axios.get(`${API_BASE_URL}/offical/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      .then(response => {
-        setFeedPosts(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching feed:', error);
-        setFeedPosts([]);
-      })
-      .finally(() => {
-        setIsFeedLoading(false);
-      });
+    if (activeTab === "following" && token && officialPosts.length === 0) {
+      fetchOfficialPosts();
     }
   }, [activeTab, token]);
+  
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -194,18 +262,14 @@ export default function Homepage() {
       toast.error('Please enter some content or select at least one image');
       return;
     }
-
+  
     try {
       setIsUploading(true);
-      
-      // Upload all images using signed URL logic
+  
       const mediaUrls = await Promise.all(
-        selectedFiles.map(async (file) => {
-          return uploadPostMedia(file, token);
-        })
+        selectedFiles.map(file => uploadPostMedia(file, token))
       );
-
-      // Then create the post with the media URLs
+  
       const postData = {
         content: newPostContent,
         author_username: user?.email || '',
@@ -218,22 +282,24 @@ export default function Homepage() {
         has_liked: false,
         trending_score: 0,
         last_engagement_at: null,
-        author_display_name: user?.fullName ? user.fullName.split(' ')[0] : user?.username || 'Unknown User'
+        author_display_name: user?.fullName?.split(' ')[0] || 'Unknown User'
       };
-
+  
       const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-
-      setPosts([response.data, ...posts]);
+  
+      // 💡 Add post immediately to feed and view
+      setFeedPosts((prev) => [response.data, ...prev]);
+      setPosts((prev) => [response.data, ...prev]);
+  
       setNewPostContent('');
       setSelectedFiles([]);
       setIsCreatePostOpen(false);
       toast.success('Post created successfully');
-      await refreshPosts();
     } catch (error) {
       console.error('Error creating post:', error);
       toast.error('Failed to create post. Please try again.');
@@ -241,6 +307,7 @@ export default function Homepage() {
       setIsUploading(false);
     }
   };
+  
 
   const handleCancelPost = () => {
     setNewPostContent('');
@@ -388,17 +455,28 @@ export default function Homepage() {
     try {
       const response = await axios.get(`${API_BASE_URL}/posts/`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-      setPosts(response.data);
+  
+      const { results, next_cursor } = response.data;
+  
+      if (Array.isArray(results)) {
+        setFeedPosts(results); // this is your main post feed
+        setNextCursor(next_cursor);
+        setHasMore(!!next_cursor);
+      } else {
+        throw new Error("Invalid post response format");
+      }
     } catch (err) {
       setError('Failed to fetch posts');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  
 
   const handleSearch = async () => {
     setIsSearching(true);
@@ -518,19 +596,40 @@ export default function Homepage() {
     return () => observer.disconnect();
   }, [posts.length, isLoading]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop
-        >= document.documentElement.offsetHeight - 300 &&
-        hasMore && !isLoading
-      ) {
-        fetchPosts(nextCursor);
+  // ⚠️ FIX THIS FIRST
+useEffect(() => {
+  const handleScroll = () => {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 &&
+      !isLoading &&
+      hasMore
+    ) {
+      if (activeTab === "forYou") {
+        fetchPaginatedPosts("feed");
+      } else if (activeTab === "official") {
+        fetchPaginatedPosts("official");
       }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading, nextCursor]);
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, [isLoading, hasMore, activeTab, nextFeedPage, nextOfficialPage]);
+
+// ✅ Put this separately
+useEffect(() => {
+  if (token) {
+    if (activeTab === "forYou" && feedPosts.length === 0) {
+      fetchPaginatedPosts("feed");
+    } else if (activeTab === "official" && officialPosts.length === 0) {
+      fetchPaginatedPosts("official");
+    }
+  }
+}, [activeTab, token]);
+
+  
+  
+  
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden animate-fade-in">
@@ -735,7 +834,7 @@ export default function Homepage() {
                           </Text>
                         </div>
                       ) : (
-                        feedPosts.map((post, idx) => (
+                        officialPosts.map((post, idx) => (
                           <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
                             <Post 
                               post={post} 

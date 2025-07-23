@@ -83,7 +83,6 @@ export default function PostPage({ isModal = false }) {
     axios
       .get(`${API_BASE_URL}/posts/${id}/`, { headers })
       .then((res) => {
-        console.log('Post data received:', res.data);
         setPost(res.data);
       })
       .catch((err) => {
@@ -109,7 +108,7 @@ export default function PostPage({ isModal = false }) {
       if (token) headers.Authorization = `Bearer ${token}`;
   
       const res = await axios.get(`${API_BASE_URL}/posts/${id}/comments/`, { headers });
-      console.log('Comments response:', res.data); // Show response on console
+      
   
       const commentData = Array.isArray(res.data)
         ? res.data
