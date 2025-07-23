@@ -109,6 +109,7 @@ export default function PostPage({ isModal = false }) {
       if (token) headers.Authorization = `Bearer ${token}`;
   
       const res = await axios.get(`${API_BASE_URL}/posts/${id}/comments/`, { headers });
+      console.log('Comments response:', res.data); // Show response on console
   
       const commentData = Array.isArray(res.data)
         ? res.data
@@ -118,9 +119,11 @@ export default function PostPage({ isModal = false }) {
   
       setComments(commentData);
     } catch (error) {
+      console.error('Failed to fetch comments:', error); // Show error on console
       setComments([]);
     }
   };
+  
   
 
   const handleAddComment = async (e: React.FormEvent) => {

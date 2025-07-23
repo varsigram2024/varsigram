@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect, useMemo } from 'react';
+import debounce from "lodash/debounce";
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
@@ -406,9 +407,8 @@ export default function Homepage() {
       if (searchType !== 'all') params.type = searchType;
       if (searchFaculty) params.faculty = searchFaculty;
       if (searchDepartment) params.department = searchDepartment;
-      // Only add q if the user actually typed something
-      if (searchQuery.trim()) params.q = searchQuery.trim();
-
+      if (searchQuery.trim()) params.query = searchQuery.trim();
+  
       const usersResponse = await axios.get(
         `${API_BASE_URL}/users/search/`,
         {
@@ -416,11 +416,9 @@ export default function Homepage() {
           params,
         }
       );
-
-      // Map backend response to frontend user object
+  
       const mappedUsers = usersResponse.data.map((user: any, idx: number) => {
         if (user.name) {
-          // Student
           return {
             id: user.display_name_slug || user.email || idx,
             email: user.email,
@@ -432,7 +430,6 @@ export default function Homepage() {
             department: user.department,
           };
         } else if (user.organization_name) {
-          // Organization
           return {
             id: user.display_name_slug || user.email || idx,
             email: user.email,
@@ -444,7 +441,12 @@ export default function Homepage() {
         }
         return null;
       }).filter(Boolean);
-
+  
+      // ✅ Sort results alphabetically
+      mappedUsers.sort((a, b) =>
+        a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase())
+      );
+  
       setSearchResults({
         users: mappedUsers,
         posts: [],
@@ -457,6 +459,7 @@ export default function Homepage() {
       setIsSearching(false);
     }
   };
+  
 
   useEffect(() => {
     // Only trigger if the search modal is open
@@ -465,6 +468,24 @@ export default function Homepage() {
     }
     // eslint-disable-next-line
   }, [searchType, searchFaculty, searchDepartment]);
+
+
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+  
+    debouncedSearch();
+  
+    // Cancel debounce on unmount
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [searchQuery, searchType, searchFaculty, searchDepartment]);
+  
+  // Debounced version of handleSearch
+  const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [
+    handleSearch,
+  ]);
+  
 
   useEffect(() => {
     const savedScroll = sessionStorage.getItem('homepageScroll');
