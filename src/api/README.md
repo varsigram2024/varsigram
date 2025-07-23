@@ -144,17 +144,58 @@ Most endpoints require authentication. Authentication is handled using token-bas
   - Authentication: Required
   - Response (200 OK): Returns user profile data and profile type.
 
-- **`GET /users/search/?q=<query>`**  [name='search']
+- **`GET /users/search/`**  [name='user-search']
 
-  - Description: Searches for users based on a query string.
+  - Description: Search for users (students or organizations) using filters such as name, faculty, and department.
   - Request: `GET`
+  - Authentication: Required (JWT)
   - Query Parameters:
-    - `q`: The search query.
-    - `type`: "student" or "organization" (optional)
-    - `faculty`, `department`: (optional, for student search)
+    - `type`: (required) `"student"` or `"organization"` — specifies which user type to search.
+    - `faculty`: (optional, students only) Filter by faculty name (case-insensitive).
+    - `department`: (optional, students only) Filter by department name (case-insensitive).
+    - `query`: (optional) Search by student name or organization name (case-insensitive).
   - Response (200 OK): Returns a list of matching users.
+    ```json
+    [
+      {
+        "email": "student@email.com",
+        "faculty": "Science",
+        "department": "Mathematics",
+        "name": "John Doe",
+        "display_name_slug": "john-doe-1"
+      },
+      {
+        "email": "org@email.com",
+        "organization_name": "Varsigram Inc",
+        "display_name_slug": "varsigram-inc-1",
+        "exclusive": true
+      }
+    ]
+    ```
+  - Response (400 Bad Request): If required parameters are missing or invalid.
+    ```json
+    {
+      "message": "Missing \"type\" parameter. Please specify \"student\" or \"organization\"."
+    }
+    ```
+    or
+    ```json
+    {
+      "message": "Invalid \"type\" parameter. Must be \"student\" or \"organization\"."
+    }
+    ```
+  - Response (200 OK, empty): If no users match the search.
+    ```json
+    []
+    ```
 
-- **`POST /deactivate/`**  [name='user-deactivate']
+**Notes:**
+
+- For `type=student`, at least one of `faculty`, `department`, or `query` must be provided.
+- For `type=organization`, only `query` is supported for filtering.
+- All searches are case-insensitive and partial matches are supported.
+
+* **`POST /deactivate/`**  [name='user-deactivate']
 
   - Description: Deactivates the authenticated user's account.
   - Request: `POST`
@@ -167,7 +208,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (200 OK): On successful deactivation.
 
-- **`POST /reactivate/`**  [name='user-reactivate']
+* **`POST /reactivate/`**  [name='user-reactivate']
 
   - Description: Reactivates the authenticated user's account.
   - Request: `POST`
@@ -180,14 +221,14 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (200 OK): On successful reactivation.
 
-- **`POST /send-otp/`**  [name='send-otp']
+* **`POST /send-otp/`**  [name='send-otp']
 
   - Description: Sends an OTP to the user's registered email.
   - Request: `POST`
   - Authentication: Required
   - Response (200 OK): On successful OTP send.
 
-- **`POST /verify-otp/`**  [name='verify-otp']
+* **`POST /verify-otp/`**  [name='verify-otp']
 
   - Description: Verifies the provided OTP.
   - Request: `POST`
@@ -200,14 +241,14 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (200 OK): On successful verification.
 
-- **`GET /check-verification/`**  [name='check-verification']
+* **`GET /check-verification/`**  [name='check-verification']
 
   - Description: Checks the verification status of a user.
   - Request: `GET`
   - Authentication: Required
   - Response (200 OK): Returns verification status.
 
-- **`POST /get-signed-upload-url/`**  [name='get-signed-upload-url']
+* **`POST /get-signed-upload-url/`**  [name='get-signed-upload-url']
 
   - Description: Returns a signed URL for uploading files (e.g., profile pictures) to Firebase Storage.
   - Request: `POST`
@@ -221,7 +262,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (200 OK): Returns the signed upload URL and file path.
 
-- **`GET /profile/<slug:slug>/`**  [name='public-profile']
+* **`GET /profile/<slug:slug>/`**  [name='public-profile']
 
   - Description: Retrieves a user's public profile by `display_name_slug`.
   - Request: `GET`
@@ -260,9 +301,60 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
 ### Posts
 
-- **`GET /posts/`** and **`POST /posts/`**  [name='post-list-create']
+- **`GET /posts/`**  [name='post-list-firestore']
 
-  - **GET**: Retrieves a list of posts.
+  - Description: Retrieves a paginated list of all posts from Firestore, ordered by `timestamp` (most recent first).
+  - Request: `GET`
+  - Authentication: Optional (some fields like `has_liked` depend on authentication)
+  - Query Parameters:
+    - `page_size`: (optional, default: 10) Number of posts to return per page.
+    - `start_after`: (optional) Firestore post ID to start after (for pagination).
+  - Response (200 OK): Returns a paginated list of posts.
+    ```json
+    {
+      "results": [
+        {
+          "id": "post_id",
+          "content": "Post content",
+          "timestamp": "2025-07-22T12:34:56Z",
+          "author_id": "user_id",
+          "has_liked": false,
+          "media_urls": []
+          // ...other post fields...
+        }
+      ],
+      "next_cursor": "next_post_id"
+    }
+    ```
+  - Response (200 OK, empty): If no posts are found.
+    ```json
+    {
+      "results": [],
+      "next_cursor": null
+    }
+    ```
+  - Response (400 Bad Request): If an invalid `start_after` ID is provided.
+    ```json
+    {
+      "error": "Invalid start_after ID"
+    }
+    ```
+  - Response (500 Internal Server Error): If an error occurs.
+    ```json
+    {
+      "error": "Failed to retrieve posts: <error_message>"
+    }
+    ```
+
+**Notes:**
+
+- The endpoint returns posts sorted by `timestamp` (most recent first).
+- Pagination is handled via the `start_after` query parameter and `next_cursor` in the response.
+- Each post includes hydrated author information in the response context.
+- If authenticated, the `has_liked` field reflects whether the current user has
+
+* **`POST /posts/`**  [name='post-list-create']
+
   - **POST**: Creates a new post.
   - Authentication: Required for POST.
   - Request Body (POST, JSON):
@@ -275,13 +367,13 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (201 Created): Returns the created post.
 
-- **`GET /posts/<str:post_id>/`**  [name='post-detail']
+* **`GET /posts/<str:post_id>/`**  [name='post-detail']
 
   - Retrieves a specific post by its ID.
   - Request: GET
   - Response (200 OK): Returns the post data.
 
-- **`PUT /posts/<str:post_id>/`**  [name='post-detail']
+* **`PUT /posts/<str:post_id>/`**  [name='post-detail']
 
   - Updates a specific post.
   - Authentication: Required
@@ -294,18 +386,60 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (200 OK): Returns the updated post.
 
-- **`DELETE /posts/<str:post_id>/`**  [name='post-detail']
+* **`DELETE /posts/<str:post_id>/`**  [name='post-detail']
 
   - Deletes a specific post.
   - Authentication: Required
   - Response (204 No Content): On successful deletion.
 
-- **`GET /posts/<str:post_id>/comments/`**  [name='post-comments']
+* **`GET /posts/<str:post_id>/comments/`**  [name='post-comments']
 
-  - Retrieves comments for a specific post.
-  - Request: GET
+  - Description: Retrieves comments for a specific post. Supports cursor-based pagination.
+  - Request: `GET`
+  - Authentication: Optional (some fields may depend on authentication)
+  - Path Parameters:
+    - `post_id`: The ID of the post whose comments you want to retrieve.
+  - Query Parameters:
+    - `page_size`: (optional, default: 10) Number of comments to return per page.
+    - `start_after`: (optional) Firestore comment ID to start after (for pagination).
+  - Response (200 OK): Returns a paginated list of comments for the post.
+    ```json
+    {
+      "results": [
+        {
+          "id": "comment_id",
+          "text": "Comment text",
+          "author_id": "user_id",
+          "timestamp": "2025-07-22T12:34:56Z",
+          "profile_pic_url": "https://...",
+          "display_name_slug": "user-slug"
+          // ...other comment fields...
+        }
+      ],
+      "next_cursor": "next_comment_id"
+    }
+    ```
+  - Response (200 OK, empty): If the post has no comments.
+    ```json
+    {
+      "results": [],
+      "next_cursor": null
+    }
+    ```
+  - Response (404 Not Found): If the post does not exist.
+    ```json
+    {
+      "error": "Post not found"
+    }
+    ```
+  - Response (500 Internal Server Error): If an error occurs.
+    ```json
+    {
+      "error": "Failed to retrieve comments: <error_message>"
+    }
+    ```
 
-- **`POST /posts/<str:post_id>/comments/create/`**  [name='post-detail']
+* **`POST /posts/<str:post_id>/comments/create/`**  [name='post-detail']
 
   - Adds a comment to a post.
   - Authentication: Required
@@ -317,50 +451,187 @@ Most endpoints require authentication. Authentication is handled using token-bas
     ```
   - Response (201 Created): Returns the created comment.
 
-- **`POST /posts/<str:post_id>/like/`**  [name='post-like']
+* **`POST /posts/<str:post_id>/like/`**  [name='post-like']
 
   - Likes a specific post.
   - Authentication: Required
 
-- **`GET /posts/<str:post_id>/likes/`**  [name='post-likes-list']
+* **`GET /posts/<str:post_id>/likes/`**  [name='post-likes-list']
 
   - Retrieves likes for a specific post.
   - Request: GET
 
-- **`POST /posts/<str:post_id>/share/`**  [name='post-share']
+* **`POST /posts/<str:post_id>/share/`**  [name='post-share']
 
   - Shares a specific post.
   - Authentication: Required
   - Response (201 Created): Returns the share object.
 
-- **`GET /users/<str:user_id>/posts/`**  [name='user-posts']
+* **`GET /users/<str:user_id>/posts/`**  [name='user-posts-firestore']
 
-      *   Retrieves all posts by a specific user.
-      *   Request: GET
-
-  <!--
-
-
-- **`GET /posts/search/?q=<query>`**  [name='post-search']
-
-  - Searches for posts based on a query string.
-  - Request: GET
+  - Description: Retrieves all posts authored by a specific user, including posts the user has shared. Supports cursor-based pagination.
+  - Request: `GET`
+  - Authentication: Optional (some fields like `has_liked` depend on authentication)
+  - Path Parameters:
+    - `user_id`: The ID of the user whose posts you want to retrieve.
   - Query Parameters:
-    - `q`: The search query.
-  - Response (200 OK): Returns a list of matching posts. -->
+    - `page_size`: (optional, default: 20) Number of posts to return per page.
+    - `start_after`: (optional) Firestore post ID to start after (for pagination).
+  - Response (200 OK): Returns a paginated list of posts authored or shared by the user.
+    ```json
+    {
+      "results": [
+        {
+          "id": "post_id",
+          "content": "Post content",
+          "timestamp": "2025-07-22T12:34:56Z",
+          "author_id": "user_id",
+          "is_shared": false,
+          "has_liked": false,
+          "media_urls": []
+          // ...other post fields...
+        },
+        {
+          "id": "shared_post_id",
+          "content": "Shared post content",
+          "timestamp": "2025-07-21T10:00:00Z",
+          "author_id": "original_author_id",
+          "is_shared": true,
+          "shared_by_id": "user_id",
+          "shared_at": "2025-07-22T13:00:00Z",
+          "has_liked": false,
+          "media_urls": []
+          // ...other post fields...
+        }
+      ],
+      "next_cursor": "next_post_id"
+    }
+    ```
+  - Response (200 OK, empty): If the user has no posts or shares.
+    ```json
+    {
+      "results": [],
+      "next_cursor": null
+    }
+    ```
+  - Response (500 Internal Server Error): If an error occurs.
+    ```json
+    {
+      "error": "Failed to retrieve posts for user: <error_message>"
+    }
+    ```
 
-- **`GET /feed/`**  [name='feed']
+**Notes:**
 
-  - Retrieves the authenticated user's feed, including posts from followed organizations, users in the same department/faculty/religion, and the user's own posts and shares.
-  - Authentication: Required
+- The endpoint returns posts sorted by `shared_at` (if shared) or `timestamp` (if authored), most recent first.
+- Pagination is handled via the `start_after` query parameter and `next_cursor` in the response.
+- Each post includes hydrated author information and share details if applicable.
+- If authenticated, the `has_liked`
+
+* **`GET /feed/`**  [name='feed']
+
+  - Description: Retrieves the main feed of posts by students, ordered by `trending_score` (descending) and then by `timestamp` (descending). Supports cursor-based pagination.
+  - Request: `GET`
+  - Authentication: Required (JWT)
   - Query Parameters:
-    - `shared`: If present, includes shared posts in the feed.
+    - `page_size`: (optional, default: 30) Number of posts to return per page.
+    - `start_after_score`: (optional) The `trending_score` of the last post from the previous page (for cursor-based pagination).
+    - `start_after_timestamp`: (optional) The `timestamp` of the last post from the previous page (for cursor-based pagination).
+  - Response (200 OK): Returns a paginated list of student posts.
+    ```json
+    {
+      "results": [
+        {
+          "id": "post_id",
+          "content": "Post content",
+          "timestamp": "2025-07-22T12:34:56Z",
+          "author_id": "student_user_id",
+          "trending_score": 42.5,
+          "has_liked": false,
+          "media_urls": []
+          // ...other post fields...
+        }
+      ],
+      "next_cursor": {
+        "trending_score": 42.5,
+        "timestamp": "2025-07-22T12:34:56Z"
+      }
+    }
+    ```
+  - Response (200 OK, empty): If no posts are found.
+    ```json
+    {
+      "results": [],
+      "next_cursor": null
+    }
+    ```
+  - Response (500 Internal Server Error): If an error occurs.
+    ```json
+    {
+      "error": "Failed to retrieve feed posts: <error_message>"
+    }
+    ```
 
-- **`GET /trending/`**  [name='trending-posts']
+**Notes:**
+
+- The endpoint returns posts sorted by `trending_score` and then by `timestamp`, most recent and trending first.
+- Pagination is handled via the `start_after_score` and `start_after_timestamp` query parameters, and the `next_cursor` in the response.
+- Each post includes hydrated author information in the response context.
+- The `has_liked` field reflects whether the current user has
+<!--
+
+* **`GET /trending/`**  [name='trending-posts']
 
   - Retrieves trending posts (based on likes, shares, or other criteria).
   - Request: GET
-  - Response (200 OK): Returns a list of trending posts.
+  - Response (200 OK): Returns a list of trending posts. -->
+
+* **`GET /official`**  [name='exclusive-orgs-recent-posts']
+
+  - Description: Retrieves recent posts from organizations marked as `exclusive=True`. Supports cursor-based pagination.
+  - Request: `GET`
+  - Authentication: Optional (some fields like `has_liked` depend on authentication)
+  - Query Parameters:
+    - `page_size`: (optional, default: 20) Number of posts to return per page.
+    - `start_after`: (optional) Firestore document ID to start after (for pagination).
+  - Response (200 OK): Returns a paginated list of recent posts from exclusive organizations.
+    ```json
+    {
+      "results": [
+        {
+          "id": "post_id",
+          "content": "Post content",
+          "timestamp": "2025-07-22T12:34:56Z",
+          "author_id": "org_user_id",
+          "has_liked": false,
+          "media_urls": []
+          // ...other post fields...
+        }
+      ],
+      "next_cursor": "next_post_id"
+    }
+    ```
+  - Response (200 OK, empty): If no exclusive organizations or posts are found.
+    ```json
+    {
+      "results": [],
+      "next_cursor": null
+    }
+    ```
+  - Response (500 Internal Server Error): If an error occurs.
+    ```json
+    {
+      "detail": "Error fetching posts."
+    }
+    ```
+
+**Notes:**
+
+- The endpoint returns posts sorted by `timestamp` (most recent first).
+- Pagination is handled via the `start_after` query parameter and `next_cursor` in the response.
+- Each post includes hydrated author information in the response context.
+- Only organizations with `exclusive=True` are included.
+- If authenticated, the `has_liked` field reflects whether the current user has liked each post.
 
 ### Following & Followers
 
@@ -481,3 +752,17 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
 - All follow/unfollow actions require the user to be authenticated and to be a student.
 - The "Who To Follow" endpoint will always include organizations marked as exclusive, and will not return organizations the student already follows.
+
+...
+
+### Organization Verification
+
+- **`GET /verified-org-badge/`**  [name='verified-org-badge']
+
+  - Description: Checks if the authenticated organization is both exclusive and verified.
+  - Request: `GET`
+  - Authentication: Required
+  - Response (200 OK): Returns `{"is_verified": true}` if the organization is exclusive and verified, otherwise `{"is_verified": false}`.
+  - Response (404 Not Found): If the organization profile is not found.
+
+...

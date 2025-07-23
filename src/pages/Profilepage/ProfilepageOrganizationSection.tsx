@@ -115,8 +115,10 @@ export default function ProfileOrganizationSection() {
                 </Text>
               </div>
             ) : (
-              filteredFollowing.map((user, index) => {
-                const followee = user.followee_student || user.followee_organization;
+              filteredFollowing.map((item, index) => {
+                // Only show if followee_student or followee_organization exists
+                const followee = item.followee_student || item.followee_organization;
+                if (!followee) return null;
 
                 const displayName =
                   followee?.name ||
@@ -129,14 +131,13 @@ export default function ProfileOrganizationSection() {
                   followee?.user?.profile_pic_url ||
                   "/images/user.png";
 
-                // Use email for @
                 const atUsername =
                   followee?.user?.email ||
                   '';
 
                 return (
                   <div
-                    key={`${user.id}-${index}`}
+                    key={`${item.id}-${index}`}
                     onClick={() => {
                       if (followee?.display_name_slug) {
                         navigate(`/user-profile/${followee.display_name_slug}`);
