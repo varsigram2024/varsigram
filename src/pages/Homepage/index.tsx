@@ -519,7 +519,7 @@ export default function Homepage() {
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
         <div 
-          className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col"
+          className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
           ref={postsContainerRef}
           style={{ 
             overflowY: 'auto',

@@ -62,3 +62,18 @@ class UserSearchView(ListAPIView):
                         'display_name_slug': organization.display_name_slug,
                     })
         return Response(user_data, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
