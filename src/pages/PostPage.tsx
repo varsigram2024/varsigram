@@ -83,7 +83,6 @@ export default function PostPage({ isModal = false }) {
     axios
       .get(`${API_BASE_URL}/posts/${id}/`, { headers })
       .then((res) => {
-        console.log('Post data received:', res.data);
         setPost(res.data);
       })
       .catch((err) => {
@@ -106,19 +105,25 @@ export default function PostPage({ isModal = false }) {
   const fetchComments = async () => {
     try {
       const headers: any = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+      if (token) headers.Authorization = `Bearer ${token}`;
+  
+      const res = await axios.get(`${API_BASE_URL}/posts/${id}/comments/`, { headers });
       
-      const res = await axios.get(
-        `${API_BASE_URL}/posts/${id}/comments/`,
-        { headers }
-      );
-      setComments(res.data);
-    } catch {
+  
+      const commentData = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.results)
+          ? res.data.results
+          : [];
+  
+      setComments(commentData);
+    } catch (error) {
+      console.error('Failed to fetch comments:', error); // Show error on console
       setComments([]);
     }
   };
+  
+  
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
