@@ -77,7 +77,7 @@ export const Post: React.FC<PostProps> = ({
   onClick,
   showFullContent = false,
   postsData = [],
-  isPublicView = false // Add this prop
+  isPublicView = false
 }) => {
   const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
@@ -87,54 +87,12 @@ export const Post: React.FC<PostProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
 
-  // Add refs for share menu
-  const shareMenuRef = React.useRef<HTMLDivElement>(null);
-  const shareButtonRef = React.useRef<HTMLDivElement>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-
-  // Add click outside handler
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
-        setShowShareMenu(false);
-      }
-    };
-
-    if (showShareMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showShareMenu]);
-
-  // Calculate menu position when opening - improved for mobile
   const handleShareClick = () => {
-    if (shareButtonRef.current) {
-      const rect = shareButtonRef.current.getBoundingClientRect();
-      const isMobile = window.innerWidth <= 768;
-      
-      if (isMobile) {
-        // For mobile, position the menu below the button and center it
-        setMenuPosition({
-          top: rect.bottom + window.scrollY + 8,
-          left: Math.max(10, rect.left - 80) // Center with some margin
-        });
-      } else {
-        // For desktop, position to the right of the button
-        setMenuPosition({
-          top: rect.bottom + window.scrollY + 8,
-          left: rect.right - 160
-        });
-      }
-    }
-    setShowShareMenu((prev) => !prev);
+    handleWebShare();
   };
 
   // Helper to determine if content is long
@@ -374,7 +332,6 @@ export const Post: React.FC<PostProps> = ({
     try {
       await navigator.clipboard.writeText(postUrl);
       toast.success("Link copied!");
-      setShowShareMenu(false);
     } catch {
       toast.error("Failed to copy link");
     }
@@ -387,7 +344,6 @@ export const Post: React.FC<PostProps> = ({
         text: post.content,
         url: postUrl,
       })
-        .then(() => setShowShareMenu(false))
         .catch(() => toast.error("Share cancelled or failed"));
     } else {
       toast.error("Sharing not supported on this device");
@@ -649,7 +605,7 @@ export const Post: React.FC<PostProps> = ({
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
-            <div className="relative" ref={shareButtonRef}>
+            <div className="relative">
               <Img
                 src="/images/vectors/share.svg"
                 alt="Share"
@@ -699,36 +655,6 @@ export const Post: React.FC<PostProps> = ({
           }}
           onSubmit={handleEditSubmit}
         />
-      )}
-
-      {/* Render share menu as portal to avoid clipping */}
-      {showShareMenu && createPortal(
-        <div
-          ref={shareMenuRef}
-          className="fixed bg-white rounded-lg shadow-xl py-2 z-[9999] border border-gray-200 min-w-[140px] max-w-[200px]"
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-            // Ensure it doesn't overflow horizontally
-            maxWidth: 'calc(100vw - 20px)',
-            // Ensure it doesn't go off-screen
-            transform: 'translateX(-50%)',
-          }}
-        >
-          <button
-            onClick={handleCopyLink}
-            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm whitespace-nowrap"
-          >
-            <span>Copy Link</span>
-          </button>
-          <button
-            onClick={handleWebShare}
-            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm whitespace-nowrap"
-          >
-            <span>Share...</span>
-          </button>
-        </div>,
-        document.body
       )}
     </>
   );

@@ -626,33 +626,48 @@ export default function Profile() {
                         </div>
                       ) : (
                         <>
-                          {posts.map((post, idx) => (
-                            <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
-                              <Post
-                                post={post}
-                                onPostUpdate={(updatedPost) => {
-                                  setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                                }}
-                                onPostDelete={(post) => {
-                                  setPosts(prev => prev.filter(p => p.id !== post.id));
-                                }}
-                                onPostEdit={(post) => {
-                                  // This is now handled internally by the Post component
-                                }}
-                                currentUserId={user?.id}
-                                currentUserEmail={user?.email}
-                              />
+                          <div className="space-y-6 w-full">
+                            {posts.map((post, idx) => {
+                              // Add unique composite key like Homepage
+                              const uniqueKey = `${post.id}-${idx}`;
+                              return (
+                                <div 
+                                  key={uniqueKey}
+                                  className="animate-slide-up mb-10" 
+                                  style={{ animationDelay: `${idx * 60}ms` }}
+                                >
+                                  <Post
+                                    post={post}
+                                    onPostUpdate={(updatedPost) => {
+                                      setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                                    }}
+                                    onPostDelete={(post) => {
+                                      setPosts(prev => prev.filter(p => p.id !== post.id));
+                                    }}
+                                    onPostEdit={(post) => {
+                                      // This is now handled internally by the Post component
+                                    }}
+                                    currentUserId={user?.id}
+                                    currentUserEmail={user?.email}
+                                    onClick={() => {
+                                      // Handle post click navigation if needed
+                                      navigate(`/posts/${post.id}`);
+                                    }}
+                                    postsData={posts}
+                                  />
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Loading trigger for infinite scroll */}
+                            <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
+                              {isLoadingMore && (
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
+                              )}
+                              {!hasMore && posts.length > 0 && (
+                                <div className="text-gray-500">No more posts to load</div>
+                              )}
                             </div>
-                          ))}
-                          
-                          {/* Loading trigger for infinite scroll */}
-                          <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
-                            {isLoadingMore && (
-                              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
-                            )}
-                            {!hasMore && posts.length > 0 && (
-                              <div className="text-gray-500">No more posts to load</div>
-                            )}
                           </div>
                         </>
                       )}
