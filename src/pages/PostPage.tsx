@@ -10,7 +10,7 @@ import BottomNav from "./../components/BottomNav";
 import ProfileOrganizationSection from "./Profilepage/ProfilepageOrganizationSection.tsx";
 import WhoToFollowSidePanel from "../components/whoToFollowSidePanel/index.tsx";
 import { toast } from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { useMediaQuery } from 'react-responsive';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -25,6 +25,10 @@ interface Comment {
   author_profile_pic_url?: string;
   author_display_name?: string;
   author_display_name_slug?: string;
+  // Add these fields that might be in the API response
+  profile_pic_url?: string;
+  display_name_slug?: string;
+  author_name?: string;
 }
 
 interface Post {
@@ -49,6 +53,14 @@ interface Post {
   // add any other fields you use
 }
 
+interface CommentItemProps {
+  comment: Comment;
+  currentUserId?: string;
+  onCommentUpdate: (commentId: string, newText: string) => void;
+  onCommentDelete: (commentId: string) => void;
+  navigate: (path: string) => void;
+}
+
 export default function PostPage({ isModal = false }) {
   const { id } = useParams<{ id: string }>();
   const { token, user, isLoading: authLoading } = useAuth();
@@ -60,6 +72,11 @@ export default function PostPage({ isModal = false }) {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Add pagination state for comments
+  const [commentsNextCursor, setCommentsNextCursor] = useState<string | null>(null);
+  const [commentsHasMore, setCommentsHasMore] = useState(true);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
   // Add a media query for mobile
   const isMobile = window.innerWidth <= 640;
@@ -102,25 +119,59 @@ export default function PostPage({ isModal = false }) {
     fetchComments();
   }, [id, token]);
 
-  const fetchComments = async () => {
+  // Update fetchComments to support pagination
+  const fetchComments = async (startAfter: string | null = null) => {
+    if (isLoadingComments) return;
+    
+    setIsLoadingComments(true);
     try {
       const headers: any = {};
       if (token) headers.Authorization = `Bearer ${token}`;
   
-      const res = await axios.get(`${API_BASE_URL}/posts/${id}/comments/`, { headers });
+      const params: any = { 
+        page_size: 10,
+        start_after: startAfter
+      };
       
-  
-      const commentData = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data.results)
-          ? res.data.results
-          : [];
-  
-      setComments(commentData);
+      const res = await axios.get(`${API_BASE_URL}/posts/${id}/comments/`, { 
+        headers,
+        params 
+      });
+      
+      const { results, next_cursor } = res.data;
+      
+      if (Array.isArray(results) && results.length > 0) {
+        if (startAfter) {
+          // Append comments for pagination
+          setComments(prev => {
+            const existingIds = new Set(prev.map(c => c.id));
+            const uniqueComments = results.filter(comment => !existingIds.has(comment.id));
+            return [...prev, ...uniqueComments];
+          });
+        } else {
+          // Replace comments for initial load
+          setComments(results);
+        }
+        setCommentsNextCursor(next_cursor);
+        setCommentsHasMore(!!next_cursor);
+      } else {
+        setComments([]);
+        setCommentsNextCursor(null);
+        setCommentsHasMore(false);
+      }
     } catch (error) {
-      console.error('Failed to fetch comments:', error); // Show error on console
+      console.error('Failed to fetch comments:', error);
       setComments([]);
+      setCommentsHasMore(false);
+    } finally {
+      setIsLoadingComments(false);
     }
+  };
+
+  // Load more comments function
+  const loadMoreComments = async () => {
+    if (isLoadingComments || !commentsHasMore) return;
+    await fetchComments(commentsNextCursor);
   };
   
   
@@ -215,23 +266,18 @@ export default function PostPage({ isModal = false }) {
           <ArrowLeft className="h-6 w-6" />
         </button>
         <div className="flex items-center gap-2">
-          {/* <Img
-            src={post?.author_profile_pic_url || "/images/user.png"}
-            alt="Profile"
-            className="h-8 w-8 rounded-full object-cover"
-          />
-          <span className="font-semibold text-[#750015]">{post?.author_name || post?.author_display_name}</span> */}
           Vars
         </div>
       </div>
 
       {/* Main content */}
       <div className={`
-        flex-1 w-full
-        ${isMobile ? 'overflow-y-auto px-0 pb-24' : 'flex items-center justify-center min-h-screen bg-white'}
+        ${isMobile ? 'flex-1 w-full overflow-y-auto px-0 pb-24' : 'w-full h-full overflow-y-auto'}
+        ${isModal && !isMobile ? 'max-h-[90vh] overflow-y-auto' : ''}
       `}>
         <div className={`
-          ${isMobile ? 'w-full max-w-full px-0' : 'w-full max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-4'}
+          ${isMobile ? 'w-full max-w-full px-0' : 'w-full max-w-2xl mx-auto bg-white p-4'}
+          ${isModal && !isMobile ? 'rounded-xl shadow-lg' : ''}
         `}>
           {/* Back button for desktop/modal */}
           {!isMobile && (
@@ -251,7 +297,7 @@ export default function PostPage({ isModal = false }) {
               currentUserId={user?.id}
               currentUserEmail={user?.email}
               showFullContent={true}
-              isPublicView={!token} // Add this prop
+              isPublicView={!token}
             />
           </div>
 
@@ -306,37 +352,48 @@ export default function PostPage({ isModal = false }) {
             </form>
             
             <div className="space-y-6">
-              {comments.length === 0 ? (
+              {comments.length === 0 && !isLoadingComments ? (
                 <Text>No comments yet.</Text>
               ) : (
-                comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3 items-start">
-                    <Img
-                      src={comment.author_profile_pic_url || "/images/user.png"}
-                      alt="Profile"
-                      className="h-8 w-8 rounded-full object-cover"
+                <>
+                  {comments.map((comment) => (
+                    <CommentItem 
+                      key={comment.id} 
+                      comment={comment} 
+                      currentUserId={user?.id}
+                      onCommentUpdate={handleCommentUpdate}
+                      onCommentDelete={handleCommentDelete}
+                      navigate={navigate}
                     />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Text
-                          as="span"
-                          className="font-semibold text-[#750015] cursor-pointer hover:underline"
-                          onClick={() => {
-                            if (comment.author_display_name_slug) {
-                              navigate(`/user-profile/${comment.author_display_name_slug}`);
-                            }
-                          }}
-                        >
-                          {comment.author_name}
-                        </Text>
-                        <span className="text-xs text-gray-400">
-                          {new Date(comment.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <Text className="block">{comment.text}</Text>
+                  ))}
+                  
+                  {/* Load more comments button */}
+                  {commentsHasMore && (
+                    <div className="flex justify-center mt-4">
+                      <button
+                        onClick={loadMoreComments}
+                        disabled={isLoadingComments}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                      >
+                        {isLoadingComments ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-600"></div>
+                            Loading...
+                          </div>
+                        ) : (
+                          'Load more comments'
+                        )}
+                      </button>
                     </div>
-                  </div>
-                ))
+                  )}
+                  
+                  {/* Loading indicator */}
+                  {isLoadingComments && comments.length > 0 && (
+                    <div className="flex justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#750015]"></div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -356,3 +413,271 @@ export default function PostPage({ isModal = false }) {
     </div>
   );
 }
+
+const CommentItem: React.FC<CommentItemProps> = ({ 
+  comment, 
+  currentUserId, 
+  onCommentUpdate, 
+  onCommentDelete,
+  navigate 
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fix the author comparison - convert both to strings for comparison
+  const isAuthor = currentUserId && comment.author_id && 
+    currentUserId.toString() === comment.author_id.toString();
+
+  // Get the correct profile picture URL
+  const profilePicUrl = comment.author_profile_pic_url || comment.profile_pic_url || "/images/user.png";
+  
+  // Get the correct author name
+  const authorName = comment.author_display_name || comment.author_name || comment.author_username;
+  
+  // Get the correct display name slug
+  const displayNameSlug = comment.author_display_name_slug || comment.display_name_slug;
+
+  // Debug logging
+  console.log('Comment:', comment);
+  console.log('Current user ID:', currentUserId);
+  console.log('Comment author ID:', comment.author_id);
+  console.log('Is author:', isAuthor);
+  console.log('Profile pic URL:', profilePicUrl);
+  console.log('Author name:', authorName);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showOptions && !event.target.closest('.comment-options')) {
+        setShowOptions(false);
+      }
+    };
+
+    if (showOptions) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showOptions]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditText(comment.text);
+    setShowOptions(false);
+  };
+
+  const handleSave = async () => {
+    if (!editText.trim() || editText === comment.text) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await onCommentUpdate(comment.id, editText);
+      setIsEditing(false);
+    } catch (error) {
+      toast.error('Failed to update comment');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditText(comment.text);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await onCommentDelete(comment.id);
+    } catch (error) {
+      toast.error('Failed to delete comment');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex gap-3 items-start">
+        <Img
+          src={profilePicUrl}
+          alt="Profile"
+          className="h-8 w-8 rounded-full object-cover"
+        />
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Text
+              as="span"
+              className="font-semibold text-[#750015] cursor-pointer hover:underline"
+              onClick={() => {
+                if (displayNameSlug) {
+                  navigate(`/user-profile/${displayNameSlug}`);
+                }
+              }}
+            >
+              {authorName}
+            </Text>
+            <span className="text-xs text-gray-400">
+              {new Date(comment.timestamp).toLocaleString()}
+            </span>
+          </div>
+          <div className="space-y-2">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 resize-none"
+              rows={3}
+              disabled={isUpdating}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                disabled={!editText.trim() || isUpdating}
+                className="px-3 py-1 bg-[#750015] text-white rounded text-sm disabled:opacity-50"
+              >
+                {isUpdating ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isUpdating}
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-3 items-start">
+      <Img
+        src={profilePicUrl}
+        alt="Profile"
+        className="h-8 w-8 rounded-full object-cover"
+      />
+      <div className="flex-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Text
+              as="span"
+              className="font-semibold text-[#750015] cursor-pointer hover:underline"
+              onClick={() => {
+                if (displayNameSlug) {
+                  navigate(`/user-profile/${displayNameSlug}`);
+                }
+              }}
+            >
+              {authorName}
+            </Text>
+            <span className="text-xs text-gray-400">
+              {new Date(comment.timestamp).toLocaleString()}
+            </span>
+          </div>
+          {isAuthor && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowOptions(!showOptions)}
+                className="p-1 hover:bg-gray-100 rounded-full comment-options"
+                disabled={isDeleting}
+              >
+                <MoreVertical size={16} />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg py-1 z-10 border">
+                  <button 
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
+                  >
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button 
+                    onClick={handleDelete}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-gray-100 text-sm"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <Text className="block">{comment.text}</Text>
+      </div>
+    </div>
+  );
+};
+
+const handleCommentUpdate = async (commentId: string, newText: string) => {
+  try {
+    // Try different possible API endpoints
+    let response;
+    try {
+      response = await axios.put(
+        `${API_BASE_URL}/posts/${id}/comments/${commentId}/`,
+        { text: newText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      // If the above fails, try this alternative endpoint
+      response = await axios.put(
+        `${API_BASE_URL}/comments/${commentId}/`,
+        { text: newText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+    
+    // Update the comment in the local state
+    setComments(prev => prev.map(comment => 
+      comment.id === commentId 
+        ? { ...comment, text: newText }
+        : comment
+    ));
+    
+    toast.success('Comment updated successfully');
+  } catch (error) {
+    console.error('Failed to update comment:', error);
+    toast.error('Failed to update comment');
+    throw error;
+  }
+};
+
+const handleCommentDelete = async (commentId: string) => {
+  try {
+    // Try different possible API endpoints
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/posts/${id}/comments/${commentId}/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      // If the above fails, try this alternative endpoint
+      await axios.delete(
+        `${API_BASE_URL}/comments/${commentId}/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+    
+    // Remove the comment from the local state
+    setComments(prev => prev.filter(comment => comment.id !== commentId));
+    
+    toast.success('Comment deleted successfully');
+  } catch (error) {
+    console.error('Failed to delete comment:', error);
+    toast.error('Failed to delete comment');
+    throw error;
+  }
+};

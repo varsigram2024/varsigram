@@ -32,6 +32,8 @@ import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import PostPage from "./pages/PostPage";
 import { VerifiedRoute } from './components/VerifiedRoute';
+import MainLayout from './components/MainLayout';
+import { FeedProvider } from './context/FeedContext';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -155,10 +157,12 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Analytics />
-        <SpeedInsights />
-        <EmailVerificationBanner />
-        <AppContent />
+        <FeedProvider>
+          <Analytics />
+          <SpeedInsights />
+          <EmailVerificationBanner />
+          <AppContent />
+        </FeedProvider>
       </AuthProvider>
     </Router>
   );
