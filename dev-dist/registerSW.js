@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/varsigram/dev-sw.js?dev-sw', { scope: '/varsigram/', type: 'classic' })
