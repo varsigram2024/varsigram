@@ -178,7 +178,7 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Bell size={20} />
                     <div>
-                      <Text>Push Notifications</Text>
+                      <Text>Notifications</Text>
                       <Text className="text-xs text-gray-500">
                         {!isNotificationSupported 
                           ? 'Not supported in this browser'

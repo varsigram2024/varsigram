@@ -35,6 +35,7 @@ import { VerifiedRoute } from './components/VerifiedRoute';
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
 import { NotificationProvider } from './context/NotificationContext';
+import NotificationsPage from './pages/Notifications/index.tsx';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -124,6 +125,7 @@ function AppContent() {
         <Route path="/home" element={<VerifiedRoute><Homepage /></VerifiedRoute>} />
         <Route path="/chat" element={<VerifiedRoute><Chatpage /></VerifiedRoute>} />
         <Route path="/connections" element={<VerifiedRoute><Connectionspage /></VerifiedRoute>} />
+        <Route path="/notifications" element={<VerifiedRoute><NotificationsPage /></VerifiedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/user-profile/:display_name_slug" element={<ProfilePage />} />
         <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

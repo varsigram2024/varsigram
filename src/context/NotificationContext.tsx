@@ -8,8 +8,10 @@ interface NotificationContextType {
   isNotificationSupported: boolean;
   isNotificationEnabled: boolean;
   notificationPermission: NotificationPermission;
+  unreadCount: number;
   requestNotificationPermission: () => Promise<void>;
   unregisterDevice: () => Promise<void>;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Load saved notification preference on mount
   useEffect(() => {
@@ -150,12 +153,31 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [isNotificationEnabled]);
 
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await axios.patch(
+        `${import.meta.env.VITE_API_BASE_URL}/notifications/${notificationId}/mark-read/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   const value = {
     isNotificationSupported,
     isNotificationEnabled,
     notificationPermission,
+    unreadCount,
     requestNotificationPermission,
-    unregisterDevice
+    unregisterDevice,
+    markNotificationAsRead
   };
 
   return (

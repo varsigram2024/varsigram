@@ -15,6 +15,7 @@ import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.ts
 import CreatePostModal from '../../components/CreatePostModal';
 import { faculties, facultyDepartments } from "../../constants/academic";
 import { useFeed } from '../../context/FeedContext';
+import { useNotification } from '../../context/NotificationContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -644,6 +645,8 @@ export default function Homepage() {
 
   const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [handleSearch]);
 
+  const { unreadCount } = useNotification(); // Add this to NotificationContext
+
   return (
     <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto ${isFirstLoad ? 'animate-fade-in' : ''}`}>
       <Sidebar1 />
@@ -682,6 +685,18 @@ export default function Homepage() {
               className="h-[24px] w-[24px] cursor-pointer"
               onClick={() => setIsSearchOpen(true)}
             />
+            <Link to="/notifications" className="relative">
+              <Img
+                src="/images/vectors/bell.svg"
+                alt="Notifications"
+                className="h-[24px] w-[24px] text-gray-600 hover:text-blue-600 transition-colors"
+              />
+              {unreadCount > 0 && (
+                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </div>
+              )}
+            </Link>
           </div>
          
           <div className="lg:mt-5 flex justify-between animate-slide-up">
