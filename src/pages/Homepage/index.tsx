@@ -745,13 +745,26 @@ export default function Homepage() {
               <Text className="font-semibold text-xl">Varsigram</Text>
             </div>
 
-            <div className='flex flex-row justify-between'>
+            <div className='flex flex-row justify-between items-center space-x-2'>
               <div
                 onClick={() => handleNavigation('settings')}
-                className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
+                className="hover:opacity-80 transition-opacity cursor-pointer"
               >
-               <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
+               <Img src="images/settings-icon.svg" alt="Settings" className="h-[24px] w-[24px]" />
               </div>
+           
+              <Link to="/notifications" className="relative">
+                <Img
+                  src="/images/vectors/bell.svg"
+                  alt="Notifications"
+                  className="h-[24px] w-[24px] text-gray-600 hover:text-blue-600 transition-colors"
+                />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </div>
+                )}
+              </Link>
            
               <Img
                 src="/images/search.svg"
