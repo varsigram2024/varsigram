@@ -9,36 +9,30 @@ interface NotificationContextType {
   isNotificationEnabled: boolean;
   notificationPermission: NotificationPermission;
   requestNotificationPermission: () => Promise<void>;
-  registerDevice: () => Promise<void>;
   unregisterDevice: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotification must be used within a NotificationProvider');
-  }
-  return context;
-};
-
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { token, user } = useAuth();
-  const [isNotificationSupported, setIsNotificationSupported] = useState(false);
-  const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
+  const { token } = useAuth();
+  const [isNotificationSupported] = useState('Notification' in window && 'serviceWorker' in navigator);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
-  const [hasAttemptedRegistration, setHasAttemptedRegistration] = useState(false);
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+  // Load saved notification preference on mount
   useEffect(() => {
-    // Check if notifications are supported
-    setIsNotificationSupported('Notification' in window && 'serviceWorker' in navigator);
-    
-    if (isNotificationSupported) {
+    const savedPreference = localStorage.getItem('notificationEnabled');
+    if (savedPreference === 'true') {
+      setIsNotificationEnabled(true);
+    }
+  }, []);
+
+  // Check notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
-      setIsNotificationEnabled(Notification.permission === 'granted');
     }
   }, []);
 
@@ -51,12 +45,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
-      setIsNotificationEnabled(permission === 'granted');
       
       if (permission === 'granted') {
-        toast.success('Notifications enabled!');
+        setIsNotificationEnabled(true);
+        localStorage.setItem('notificationEnabled', 'true');
         await registerDevice();
+        toast.success('Notifications enabled successfully!');
       } else {
+        setIsNotificationEnabled(false);
+        localStorage.setItem('notificationEnabled', 'false');
         toast.error('Notification permission denied');
       }
     } catch (error) {
@@ -65,121 +62,99 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
+  const unregisterDevice = async () => {
+    if (!token || !fcmToken) {
+      console.log('No token or FCM token available for unregistering');
+      setIsNotificationEnabled(false);
+      localStorage.setItem('notificationEnabled', 'false');
+      return;
+    }
+
+    try {
+      console.log('Unregistering device with FCM token:', fcmToken);
+      
+      // Call backend to unregister device using the correct endpoint
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/notifications/unregister/${fcmToken}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setIsNotificationEnabled(false);
+      localStorage.setItem('notificationEnabled', 'false');
+      setFcmToken(null);
+      toast.success('Notifications disabled successfully!');
+    } catch (error) {
+      console.error('Error unregistering device:', error);
+      // Even if backend call fails, disable locally
+      setIsNotificationEnabled(false);
+      localStorage.setItem('notificationEnabled', 'false');
+      setFcmToken(null);
+      toast.success('Notifications disabled locally');
+    }
+  };
+
   const registerDevice = async () => {
     if (!token || !isNotificationEnabled) return;
 
     try {
       console.log('Attempting to get FCM token...');
-      
-      // First, ensure service worker is registered
-      if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log('Service Worker registered:', registration);
-      }
-      
-      const fcmToken = await getToken(messaging, {
+      const newFcmToken = await getToken(messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID
       });
 
-      console.log('FCM Token received:', fcmToken ? 'Yes' : 'No');
-
-      if (fcmToken) {
-        console.log('Registering device with backend...');
+      if (newFcmToken) {
+        console.log('FCM Token obtained:', newFcmToken);
+        setFcmToken(newFcmToken);
+        
         await axios.post(
-          `${API_BASE_URL}/notifications/register/`,
+          `${import.meta.env.VITE_API_BASE_URL}/notifications/register/`,
           {
-            registration_id: fcmToken,
+            registration_id: newFcmToken,
             device_id: navigator.userAgent
           },
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              Authorization: `Bearer ${token}`
             }
           }
         );
-        console.log('Device registered for notifications');
-        // Only show success toast if user manually enabled notifications
-        if (hasAttemptedRegistration) {
-          toast.success('Device registered for notifications');
-        }
-      } else {
-        console.log('No FCM token received');
-        if (hasAttemptedRegistration) {
-          toast.error('Failed to get notification token');
-        }
-      }
-    } catch (error: any) {
-      console.error('Error registering device:', error);
-      
-      // Only show error toast if user manually enabled notifications
-      if (hasAttemptedRegistration) {
-        if (error.code === 'messaging/failed-service-worker-registration') {
-          toast.error('Service worker registration failed. Please refresh the page and try again.');
-        } else if (error.code === 'messaging/permission-blocked') {
-          toast.error('Notification permission is blocked. Please enable notifications in your browser settings.');
-        } else {
-          toast.error('Failed to register device for notifications');
-        }
-      }
-    }
-  };
 
-  const unregisterDevice = async () => {
-    if (!token) return;
-
-    try {
-      const fcmToken = await getToken(messaging);
-      if (fcmToken) {
-        await axios.delete(
-          `${API_BASE_URL}/notifications/unregister/${fcmToken}/`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
-        console.log('Device unregistered from notifications');
-        toast.success('Device unregistered from notifications');
+        console.log('Device registered successfully');
       }
     } catch (error) {
-      console.error('Error unregistering device:', error);
-      toast.error('Failed to unregister device');
+      console.error('Error registering device:', error);
+      // Don't show error toast on auto-registration to avoid spam
     }
   };
+
+  // Auto-register device when user logs in and notifications are enabled
+  useEffect(() => {
+    if (token && isNotificationEnabled && notificationPermission === 'granted') {
+      registerDevice();
+    }
+  }, [token, isNotificationEnabled, notificationPermission]);
 
   // Handle foreground messages
   useEffect(() => {
-    if (!isNotificationEnabled) return;
-
-    const unsubscribe = onMessage(messaging, (payload) => {
-      console.log('Received foreground message:', payload);
-      
-      // Show toast notification
-      toast.success(payload.notification?.body || 'You have a new notification', {
-        duration: 4000,
-        icon: '🔔',
+    if (isNotificationEnabled) {
+      const unsubscribe = onMessage(messaging, (payload) => {
+        console.log('Foreground message received:', payload);
+        toast.success(payload.notification?.body || 'New notification received!');
       });
-    });
 
-    return () => unsubscribe();
+      return unsubscribe;
+    }
   }, [isNotificationEnabled]);
 
-  // Auto-register device when user logs in and notifications are enabled
-  // But only if we haven't attempted registration yet
-  useEffect(() => {
-    if (token && isNotificationEnabled && !hasAttemptedRegistration) {
-      setHasAttemptedRegistration(true);
-      registerDevice();
-    }
-  }, [token, isNotificationEnabled, hasAttemptedRegistration]);
-
-  const value: NotificationContextType = {
+  const value = {
     isNotificationSupported,
     isNotificationEnabled,
     notificationPermission,
     requestNotificationPermission,
-    registerDevice,
     unregisterDevice
   };
 
@@ -188,4 +163,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       {children}
     </NotificationContext.Provider>
   );
+};
+
+export const useNotification = () => {
+  const context = useContext(NotificationContext);
+  if (context === undefined) {
+    throw new Error('useNotification must be used within a NotificationProvider');
+  }
+  return context;
 }; 
