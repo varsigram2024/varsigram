@@ -235,8 +235,10 @@ export const Post: React.FC<PostProps> = ({
   };
 
   const handlePostDelete = async (postToDelete: Post) => {
-    console.log('Deleting post:', postToDelete);
-    console.log('Token being used:', token);
+    console.log('Post component - Deleting post:', postToDelete.id);
+    console.log('Post component - Token being used:', token);
+    console.log('Post component - onPostDelete callback exists:', !!onPostDelete);
+    
     if (!postToDelete.id) {
       toast.error('Cannot delete post: missing post identifier');
       return;
@@ -248,7 +250,10 @@ export const Post: React.FC<PostProps> = ({
     }
 
     try {
-      await axios.delete(
+      console.log('Post component - Making API call to delete post:', postToDelete.id);
+      
+      // First, make the API call
+      const response = await axios.delete(
         `${API_BASE_URL}/posts/${postToDelete.id}/`,
         {
           headers: {
@@ -257,13 +262,22 @@ export const Post: React.FC<PostProps> = ({
         }
       );
 
-      // Call parent callback to remove from list
+      console.log('Post component - API call successful, response:', response.status);
+
+      // Only after successful API call, call parent callback to remove from list
       if (onPostDelete) {
+        console.log('Post component - Calling parent onPostDelete callback');
         onPostDelete(postToDelete);
+      } else {
+        console.log('Post component - No onPostDelete callback provided');
       }
+      
       toast.success('Post deleted successfully');
     } catch (error) {
+      console.error('Post component - Delete error:', error);
+      console.error('Post component - Error response:', error.response?.data);
       toast.error('Failed to delete post');
+      // Don't call onPostDelete here since the API call failed
     }
   };
 

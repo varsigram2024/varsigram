@@ -34,6 +34,7 @@ import PostPage from "./pages/PostPage";
 import { VerifiedRoute } from './components/VerifiedRoute';
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -157,12 +158,14 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <FeedProvider>
-          <Analytics />
-          <SpeedInsights />
-          <EmailVerificationBanner />
-          <AppContent />
-        </FeedProvider>
+        <NotificationProvider>
+          <FeedProvider>
+            <Analytics />
+            <SpeedInsights />
+            <EmailVerificationBanner />
+            <AppContent />
+          </FeedProvider>
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );

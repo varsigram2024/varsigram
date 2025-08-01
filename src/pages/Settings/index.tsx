@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import EditProfilePanel from "../../components/EditProfilePanel";
 import { getProfile } from '../../services/API';
+import { useNotification } from '../../context/NotificationContext';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -25,6 +26,13 @@ export default function Settings() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
+  const { 
+    isNotificationSupported, 
+    isNotificationEnabled, 
+    notificationPermission,
+    requestNotificationPermission,
+    unregisterDevice 
+  } = useNotification();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,6 +57,38 @@ export default function Settings() {
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
+  };
+
+  const handleNotificationToggle = async () => {
+    if (!isNotificationSupported) {
+      toast.error('Notifications are not supported in this browser');
+      return;
+    }
+
+    if (!isNotificationEnabled) {
+      // Enable notifications
+      await requestNotificationPermission();
+    } else {
+      // Show instructions for disabling notifications
+      toast.info(
+        'To disable notifications, please go to your browser settings and block notifications for this site.',
+        { duration: 5000 }
+      );
+      
+      // Optionally, you could show a modal with instructions
+      const shouldShowInstructions = window.confirm(
+        'To disable notifications, you need to update your browser settings.\n\n' +
+        '1. Click the lock/info icon in your browser address bar\n' +
+        '2. Change "Notifications" to "Block"\n' +
+        '3. Refresh the page\n\n' +
+        'Would you like to see detailed instructions?'
+      );
+      
+      if (shouldShowInstructions) {
+        // You could open a modal or navigate to a help page
+        window.open('https://support.google.com/chrome/answer/3220216?hl=en', '_blank');
+      }
+    }
   };
 
   return (
@@ -137,18 +177,55 @@ export default function Settings() {
                 <div className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-3">
                     <Bell size={20} />
-                    <Text>Notifications</Text>
+                    <div>
+                      <Text>Push Notifications</Text>
+                      <Text className="text-xs text-gray-500">
+                        {!isNotificationSupported 
+                          ? 'Not supported in this browser'
+                          : notificationPermission === 'default'
+                          ? 'Click to enable notifications'
+                          : notificationPermission === 'granted'
+                          ? 'Notifications are enabled'
+                          : 'Notifications are blocked'
+                        }
+                      </Text>
+                    </div>
                   </div>
-                  <label className="relative inline-flex items-center cursor-not-allowed">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={notifications}
-                      disabled
-                      readOnly
-                    />
-                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015] opacity-50"></div>
-                  </label>
+                  {isNotificationSupported ? (
+                    <div className="flex items-center gap-2">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={isNotificationEnabled}
+                          onChange={handleNotificationToggle}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015]"></div>
+                      </label>
+                      {isNotificationEnabled && (
+                        <button
+                          onClick={() => {
+                            toast.info('To disable notifications, please update your browser settings.');
+                            window.open('https://support.google.com/chrome/answer/3220216?hl=en', '_blank');
+                          }}
+                          className="text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                          How to disable?
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <label className="relative inline-flex items-center cursor-not-allowed">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={false}
+                        disabled
+                        readOnly
+                      />
+                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#750015] opacity-50"></div>
+                    </label>
+                  )}
                 </div>
                 <div className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-3">

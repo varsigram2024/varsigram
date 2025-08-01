@@ -463,28 +463,20 @@ export default function Homepage() {
   };
 
   const handlePostDelete = async (post: Post) => {
+    console.log('Homepage - handlePostDelete called for post:', post.id);
+    
     if (!post.id) {
       toast.error('Cannot delete post: missing post identifier');
       return;
     }
 
-    if (!token) {
-      toast.error('Please login to delete posts');
-      return;
-    }
-
-    try {
-      await axios.delete(
-        `${API_BASE_URL}/posts/${post.id}/`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-     
-      setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-      setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-      toast.success('Post deleted successfully');
-    } catch (error) {
-      toast.error('Failed to delete post');
-    }
+    // Remove from state immediately since the API call was already made in the Post component
+    console.log('Homepage - Removing post from state:', post.id);
+    
+    setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+    setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+    
+    console.log('Homepage - Post removed from state successfully');
   };
 
   const handlePostEdit = (post: Post) => {

@@ -223,6 +223,123 @@ export default function PostPage({ isModal = false }) {
     if (draft) setNewComment(draft);
   }, [id]);
 
+  // Update the comment update function - add debugging
+  const handleCommentUpdate = async (commentId: string, newText: string) => {
+    console.log('=== COMMENT UPDATE DEBUG ===');
+    console.log('PostPage - handleCommentUpdate called');
+    console.log('Comment ID:', commentId);
+    console.log('New text:', newText);
+    console.log('Post ID:', id);
+    console.log('Token exists:', !!token);
+    console.log('API URL:', `${API_BASE_URL}/posts/${id}/comments/${commentId}/`);
+    
+    try {
+      console.log('PostPage - Making API call to update comment...');
+      
+      const response = await axios.put(
+        `${API_BASE_URL}/posts/${id}/comments/${commentId}/`,
+        { text: newText },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('PostPage - API call successful!');
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
+
+      // Update the comment in the local state
+      console.log('PostPage - Updating local state...');
+      setComments(prevComments => {
+        const updatedComments = prevComments.map(comment => 
+          comment.id === commentId 
+            ? { ...comment, text: newText }
+            : comment
+        );
+        console.log('Updated comments:', updatedComments);
+        return updatedComments;
+      });
+
+      toast.success('Comment updated successfully');
+      console.log('PostPage - Comment update completed successfully');
+    } catch (error: any) {
+      console.error('=== COMMENT UPDATE ERROR ===');
+      console.error('PostPage - Error updating comment:', error);
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response headers:', error.response?.headers);
+      console.error('Request config:', error.config);
+      
+      if (error.response?.status === 403) {
+        toast.error('You do not have permission to edit this comment');
+      } else if (error.response?.status === 404) {
+        toast.error('Comment not found');
+      } else {
+        toast.error(`Failed to update comment: ${error.response?.data?.error || error.message}`);
+      }
+    }
+  };
+
+  // Update the comment delete function - add debugging
+  const handleCommentDelete = async (commentId: string) => {
+    console.log('=== COMMENT DELETE DEBUG ===');
+    console.log('PostPage - handleCommentDelete called');
+    console.log('Comment ID:', commentId);
+    console.log('Post ID:', id);
+    console.log('Token exists:', !!token);
+    console.log('API URL:', `${API_BASE_URL}/posts/${id}/comments/${commentId}/`);
+    
+    try {
+      console.log('PostPage - Making API call to delete comment...');
+      
+      const response = await axios.delete(
+        `${API_BASE_URL}/posts/${id}/comments/${commentId}/`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      console.log('PostPage - API call successful!');
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
+
+      // Remove the comment from local state
+      console.log('PostPage - Removing comment from local state...');
+      setComments(prevComments => {
+        const filteredComments = prevComments.filter(comment => comment.id !== commentId);
+        console.log('Comments after deletion:', filteredComments);
+        return filteredComments;
+      });
+
+      toast.success('Comment deleted successfully');
+      console.log('PostPage - Comment deletion completed successfully');
+    } catch (error: any) {
+      console.error('=== COMMENT DELETE ERROR ===');
+      console.error('PostPage - Error deleting comment:', error);
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response headers:', error.response?.headers);
+      console.error('Request config:', error.config);
+      
+      if (error.response?.status === 403) {
+        toast.error('You do not have permission to delete this comment');
+      } else if (error.response?.status === 404) {
+        toast.error('Comment not found');
+      } else {
+        toast.error(`Failed to delete comment: ${error.response?.data?.error || error.message}`);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-white">
@@ -426,6 +543,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [showOptions, setShowOptions] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fix the author comparison - convert both to strings for comparison
   const isAuthor = currentUserId && comment.author_id && 
@@ -439,30 +557,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
   
   // Get the correct display name slug
   const displayNameSlug = comment.author_display_name_slug || comment.display_name_slug;
-
-  // Debug logging
-  console.log('Comment:', comment);
-  console.log('Current user ID:', currentUserId);
-  console.log('Comment author ID:', comment.author_id);
-  console.log('Is author:', isAuthor);
-  console.log('Profile pic URL:', profilePicUrl);
-  console.log('Author name:', authorName);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showOptions && !event.target.closest('.comment-options')) {
-        setShowOptions(false);
-      }
-    };
-
-    if (showOptions) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showOptions]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -481,7 +575,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       await onCommentUpdate(comment.id, editText);
       setIsEditing(false);
     } catch (error) {
-      toast.error('Failed to update comment');
+      // Error is already handled in the parent function
     } finally {
       setIsUpdating(false);
     }
@@ -493,18 +587,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) {
-      return;
-    }
+    setShowDeleteConfirm(true);
+    setShowOptions(false);
+  };
 
+  const confirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onCommentDelete(comment.id);
+      setShowDeleteConfirm(false);
     } catch (error) {
-      toast.error('Failed to delete comment');
+      // Error is already handled in the parent function
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   if (isEditing) {
@@ -563,121 +663,119 @@ const CommentItem: React.FC<CommentItemProps> = ({
   }
 
   return (
-    <div className="flex gap-3 items-start">
-      <Img
-        src={profilePicUrl}
-        alt="Profile"
-        className="h-8 w-8 rounded-full object-cover"
-      />
-      <div className="flex-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Text
-              as="span"
-              className="font-semibold text-[#750015] cursor-pointer hover:underline"
-              onClick={() => {
-                if (displayNameSlug) {
-                  navigate(`/user-profile/${displayNameSlug}`);
-                }
-              }}
-            >
-              {authorName}
-            </Text>
-            <span className="text-xs text-gray-400">
-              {new Date(comment.timestamp).toLocaleString()}
-            </span>
-          </div>
-          {isAuthor && (
-            <div className="relative">
-              <button 
-                onClick={() => setShowOptions(!showOptions)}
-                className="p-1 hover:bg-gray-100 rounded-full comment-options"
-                disabled={isDeleting}
+    <>
+      <div className="flex gap-3 items-start">
+        <Img
+          src={profilePicUrl}
+          alt="Profile"
+          className="h-8 w-8 rounded-full object-cover"
+        />
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Text
+                as="span"
+                className="font-semibold text-[#750015] cursor-pointer hover:underline"
+                onClick={() => {
+                  if (displayNameSlug) {
+                    navigate(`/user-profile/${displayNameSlug}`);
+                  }
+                }}
               >
-                <MoreVertical size={16} />
-              </button>
-              {showOptions && (
-                <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg py-1 z-10 border">
-                  <button 
-                    onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
-                  >
-                    <Edit size={14} /> Edit
-                  </button>
-                  <button 
-                    onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-gray-100 text-sm"
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </div>
-              )}
+                {authorName}
+              </Text>
+              <span className="text-xs text-gray-400">
+                {new Date(comment.timestamp).toLocaleString()}
+              </span>
             </div>
-          )}
+            {isAuthor && (
+              <div className="relative">
+                <button 
+                  onClick={() => setShowOptions(!showOptions)}
+                  className="p-1 hover:bg-gray-100 rounded-full comment-options"
+                  disabled={isDeleting}
+                >
+                  <MoreVertical size={16} />
+                </button>
+                
+                {showOptions && (
+                  <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg py-1 z-10 border">
+                    <button 
+                      onClick={() => {
+                        handleEdit();
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
+                    >
+                      <Edit size={14} /> Edit
+                    </button>
+                    <button 
+                      onClick={() => {
+                        handleDelete();
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-gray-100 text-sm"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <Text className="block">{comment.text}</Text>
         </div>
-        <Text className="block">{comment.text}</Text>
       </div>
-    </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-fade-in">
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 size={32} className="text-red-600" />
+              </div>
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+              Delete Comment
+            </h3>
+            
+            {/* Message */}
+            <p className="text-gray-600 text-center mb-6">
+              Are you sure you want to delete this comment? This action cannot be undone.
+            </p>
+            
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
-};
-
-const handleCommentUpdate = async (commentId: string, newText: string) => {
-  try {
-    // Try different possible API endpoints
-    let response;
-    try {
-      response = await axios.put(
-        `${API_BASE_URL}/posts/${id}/comments/${commentId}/`,
-        { text: newText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (error) {
-      // If the above fails, try this alternative endpoint
-      response = await axios.put(
-        `${API_BASE_URL}/comments/${commentId}/`,
-        { text: newText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    }
-    
-    // Update the comment in the local state
-    setComments(prev => prev.map(comment => 
-      comment.id === commentId 
-        ? { ...comment, text: newText }
-        : comment
-    ));
-    
-    toast.success('Comment updated successfully');
-  } catch (error) {
-    console.error('Failed to update comment:', error);
-    toast.error('Failed to update comment');
-    throw error;
-  }
-};
-
-const handleCommentDelete = async (commentId: string) => {
-  try {
-    // Try different possible API endpoints
-    try {
-      await axios.delete(
-        `${API_BASE_URL}/posts/${id}/comments/${commentId}/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (error) {
-      // If the above fails, try this alternative endpoint
-      await axios.delete(
-        `${API_BASE_URL}/comments/${commentId}/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    }
-    
-    // Remove the comment from the local state
-    setComments(prev => prev.filter(comment => comment.id !== commentId));
-    
-    toast.success('Comment deleted successfully');
-  } catch (error) {
-    console.error('Failed to delete comment:', error);
-    toast.error('Failed to delete comment');
-    throw error;
-  }
 };
