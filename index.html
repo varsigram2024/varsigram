@@ -2,10 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Link to your favicon -->
     <link rel="icon" type="image/png" href="/images/vasigram-logo.png" />
+    <!-- Link to Google Fonts for your app's typography -->
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VARSIGRAM</title>
+
+    <!-- PWA Manifest Link -->
+    <!-- This is the most critical line for making your PWA installable -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- iOS Specific Meta Tags for a better experience -->
+    <!-- Makes the web app run in full-screen mode (no Safari UI) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- Defines the status bar style on iOS -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Sets the name that appears under the icon on the home screen -->
+    <meta name="apple-mobile-web-app-title" content="Varsigram" />
+    <!-- REQUIRED: The icon to display on the iOS home screen -->
+    <link rel="apple-touch-icon" href="/images/pwa-192.png" />
   </head>
   <body>
     <div id="root"></div>
