@@ -10,6 +10,24 @@
   animation: marquee 15s linear infinite;
 }
 
+@keyframes fill3 {
+  0%, 20% { fill: transparent; }
+  21%, 30% { fill: #750015; }
+  31%, 100% { fill: #750015; }
+}
+
+@keyframes fill2 {
+  0%, 40% { fill: transparent; }
+  41%, 60% { fill: #750015; }
+  61%, 100% { fill: #750015; }
+}
+
+@keyframes fill1 {
+  0%, 60% { fill: transparent; }
+  61%, 90% { fill: #750015; }
+  91%, 100% { fill: #750015; }
+}
+
 
 body {
   overflow-x: hidden;

@@ -92,8 +92,10 @@ interface UserProfile {
 // Update component to accept props
 export default function Profile() {
   const [searchBarValue, setSearchBarValue] = useState("");
-  const [posts, setPosts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const { user, token, updateUser } = useAuth();
@@ -298,28 +300,50 @@ export default function Profile() {
     console.log("Followers array:", followers);
   }, [followers]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (startAfter: string | null = null) => {
     if (!userProfile?.id || !token) return;
-    
+    setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/users/${userProfile.id}/posts/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      console.log("Fetched posts for profile:", response.data);
-      setPosts(response.data);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      setPosts([]);
+      const params: any = { page_size: 10 };
+      if (startAfter) params.start_after = startAfter;
+      const response = await axios.get(`${API_BASE_URL}/users/${userProfile.id}/posts/`, {
+        params,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const { results, next_cursor } = response.data;
+      setPosts(prev => [...prev, ...results]);
+      setNextCursor(next_cursor);
+      setHasMore(!!next_cursor);
+    } catch (err) {
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Add useEffect to fetch posts when userProfile changes
   useEffect(() => {
     if (userProfile?.id && token) {
+      setPosts([]);
+      setNextCursor(null);
+      setHasMore(true);
       fetchPosts();
     }
   }, [userProfile?.id, token]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop
+        >= document.documentElement.offsetHeight - 300 &&
+        hasMore && !isLoading
+      ) {
+        fetchPosts(nextCursor);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, isLoading, nextCursor]);
 
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
@@ -538,6 +562,11 @@ export default function Profile() {
                 {token && (
                   (userProfile.display_name_slug || userProfile.email) && (
                     <div className="w-full">
+                      {isLoading && (
+                        <div className="flex justify-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                        </div>
+                      )}
                       {posts.map((post, idx) => (
                         <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
                           <Post
