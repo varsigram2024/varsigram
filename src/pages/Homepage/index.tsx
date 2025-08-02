@@ -48,7 +48,6 @@ interface User {
   faculty?: string;
   department?: string;
   exclusive?: boolean;
-  // Add these properties that might exist in the actual user object
   user_faculty?: string;
   user_department?: string;
   user_exclusive?: boolean;
@@ -106,7 +105,6 @@ export default function Homepage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
  
-  // Use context instead of local state
   const {
     feedPosts, setFeedPosts,
     feedNextCursor, setFeedNextCursor,
@@ -133,12 +131,10 @@ export default function Homepage() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  // Add state to track if this is the first load
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const scrollRestoredRef = useRef(false);
   const postsRenderedRef = useRef(false);
 
-  // Get current posts based on active tab
   const currentPosts = useMemo(() => {
     return activeTab === 'forYou' ? feedPosts : officialPosts;
   }, [activeTab, feedPosts, officialPosts]);
@@ -155,17 +151,15 @@ export default function Homepage() {
     return activeTab === 'forYou' ? isFeedLoading : isOfficialLoading;
   }, [activeTab, isFeedLoading, isOfficialLoading]);
 
-  // Update the fetchPosts function to use context
   const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
     if (!token || (type === 'feed' ? isFeedLoading : isOfficialLoading)) return;
 
-    // Check if we should skip fetching (data is fresh)
     const now = Date.now();
     const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
-    const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000; // 5 minutes cache
+    const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
     
     if (shouldSkip && !startAfter) {
-      return; // Skip if data is fresh and we're not paginating
+      return;
     }
 
     if (type === 'feed') {
@@ -225,7 +219,6 @@ export default function Homepage() {
     }
   };
 
-  // Update loadMorePosts to properly use the cursor
   const loadMorePosts = async () => {
     if (currentIsLoading || !currentHasMore) return;
 
@@ -239,7 +232,6 @@ export default function Homepage() {
     }
   };
 
-  // Initial load based on active tab - only if no data exists
   useEffect(() => {
     if (!token) return;
 
@@ -258,7 +250,6 @@ export default function Homepage() {
 
   const loadingRef = useIntersectionObserver(loadMoreCallback);
 
-  // Infinite scroll for feed container
   useEffect(() => {
     const container = postsContainerRef.current;
     if (!container) return;
@@ -276,7 +267,6 @@ export default function Homepage() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [currentHasMore, currentIsLoading, loadMorePosts]);
 
-  // Set first load to false after initial render
   useEffect(() => {
     if (currentPosts.length > 0) {
       setTimeout(() => {
@@ -285,17 +275,13 @@ export default function Homepage() {
     }
   }, [currentPosts.length]);
 
-  // Improved scroll restoration
   useEffect(() => {
     const container = postsContainerRef.current;
     if (!container) return;
 
     const savedScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
     
-    // Only restore scroll if we have posts, haven't restored yet, and posts are rendered
     if (savedScroll > 0 && currentPosts.length > 0 && !scrollRestoredRef.current && postsRenderedRef.current) {
-      // If it's not the first load, restore immediately
-      // If it's the first load, wait for animation
       const delay = isFirstLoad ? 600 : 100;
       
       setTimeout(() => {
@@ -307,7 +293,6 @@ export default function Homepage() {
     }
   }, [activeTab, feedScroll, officialScroll, currentPosts.length, isFirstLoad]);
 
-  // Track when posts are rendered
   useEffect(() => {
     if (currentPosts.length > 0) {
       setTimeout(() => {
@@ -316,13 +301,11 @@ export default function Homepage() {
     }
   }, [currentPosts.length]);
 
-  // Reset flags when tab changes
   useEffect(() => {
     scrollRestoredRef.current = false;
     postsRenderedRef.current = false;
   }, [activeTab]);
 
-  // Save scroll position on unmount
   useEffect(() => {
     return () => {
       const container = postsContainerRef.current;
@@ -338,7 +321,6 @@ export default function Homepage() {
   }, [activeTab, setFeedScroll, setOfficialScroll]);
 
   const handlePostClick = (postId: string) => {
-    // Save scroll position before navigating
     const container = postsContainerRef.current;
     if (container) {
       const currentScroll = container.scrollTop;
@@ -350,9 +332,6 @@ export default function Homepage() {
     }
     navigate(`/posts/${postId}`, { state: { backgroundLocation: location } });
   };
-
-  // Remove the conflicting useLayoutEffect for scroll restoration
-  // The useEffect above handles it better
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -417,7 +396,6 @@ export default function Homepage() {
         },
       });
 
-      // Create a complete post object with all required fields
       const completePost = {
         ...response.data,
         author_display_name: user?.fullName || 'Unknown User',
@@ -429,7 +407,6 @@ export default function Homepage() {
         author_profile_pic_url: user?.profile_pic_url || null
       };
 
-      // Add to feed posts and refresh if needed
       setFeedPosts(prev => [completePost, ...prev]);
 
       setNewPostContent('');
@@ -464,20 +441,13 @@ export default function Homepage() {
   };
 
   const handlePostDelete = async (post: Post) => {
-    console.log('Homepage - handlePostDelete called for post:', post.id);
-    
     if (!post.id) {
       toast.error('Cannot delete post: missing post identifier');
       return;
     }
 
-    // Remove from state immediately since the API call was already made in the Post component
-    console.log('Homepage - Removing post from state:', post.id);
-    
     setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
     setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-    
-    console.log('Homepage - Post removed from state successfully');
   };
 
   const handlePostEdit = (post: Post) => {
@@ -645,7 +615,7 @@ export default function Homepage() {
 
   const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [handleSearch]);
 
-  const { unreadCount } = useNotification(); // Add this to NotificationContext
+  const { unreadCount } = useNotification();
 
   return (
     <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto ${isFirstLoad ? 'animate-fade-in' : ''}`}>
@@ -661,7 +631,7 @@ export default function Homepage() {
             maxHeight: 'calc(100vh - 120px)',
             paddingBottom: '20px',
             WebkitOverflowScrolling: 'touch',
-            scrollBehavior: 'smooth' // CHANGE: Add smooth scrolling
+            scrollBehavior: 'smooth'
           }}
         >
           <div className="hidden lg:flex items-center justify-between animate-fade-in">
@@ -846,7 +816,6 @@ export default function Homepage() {
             {!isAuthLoading && currentPosts.length > 0 && (
               <div className="space-y-6 w-full">
                 {currentPosts.map((post, idx) => {
-                  // Add unique composite key
                   const uniqueKey = `${post.id}-${idx}`;
                   return (
                     <div 
@@ -868,7 +837,6 @@ export default function Homepage() {
                   );
                 })}
                 
-                {/* Loading trigger */}
                 <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
                   {currentIsLoading && (
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
@@ -980,7 +948,6 @@ export default function Homepage() {
               </div>
             </div>
 
-            {/* Search Results */}
             <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
               {isSearching ? (
                 <div className="flex justify-center items-center py-20">
@@ -988,7 +955,6 @@ export default function Homepage() {
                 </div>
               ) : (
                 <div className="p-4">
-                  {/* Users Section */}
                   {searchResults.users.length > 0 && (
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold mb-3">People</h3>
@@ -1015,7 +981,6 @@ export default function Homepage() {
                     </div>
                   )}
 
-                  {/* Posts Section */}
                   {searchResults.posts.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold mb-3">Posts</h3>
@@ -1040,7 +1005,6 @@ export default function Homepage() {
                     </div>
                   )}
 
-                  {/* No Results */}
                   {searchQuery && 
                    !isSearching && 
                    searchResults.users.length === 0 && 

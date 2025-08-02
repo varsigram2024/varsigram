@@ -52,9 +52,10 @@ const registerServiceWorker = async () => {
     
     console.log('Firebase Service Worker registered successfully:', registration);
     
-    // Wait for the service worker to be ready
-    await navigator.serviceWorker.ready;
-    console.log('Service Worker is ready');
+    // Skip the service worker ready wait
+    console.log('Skipping service worker ready wait in registerServiceWorker...');
+    // await navigator.serviceWorker.ready;
+    // console.log('Service Worker is ready');
     
     return registration;
   } catch (error) {
