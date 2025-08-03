@@ -94,6 +94,7 @@ export default function Profile() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -300,24 +301,63 @@ export default function Profile() {
     console.log("Followers array:", followers);
   }, [followers]);
 
+  // Add intersection observer for infinite scrolling
+  const loadingRef = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const fetchPosts = async (startAfter: string | null = null) => {
     if (!userProfile?.id || !token) return;
-    setIsLoading(true);
+    
+    // Use different loading states for initial load vs pagination
+    if (startAfter) {
+      if (isLoadingMore) return; // Prevent multiple calls
+      setIsLoadingMore(true);
+    } else {
+      if (isLoadingPosts) return; // Prevent multiple calls
+      setIsLoadingPosts(true); // Use the posts-specific loading state
+    }
+    
     try {
       const params: any = { page_size: 10 };
       if (startAfter) params.start_after = startAfter;
+      
       const response = await axios.get(`${API_BASE_URL}/users/${userProfile.id}/posts/`, {
         params,
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       const { results, next_cursor } = response.data;
-      setPosts(prev => [...prev, ...results]);
-      setNextCursor(next_cursor);
-      setHasMore(!!next_cursor);
+      
+      if (Array.isArray(results) && results.length > 0) {
+        if (startAfter) {
+          // Append posts for pagination
+          setPosts(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          });
+        } else {
+          // Replace posts for initial load
+          setPosts(results);
+        }
+        setNextCursor(next_cursor);
+        setHasMore(!!next_cursor);
+      } else {
+        if (!startAfter) {
+          setPosts([]);
+        }
+        setNextCursor(null);
+        setHasMore(false);
+      }
     } catch (err) {
+      console.error('Failed to fetch posts:', err);
       setHasMore(false);
     } finally {
-      setIsLoading(false);
+      if (startAfter) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoadingPosts(false); // Use the posts-specific loading state
+      }
     }
   };
 
@@ -327,23 +367,35 @@ export default function Profile() {
       setPosts([]);
       setNextCursor(null);
       setHasMore(true);
+      setIsLoadingMore(false);
+      setIsLoadingPosts(false); // Reset posts loading state
       fetchPosts();
     }
   }, [userProfile?.id, token]);
 
+  // Add intersection observer for infinite scrolling
   useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop
-        >= document.documentElement.offsetHeight - 300 &&
-        hasMore && !isLoading
-      ) {
-        fetchPosts(nextCursor);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !isLoadingPosts && !isLoadingMore && nextCursor) {
+          fetchPosts(nextCursor);
+        }
+      },
+      { threshold: 0, rootMargin: '300px' }
+    );
+
+    const currentRef = loadingRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading, nextCursor]);
+  }, [hasMore, isLoadingPosts, isLoadingMore, nextCursor, userProfile?.id, token]);
 
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
@@ -562,29 +614,63 @@ export default function Profile() {
                 {token && (
                   (userProfile.display_name_slug || userProfile.email) && (
                     <div className="w-full">
-                      {isLoading && (
-                        <div className="flex justify-center py-4">
-                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+                      {isLoadingPosts && posts.length === 0 ? (
+                        <div className="flex justify-center items-center py-20 animate-fade-in">
+                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
                         </div>
+                      ) : posts.length === 0 && !isLoadingPosts ? (
+                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                            No posts yet.
+                          </Text>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-6 w-full">
+                            {posts.map((post, idx) => {
+                              // Add unique composite key like Homepage
+                              const uniqueKey = `${post.id}-${idx}`;
+                              return (
+                                <div 
+                                  key={uniqueKey}
+                                  className="animate-slide-up mb-10" 
+                                  style={{ animationDelay: `${idx * 60}ms` }}
+                                >
+                                  <Post
+                                    post={post}
+                                    onPostUpdate={(updatedPost) => {
+                                      setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                                    }}
+                                    onPostDelete={(post) => {
+                                      setPosts(prev => prev.filter(p => p.id !== post.id));
+                                    }}
+                                    onPostEdit={(post) => {
+                                      // This is now handled internally by the Post component
+                                    }}
+                                    currentUserId={user?.id}
+                                    currentUserEmail={user?.email}
+                                    onClick={() => {
+                                      // Handle post click navigation if needed
+                                      navigate(`/posts/${post.id}`);
+                                    }}
+                                    postsData={posts}
+                                  />
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Loading trigger for infinite scroll */}
+                            <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
+                              {isLoadingMore && (
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
+                              )}
+                              {!hasMore && posts.length > 0 && (
+                                <div className="text-gray-500">No more posts to load</div>
+                              )}
+                            </div>
+                          </div>
+                        </>
                       )}
-                      {posts.map((post, idx) => (
-                        <div key={post.id} className="animate-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
-                          <Post
-                            post={post}
-                            onPostUpdate={(updatedPost) => {
-                              setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-                            }}
-                            onPostDelete={(post) => {
-                              setPosts(prev => prev.filter(p => p.id !== post.id));
-                            }}
-                            onPostEdit={(post) => {
-                              // This is now handled internally by the Post component
-                            }}
-                            currentUserId={user?.id}
-                            currentUserEmail={user?.email}
-                          />
-                        </div>
-                      ))}
                     </div>
                   )
                 )}

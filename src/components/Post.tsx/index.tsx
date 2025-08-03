@@ -33,6 +33,9 @@ interface Post {
   author_display_name: string;
   author_display_name_slug: string;
   author_name?: string;
+  author_faculty?: string;
+  author_department?: string;
+  author_exclusive?: boolean;
   is_shared?: boolean;
   original_post?: Post;
   account_type: string;
@@ -74,7 +77,7 @@ export const Post: React.FC<PostProps> = ({
   onClick,
   showFullContent = false,
   postsData = [],
-  isPublicView = false // Add this prop
+  isPublicView = false
 }) => {
   const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
@@ -84,43 +87,12 @@ export const Post: React.FC<PostProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
 
-  // Add refs for share menu
-  const shareMenuRef = React.useRef<HTMLDivElement>(null);
-  const shareButtonRef = React.useRef<HTMLDivElement>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-
-  // Add click outside handler
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
-        setShowShareMenu(false);
-      }
-    };
-
-    if (showShareMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showShareMenu]);
-
-  // Calculate menu position when opening
   const handleShareClick = () => {
-    if (shareButtonRef.current) {
-      const rect = shareButtonRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.right - 160
-      });
-    }
-    setShowShareMenu((prev) => !prev);
+    handleWebShare();
   };
 
   // Helper to determine if content is long
@@ -263,8 +235,10 @@ export const Post: React.FC<PostProps> = ({
   };
 
   const handlePostDelete = async (postToDelete: Post) => {
-    console.log('Deleting post:', postToDelete);
-    console.log('Token being used:', token);
+    console.log('Post component - Deleting post:', postToDelete.id);
+    console.log('Post component - Token being used:', token);
+    console.log('Post component - onPostDelete callback exists:', !!onPostDelete);
+    
     if (!postToDelete.id) {
       toast.error('Cannot delete post: missing post identifier');
       return;
@@ -276,7 +250,10 @@ export const Post: React.FC<PostProps> = ({
     }
 
     try {
-      await axios.delete(
+      console.log('Post component - Making API call to delete post:', postToDelete.id);
+      
+      // First, make the API call
+      const response = await axios.delete(
         `${API_BASE_URL}/posts/${postToDelete.id}/`,
         {
           headers: {
@@ -285,13 +262,22 @@ export const Post: React.FC<PostProps> = ({
         }
       );
 
-      // Call parent callback to remove from list
+      console.log('Post component - API call successful, response:', response.status);
+
+      // Only after successful API call, call parent callback to remove from list
       if (onPostDelete) {
+        console.log('Post component - Calling parent onPostDelete callback');
         onPostDelete(postToDelete);
+      } else {
+        console.log('Post component - No onPostDelete callback provided');
       }
+      
       toast.success('Post deleted successfully');
     } catch (error) {
+      console.error('Post component - Delete error:', error);
+      console.error('Post component - Error response:', error.response?.data);
       toast.error('Failed to delete post');
+      // Don't call onPostDelete here since the API call failed
     }
   };
 
@@ -360,7 +346,6 @@ export const Post: React.FC<PostProps> = ({
     try {
       await navigator.clipboard.writeText(postUrl);
       toast.success("Link copied!");
-      setShowShareMenu(false);
     } catch {
       toast.error("Failed to copy link");
     }
@@ -373,7 +358,6 @@ export const Post: React.FC<PostProps> = ({
         text: post.content,
         url: postUrl,
       })
-        .then(() => setShowShareMenu(false))
         .catch(() => toast.error("Share cancelled or failed"));
     } else {
       toast.error("Sharing not supported on this device");
@@ -425,6 +409,30 @@ export const Post: React.FC<PostProps> = ({
 
   console.log("Post props in Post.tsx:", post);
 
+  // Helper function to make links clickable
+  const makeLinksClickable = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <>
       <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -444,20 +452,37 @@ export const Post: React.FC<PostProps> = ({
               }}
             />
             <div className='flex flex-col'>
-            <span
-              className="font-semibold lg:text-[20px] text-[16px] text-[#750015] cursor-pointer hover:underline"
-              onClick={() => {
-                console.log("Clicked name", post.author_display_name_slug);
-                if (post.author_display_name_slug) {
-                  navigate(`/user-profile/${post.author_display_name_slug}`);
-                }
-              }}
-            >
-              {post.author_name || post.author_display_name}
-            </span>
-            <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
-                {formatTimestamp(post.timestamp)}
-              </Text>
+              <div className="flex items-center gap-2">
+                <span
+                  className="font-semibold lg:text-[20px] text-[16px] text-[#750015] cursor-pointer hover:underline"
+                  onClick={() => {
+                    console.log("Clicked name", post.author_display_name_slug);
+                    if (post.author_display_name_slug) {
+                      navigate(`/user-profile/${post.author_display_name_slug}`);
+                    }
+                  }}
+                >
+                  {post.author_name || post.author_display_name}
+                </span>
+                {post.author_exclusive && (
+                  <img
+                    src="/images/vectors/verified.svg"
+                    alt="verified"
+                    className="h-[16px] w-[16px]"
+                  />
+                )}
+              </div>
+              {(post.author_faculty || post.author_department) && (
+                <Text as="p" className="text-[10px] lg:text-[12px] text-gray-600">
+                  {post.author_faculty && post.author_department 
+                    ? `${post.author_faculty} • ${post.author_department}`
+                    : post.author_faculty || post.author_department
+                  }
+                </Text>
+              )}
+              <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
+                  {formatTimestamp(post.timestamp)}
+                </Text>
             </div>
           </div>
               
@@ -510,7 +535,7 @@ export const Post: React.FC<PostProps> = ({
 
           <Text
             as="p"
-            className={`w-full text-[14px] lg:text-[20px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
+            className={`w-full text-[12px] sm:text-[14px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
               !expanded && isLong ? 'max-h-32 overflow-hidden' : ''
             }`}
             style={{ lineHeight: "1.6" }}
@@ -524,13 +549,15 @@ export const Post: React.FC<PostProps> = ({
             )}
             {isRevarsed ? (
               <div className="border p-2 rounded bg-gray-50 whitespace-pre-line">
-                <Text>{post.original_post?.content}</Text>
+                <Text className="text-[12px] sm:text-[14px] lg:text-[16px]">
+                  {makeLinksClickable(post.original_post?.content || '')}
+                </Text>
                 <div className="text-xs text-gray-400 mt-1">
                   by {post.original_post?.author_name || post.original_post?.author_display_name}
                 </div>
               </div>
             ) : (
-              displayContent
+              makeLinksClickable(displayContent)
             )}
             {!expanded && isLong && <span>...</span>}
           </Text>
@@ -592,7 +619,7 @@ export const Post: React.FC<PostProps> = ({
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
-            <div className="relative" ref={shareButtonRef}>
+            <div className="relative">
               <Img
                 src="/images/vectors/share.svg"
                 alt="Share"
@@ -632,32 +659,6 @@ export const Post: React.FC<PostProps> = ({
           <CommentSection open={showComments} onClose={() => setShowComments(false)} postId={post.id} />
         </div>
       </div>
-
-      {/* Render share menu as portal */}
-      {showShareMenu && createPortal(
-        <div
-          ref={shareMenuRef}
-          className="fixed bg-white rounded-lg shadow-xl py-2 z-[9999] border border-gray-200 min-w-[160px]"
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-          }}
-        >
-          <button
-            onClick={handleCopyLink}
-            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm"
-          >
-            <span>Copy Link</span>
-          </button>
-          <button
-            onClick={handleWebShare}
-            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm"
-          >
-            <span>Share...</span>
-          </button>
-        </div>,
-        document.body
-      )}
 
       {isEditModalOpen && editingPost && (
         <EditPostModal

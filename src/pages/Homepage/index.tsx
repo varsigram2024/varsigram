@@ -14,6 +14,8 @@ import { uploadPostMedia } from '../../utils/fileUpload';
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
 import CreatePostModal from '../../components/CreatePostModal';
 import { faculties, facultyDepartments } from "../../constants/academic";
+import { useFeed } from '../../context/FeedContext';
+import { useNotification } from '../../context/NotificationContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -43,6 +45,12 @@ interface User {
   profile_pic_url?: string;
   author_profile_pic_url: string;
   display_name_slug?: string;
+  faculty?: string;
+  department?: string;
+  exclusive?: boolean;
+  user_faculty?: string;
+  user_department?: string;
+  user_exclusive?: boolean;
 }
 
 interface SearchResult {
@@ -86,8 +94,6 @@ const useIntersectionObserver = (
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
   const [activeTab, setActiveTab] = useState<'forYou' | 'official'>('forYou');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { token, user, logout, isLoading: isAuthLoading } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -99,13 +105,21 @@ export default function Homepage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
  
-  // Separate state for each feed type
-  const [feedPosts, setFeedPosts] = useState<Post[]>([]);
-  const [officialPosts, setOfficialPosts] = useState<Post[]>([]);
-  const [feedNextCursor, setFeedNextCursor] = useState<string | null>(null);
-  const [officialNextCursor, setOfficialNextCursor] = useState<string | null>(null);
-  const [feedHasMore, setFeedHasMore] = useState(true);
-  const [officialHasMore, setOfficialHasMore] = useState(true);
+  const {
+    feedPosts, setFeedPosts,
+    feedNextCursor, setFeedNextCursor,
+    feedHasMore, setFeedHasMore,
+    feedScroll, setFeedScroll,
+    isFeedLoading, setIsFeedLoading,
+    lastFeedFetch, setLastFeedFetch,
+    
+    officialPosts, setOfficialPosts,
+    officialNextCursor, setOfficialNextCursor,
+    officialHasMore, setOfficialHasMore,
+    officialScroll, setOfficialScroll,
+    isOfficialLoading, setIsOfficialLoading,
+    lastOfficialFetch, setLastOfficialFetch,
+  } = useFeed();
  
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,7 +131,10 @@ export default function Homepage() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  // Get current posts based on active tab
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const scrollRestoredRef = useRef(false);
+  const postsRenderedRef = useRef(false);
+
   const currentPosts = useMemo(() => {
     return activeTab === 'forYou' ? feedPosts : officialPosts;
   }, [activeTab, feedPosts, officialPosts]);
@@ -130,11 +147,27 @@ export default function Homepage() {
     return activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
   }, [activeTab, feedNextCursor, officialNextCursor]);
 
-  // Update the fetchPosts function to properly append posts
-  const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
-    if (!token || isLoading) return;
+  const currentIsLoading = useMemo(() => {
+    return activeTab === 'forYou' ? isFeedLoading : isOfficialLoading;
+  }, [activeTab, isFeedLoading, isOfficialLoading]);
 
-    setIsLoading(true);
+  const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
+    if (!token || (type === 'feed' ? isFeedLoading : isOfficialLoading)) return;
+
+    const now = Date.now();
+    const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
+    const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
+    
+    if (shouldSkip && !startAfter) {
+      return;
+    }
+
+    if (type === 'feed') {
+      setIsFeedLoading(true);
+    } else {
+      setIsOfficialLoading(true);
+    }
+
     try {
       const endpoint = type === 'feed' ? '/posts/' : '/official/';
 
@@ -155,7 +188,6 @@ export default function Homepage() {
       
       if (Array.isArray(results) && results.length > 0) {
         if (type === 'feed') {
-          // CHANGE: Append posts instead of replacing them
           setFeedPosts(prev => {
             const existingIds = new Set(prev.map(p => p.id));
             const uniquePosts = results.filter(post => !existingIds.has(post.id));
@@ -163,8 +195,8 @@ export default function Homepage() {
           });
           setFeedNextCursor(next_cursor);
           setFeedHasMore(!!next_cursor);
+          setLastFeedFetch(now);
         } else {
-          // Same for official posts
           setOfficialPosts(prev => {
             const existingIds = new Set(prev.map(p => p.id));
             const uniquePosts = results.filter(post => !existingIds.has(post.id));
@@ -172,34 +204,34 @@ export default function Homepage() {
           });
           setOfficialNextCursor(next_cursor);
           setOfficialHasMore(!!next_cursor);
+          setLastOfficialFetch(now);
         }
       }
     } catch (error) {
       if (type === 'feed') setFeedHasMore(false);
       else setOfficialHasMore(false);
     } finally {
-      setIsLoading(false);
+      if (type === 'feed') {
+        setIsFeedLoading(false);
+      } else {
+        setIsOfficialLoading(false);
+      }
     }
   };
 
-  // Update loadMorePosts to properly use the cursor
   const loadMorePosts = async () => {
-    if (isLoading || !currentHasMore) return;
+    if (currentIsLoading || !currentHasMore) return;
 
     const type = activeTab === 'forYou' ? 'feed' : 'official';
     const cursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
 
     try {
-      setIsLoading(true);
       await fetchPosts(type, cursor);
     } catch (error) {
       console.error('Failed to load more posts:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Initial load based on active tab
   useEffect(() => {
     if (!token) return;
 
@@ -211,25 +243,95 @@ export default function Homepage() {
   }, [activeTab, token]);
 
   const loadMoreCallback = useCallback(() => {
-    if (!isLoading && currentHasMore && token) {
+    if (!currentIsLoading && currentHasMore && token) {
       loadMorePosts();
     }
-  }, [isLoading, currentHasMore, token, currentPosts.length, loadMorePosts]);
+  }, [currentIsLoading, currentHasMore, token, currentPosts.length, loadMorePosts]);
 
   const loadingRef = useIntersectionObserver(loadMoreCallback);
 
-  // Scroll restoration
-  useLayoutEffect(() => {
-    if (!isLoading && currentPosts.length > 0 && postsContainerRef.current) {
-      const savedScroll = sessionStorage.getItem('homepageScroll');
-      if (savedScroll) {
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(savedScroll, 10));
-          sessionStorage.removeItem('homepageScroll');
-        }, 100);
+  useEffect(() => {
+    const container = postsContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (
+        container.scrollTop + container.clientHeight >= container.scrollHeight - 300 &&
+        currentHasMore && !currentIsLoading
+      ) {
+        loadMorePosts();
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [currentHasMore, currentIsLoading, loadMorePosts]);
+
+  useEffect(() => {
+    if (currentPosts.length > 0) {
+      setTimeout(() => {
+        setIsFirstLoad(false);
+      }, 100);
+    }
+  }, [currentPosts.length]);
+
+  useEffect(() => {
+    const container = postsContainerRef.current;
+    if (!container) return;
+
+    const savedScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
+    
+    if (savedScroll > 0 && currentPosts.length > 0 && !scrollRestoredRef.current && postsRenderedRef.current) {
+      const delay = isFirstLoad ? 600 : 100;
+      
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          container.scrollTop = savedScroll;
+          scrollRestoredRef.current = true;
+        });
+      }, delay);
+    }
+  }, [activeTab, feedScroll, officialScroll, currentPosts.length, isFirstLoad]);
+
+  useEffect(() => {
+    if (currentPosts.length > 0) {
+      setTimeout(() => {
+        postsRenderedRef.current = true;
+      }, 100);
+    }
+  }, [currentPosts.length]);
+
+  useEffect(() => {
+    scrollRestoredRef.current = false;
+    postsRenderedRef.current = false;
+  }, [activeTab]);
+
+  useEffect(() => {
+    return () => {
+      const container = postsContainerRef.current;
+      if (container) {
+        const currentScroll = container.scrollTop;
+        if (activeTab === 'forYou') {
+          setFeedScroll(currentScroll);
+        } else {
+          setOfficialScroll(currentScroll);
+        }
+      }
+    };
+  }, [activeTab, setFeedScroll, setOfficialScroll]);
+
+  const handlePostClick = (postId: string) => {
+    const container = postsContainerRef.current;
+    if (container) {
+      const currentScroll = container.scrollTop;
+      if (activeTab === 'forYou') {
+        setFeedScroll(currentScroll);
+      } else {
+        setOfficialScroll(currentScroll);
       }
     }
-  }, [isLoading, currentPosts.length]);
+    navigate(`/posts/${postId}`, { state: { backgroundLocation: location } });
+  };
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -279,7 +381,12 @@ export default function Homepage() {
         has_liked: false,
         trending_score: 0,
         last_engagement_at: null,
-        author_display_name: user?.fullName?.split(' ')[0] || 'Unknown User'
+        author_display_name: user?.fullName || 'Unknown User',
+        author_name: user?.fullName || 'Unknown User',
+        author_display_name_slug: user?.display_name_slug || '',
+        author_faculty: (user as any)?.faculty || '',
+        author_department: (user as any)?.department || '',
+        author_exclusive: (user as any)?.exclusive || false
       };
 
       const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
@@ -289,8 +396,18 @@ export default function Homepage() {
         },
       });
 
-      // Add to feed posts and refresh if needed
-      setFeedPosts(prev => [response.data, ...prev]);
+      const completePost = {
+        ...response.data,
+        author_display_name: user?.fullName || 'Unknown User',
+        author_name: user?.fullName || 'Unknown User',
+        author_display_name_slug: user?.display_name_slug || '',
+        author_faculty: (user as any)?.faculty || '',
+        author_department: (user as any)?.department || '',
+        author_exclusive: (user as any)?.exclusive || false,
+        author_profile_pic_url: user?.profile_pic_url || null
+      };
+
+      setFeedPosts(prev => [completePost, ...prev]);
 
       setNewPostContent('');
       setSelectedFiles([]);
@@ -329,23 +446,8 @@ export default function Homepage() {
       return;
     }
 
-    if (!token) {
-      toast.error('Please login to delete posts');
-      return;
-    }
-
-    try {
-      await axios.delete(
-        `${API_BASE_URL}/posts/${post.id}/`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-     
-      setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-      setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-      toast.success('Post deleted successfully');
-    } catch (error) {
-      toast.error('Failed to delete post');
-    }
+    setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+    setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
   };
 
   const handlePostEdit = (post: Post) => {
@@ -513,8 +615,10 @@ export default function Homepage() {
 
   const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [handleSearch]);
 
+  const { unreadCount } = useNotification();
+
   return (
-    <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto overflow-hidden animate-fade-in">
+    <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto ${isFirstLoad ? 'animate-fade-in' : ''}`}>
       <Sidebar1 />
 
       <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
@@ -527,7 +631,7 @@ export default function Homepage() {
             maxHeight: 'calc(100vh - 120px)',
             paddingBottom: '20px',
             WebkitOverflowScrolling: 'touch',
-            scrollBehavior: 'smooth' // CHANGE: Add smooth scrolling
+            scrollBehavior: 'smooth'
           }}
         >
           <div className="hidden lg:flex items-center justify-between animate-fade-in">
@@ -551,6 +655,18 @@ export default function Homepage() {
               className="h-[24px] w-[24px] cursor-pointer"
               onClick={() => setIsSearchOpen(true)}
             />
+            <Link to="/notifications" className="relative">
+              <Img
+                src="/images/vectors/bell.svg"
+                alt="Notifications"
+                className="h-[24px] w-[24px] text-gray-600 hover:text-blue-600 transition-colors"
+              />
+              {unreadCount > 0 && (
+                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </div>
+              )}
+            </Link>
           </div>
          
           <div className="lg:mt-5 flex justify-between animate-slide-up">
@@ -599,13 +715,26 @@ export default function Homepage() {
               <Text className="font-semibold text-xl">Varsigram</Text>
             </div>
 
-            <div className='flex flex-row justify-between'>
+            <div className='flex flex-row justify-between items-center space-x-2'>
               <div
                 onClick={() => handleNavigation('settings')}
-                className="hover:opacity-80 transition-opacity cursor-pointer mr-2"
+                className="hover:opacity-80 transition-opacity cursor-pointer"
               >
-               <Img src="images/settings-icon.svg" alt="File" className="h-[24px] w-[24px]" />
+               <Img src="images/settings-icon.svg" alt="Settings" className="h-[24px] w-[24px]" />
               </div>
+           
+              <Link to="/notifications" className="relative">
+                <Img
+                  src="/images/vectors/bell.svg"
+                  alt="Notifications"
+                  className="h-[24px] w-[24px] text-gray-600 hover:text-blue-600 transition-colors"
+                />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </div>
+                )}
+              </Link>
            
               <Img
                 src="/images/search.svg"
@@ -658,13 +787,13 @@ export default function Homepage() {
           )}
 
           <div className="w-full post-section">
-            {isLoading && currentPosts.length === 0 && (
+            {currentIsLoading && currentPosts.length === 0 && (
               <div className="flex justify-center items-center py-20 animate-fade-in">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
               </div>
             )}
 
-            {error && !isLoading && !isAuthLoading && (
+            {error && !currentIsLoading && !isAuthLoading && (
               <div className="flex flex-col justify-center items-center py-20 animate-fade-in">
                 <p className="text-red-500 text-center mb-4">{error}</p>
                 <button
@@ -676,7 +805,7 @@ export default function Homepage() {
               </div>
             )}
 
-            {!isLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
+            {!currentIsLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
               <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
                 <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
                   No {activeTab === 'forYou' ? 'posts' : 'official posts'} in your feed yet.
@@ -687,7 +816,6 @@ export default function Homepage() {
             {!isAuthLoading && currentPosts.length > 0 && (
               <div className="space-y-6 w-full">
                 {currentPosts.map((post, idx) => {
-                  // Add unique composite key
                   const uniqueKey = `${post.id}-${idx}`;
                   return (
                     <div 
@@ -702,19 +830,15 @@ export default function Homepage() {
                         onPostEdit={handlePostEdit}
                         currentUserId={user?.id}
                         currentUserEmail={user?.email}
-                        onClick={() => {
-                          sessionStorage.setItem('homepageScroll', window.scrollY.toString());
-                          navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
-                        }}
+                        onClick={() => handlePostClick(post.id)}
                         postsData={feedPosts}
                       />
                     </div>
                   );
                 })}
                 
-                {/* Loading trigger */}
                 <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
-                  {isLoading && (
+                  {currentIsLoading && (
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
                   )}
                   {!currentHasMore && currentPosts.length > 0 && (
@@ -740,6 +864,7 @@ export default function Homepage() {
       </div>
 
       <BottomNav />
+      
 
       {isSearchOpen && (
         <div
@@ -793,9 +918,8 @@ export default function Homepage() {
                   value={searchType}
                   onChange={e => setSearchType(e.target.value as any)}
                 >
-                  <option value="all">Select Types</option>
-                  <option value="student">Student</option>
-                  <option value="organization">Organization</option>
+                  <option value="student">Students</option>
+                  <option value="organization">Organizations</option>
                 </select>
                 <select
                   className="border rounded px-2 py-1"
@@ -824,7 +948,6 @@ export default function Homepage() {
               </div>
             </div>
 
-            {/* Search Results */}
             <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
               {isSearching ? (
                 <div className="flex justify-center items-center py-20">
@@ -832,7 +955,6 @@ export default function Homepage() {
                 </div>
               ) : (
                 <div className="p-4">
-                  {/* Users Section */}
                   {searchResults.users.length > 0 && (
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold mb-3">People</h3>
@@ -859,7 +981,6 @@ export default function Homepage() {
                     </div>
                   )}
 
-                  {/* Posts Section */}
                   {searchResults.posts.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold mb-3">Posts</h3>
@@ -874,7 +995,8 @@ export default function Homepage() {
                             currentUserId={user?.id}
                             currentUserEmail={user?.email}
                             onClick={() => {
-                              sessionStorage.setItem('homepageScroll', window.scrollY.toString());
+                              const currentScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
+                              sessionStorage.setItem('homepageScroll', currentScroll.toString());
                               navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
                             }}
                           />
@@ -883,7 +1005,6 @@ export default function Homepage() {
                     </div>
                   )}
 
-                  {/* No Results */}
                   {searchQuery && 
                    !isSearching && 
                    searchResults.users.length === 0 && 
