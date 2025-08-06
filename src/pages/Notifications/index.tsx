@@ -138,9 +138,9 @@ export default function NotificationsPage() {
       case 'like':
         return '/images/vectors/like_filled.svg';
       case 'comment':
-        return '/images/vectors/comment.svg';
+        return '/images/vectors/vars.svg';
       case 'follow':
-        return '/images/vectors/user.svg';
+        return '/images/vectors/follow.svg';
       case 'mention':
         return '/images/vectors/at.svg';
       // case 'system': // Added system type icon
