@@ -254,17 +254,16 @@ export const Welcome = () => {
           <div className="animate-scaleIn delay-400">
             <h1 className="text-2xl font-bold text-white lg:text-3xl"> 
               <br />
-              <span className="inline-block animate-fadeInUp delay-500">Be In The Conversation With A Vars</span>
+           <span className="inline-block animate-fadeInUp delay-500">
+  Be In The 
+  <span className="text-[#FF6682] animate-pulse"> Conversation</span> With A  
+  <span className="text-[#FF6682] animate-bounce"> Vars</span>
+</span>
             
             </h1>
           </div>
 
-          <div className="animate-fadeInUp delay-700">
-            <p className="text-xs text-white opacity-90 hover:opacity-100 transition-opacity duration-300">
-              Access real-time information on Varsigram to stay up to date on campus news, directly from verified sources. 
-              Connect with other students across various departments and faculties, and showcase your talent.
-            </p>
-          </div>
+         
 
           <div className="space-y-5 sm:space-y-0 sm:space-x-4 lg:space-x-9 animate-fadeInUp delay-800">
             <Button
