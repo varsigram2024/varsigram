@@ -124,14 +124,23 @@ export const Login = () => {
                 }
               />
             </div>
-
-            <div
-              className="text-center mt-4 animate-slide-up"
-              style={{ animationDelay: "250ms" }}>
-              <Link to="/forgot-password" className="text-sm text-[#750015] hover:underline">
-                Forgot Password?
-              </Link>
-            </div>
+<div className="flex justify-between">             
+  <div
+    className="mt-4 animate-slide-up"
+    style={{ animationDelay: "250ms" }}>
+    <Link to="https://chat.whatsapp.com/EGY8l7P0ZqT6DIrXp8YgAx?mode=ems_copy_c" className="text-sm text-[#750015] hover:underline">
+      Complain
+    </Link>
+  </div>
+    
+  <div
+    className="mt-4 animate-slide-up"
+    style={{ animationDelay: "250ms" }}>
+    <Link to="/forgot-password" className="text-sm text-[#750015] hover:underline">
+      Forgot Password?
+    </Link>
+  </div>
+</div>
 
             <div
               className="animate-slide-up"
