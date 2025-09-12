@@ -480,7 +480,7 @@ export const Post: React.FC<PostProps> = ({
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <span
-                      className="font-semibold lg:text-[20px] text-[16px] text-[#750015] cursor-pointer hover:underline"
+                      className="font-semibold lg:text-[20px] text-[20px] text-[#750015] cursor-pointer hover:underline"
                       onClick={() => {
                         console.log(
                           "Clicked name",
@@ -506,7 +506,7 @@ export const Post: React.FC<PostProps> = ({
                   {(post.author_faculty || post.author_department) && (
                     <Text
                       as="p"
-                      className="text-[10px] lg:text-[12px] text-gray-600"
+                      className="text-[8px] lg:text-[12px] text-gray-600"
                     >
                       {post.author_faculty && post.author_department
                         ? `${post.author_faculty} • ${post.author_department}`
@@ -515,7 +515,7 @@ export const Post: React.FC<PostProps> = ({
                   )}
                   <Text
                     as="p"
-                    className="text-[12px] lg:text-[16px] text-gray-500"
+                    className="text-[9px] lg:text-[16px] text-gray-500"
                   >
                     {formatTimestamp(post.timestamp)}
                   </Text>
@@ -570,7 +570,7 @@ export const Post: React.FC<PostProps> = ({
           <div className="h-[0.6px] w-92 bg-gray-300"></div>
           <Text
             as="p"
-            className={`w-full text-[12px] sm:text-[14px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
+            className={`w-full text-[10px] sm:text-[10px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
               !expanded && isLong ? "max-h-32 overflow-hidden" : ""
             }`}
             style={{ lineHeight: "1.6" }}
@@ -695,7 +695,7 @@ export const Post: React.FC<PostProps> = ({
 
             <div className="relative">
               <Img
-                src="/images/vectors/share.svg"
+                src="/images/share.jpg"
                 alt="Share"
                 className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
                 onClick={handleShareClick}
