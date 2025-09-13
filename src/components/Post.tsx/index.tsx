@@ -480,9 +480,9 @@ export const Post: React.FC<PostProps> = ({
                   }
                 </Text>
               )}
-              <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
+{/*               <Text as="p" className="text-[12px] lg:text-[16px] text-gray-500">
                   {formatTimestamp(post.timestamp)}
-                </Text>
+                </Text> */}
             </div>
           </div>
               
