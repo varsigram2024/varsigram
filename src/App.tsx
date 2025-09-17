@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { ViewTrackingProvider } from './context/viewTrackingContext.tsx';
 import { Welcome } from './pages/Welcome';
 import ErrorBoundary from './components/ErrorBoundary';
 import { SignUp } from './pages/SignUp';
@@ -238,12 +239,14 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <FeedProvider>
-            <Analytics />
-            <SpeedInsights />
-            <EmailVerificationBanner />
-            <ErrorBoundary>
-              <AppContent />
-            </ErrorBoundary>
+            <ViewTrackingProvider> {/* Add this line */}
+              <Analytics />
+              <SpeedInsights />
+              <EmailVerificationBanner />
+              <ErrorBoundary>
+                <AppContent />
+              </ErrorBoundary>
+            </ViewTrackingProvider> {/* Add this line */}
           </FeedProvider>
         </NotificationProvider>
       </AuthProvider>

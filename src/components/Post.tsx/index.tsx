@@ -1,5 +1,7 @@
 // ... existing code ...
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useViewTracking } from '../../context/viewTrackingContext';
+import { useInView } from 'react-intersection-observer';
 import { Text } from '../Text';
 import { Img } from '../Img';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -28,6 +30,7 @@ interface Post {
   comment_count: number;
   share_count: number;
   has_liked: boolean;
+  view_count: number;
   trending_score: number;
   last_engagement_at: string | null;
   author_display_name: string;
@@ -67,6 +70,7 @@ interface PostProps {
 const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+
 export const Post: React.FC<PostProps> = ({ 
   post, 
   onPostUpdate, 
@@ -79,6 +83,18 @@ export const Post: React.FC<PostProps> = ({
   postsData = [],
   isPublicView = false
 }) => {
+  const { addToBatch } = useViewTracking();
+  const [viewRef, inView] = useInView({
+    threshold: 0.5, // 50% of the post is visible
+    triggerOnce: true, // Only trigger once per post
+  });
+
+  useEffect(() => {
+    if (inView && post.id) {
+      addToBatch(post.id);
+    }
+  }, [inView, post.id, addToBatch]);
+
   const { token, user } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(post.has_liked);
@@ -90,6 +106,8 @@ export const Post: React.FC<PostProps> = ({
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
+
+  
 
   const handleShareClick = () => {
     handleWebShare();
@@ -435,7 +453,9 @@ export const Post: React.FC<PostProps> = ({
 
   return (
     <>
-      <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
+    
+      <div ref={viewRef}
+      className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
         <div className="flex flex-col gap-7 self-stretch">
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
@@ -585,7 +605,9 @@ export const Post: React.FC<PostProps> = ({
 
           {renderMedia()}
 
+          
           <div className="flex justify-between items-center border-t pt-4">
+            {/* Like button */}
             {/* <div 
               className={`flex items-center gap-2 ${token ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} 
               onClick={token ? handleLike : () => {
@@ -608,11 +630,16 @@ export const Post: React.FC<PostProps> = ({
               <span>{likeCount}</span>
             </div> */}
 
-            <svg width="16px" height="16px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-eye">
-              <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-              <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-            </svg>
+            {/* View count */}
+            <div className="flex items-center gap-2">
+              <svg width="16px" height="16px" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+              </svg>
+              <span>{post.view_count || 0}</span>
+            </div>
 
+            {/* Comment button */}
             <div 
               className={`flex items-center gap-2 ${token ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} 
               onClick={token ? handleCommentClick : () => {
@@ -624,6 +651,7 @@ export const Post: React.FC<PostProps> = ({
               <Text as="p" className="text-[14px] font-normal">{post.comment_count}</Text>
             </div>
 
+            {/* Share button */}
             <div className="relative">
               <Img
                 src="/images/vectors/share.svg"
