@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+
 import debounce from "lodash/debounce";
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-dom";
+
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
@@ -16,6 +18,7 @@ import CreatePostModal from '../../components/CreatePostModal';
 import { faculties, facultyDepartments } from "../../constants/academic";
 import { useFeed } from '../../context/FeedContext';
 import { useNotification } from '../../context/NotificationContext';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -36,6 +39,10 @@ interface Post {
   last_engagement_at: string | null;
   author_display_name: string;
   author_name?: string;
+  author_display_name_slug?: string;
+  account_type?: string;
+  is_verified?: boolean;
+  exclusive?: boolean;
 }
 
 interface User {
@@ -104,23 +111,20 @@ export default function Homepage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
- 
+
   const {
     feedPosts, setFeedPosts,
     feedNextCursor, setFeedNextCursor,
     feedHasMore, setFeedHasMore,
-    feedScroll, setFeedScroll,
     isFeedLoading, setIsFeedLoading,
     lastFeedFetch, setLastFeedFetch,
-    
     officialPosts, setOfficialPosts,
     officialNextCursor, setOfficialNextCursor,
     officialHasMore, setOfficialHasMore,
-    officialScroll, setOfficialScroll,
     isOfficialLoading, setIsOfficialLoading,
     lastOfficialFetch, setLastOfficialFetch,
   } = useFeed();
- 
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
@@ -128,12 +132,6 @@ export default function Homepage() {
   const [searchType, setSearchType] = useState<'all' | 'student' | 'organization'>('all');
   const [searchFaculty, setSearchFaculty] = useState('');
   const [searchDepartment, setSearchDepartment] = useState('');
-  const postsContainerRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
-
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const scrollRestoredRef = useRef(false);
-  const postsRenderedRef = useRef(false);
 
   const currentPosts = useMemo(() => {
     return activeTab === 'forYou' ? feedPosts : officialPosts;
@@ -157,7 +155,7 @@ export default function Homepage() {
     const now = Date.now();
     const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
     const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
-    
+
     if (shouldSkip && !startAfter) {
       return;
     }
@@ -171,11 +169,11 @@ export default function Homepage() {
     try {
       const endpoint = type === 'feed' ? '/posts/' : '/official/';
 
-      const params: any = { 
+      const params: any = {
         page_size: 10,
         start_after: startAfter
       };
-      
+
       const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -185,7 +183,7 @@ export default function Homepage() {
       });
 
       const { results, next_cursor } = response.data;
-      
+
       if (Array.isArray(results) && results.length > 0) {
         if (type === 'feed') {
           setFeedPosts(prev => {
@@ -250,86 +248,7 @@ export default function Homepage() {
 
   const loadingRef = useIntersectionObserver(loadMoreCallback);
 
-  useEffect(() => {
-    const container = postsContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (
-        container.scrollTop + container.clientHeight >= container.scrollHeight - 300 &&
-        currentHasMore && !currentIsLoading
-      ) {
-        loadMorePosts();
-      }
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [currentHasMore, currentIsLoading, loadMorePosts]);
-
-  useEffect(() => {
-    if (currentPosts.length > 0) {
-      setTimeout(() => {
-        setIsFirstLoad(false);
-      }, 100);
-    }
-  }, [currentPosts.length]);
-
-  useEffect(() => {
-    const container = postsContainerRef.current;
-    if (!container) return;
-
-    const savedScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
-    
-    if (savedScroll > 0 && currentPosts.length > 0 && !scrollRestoredRef.current && postsRenderedRef.current) {
-      const delay = isFirstLoad ? 600 : 100;
-      
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          container.scrollTop = savedScroll;
-          scrollRestoredRef.current = true;
-        });
-      }, delay);
-    }
-  }, [activeTab, feedScroll, officialScroll, currentPosts.length, isFirstLoad]);
-
-  useEffect(() => {
-    if (currentPosts.length > 0) {
-      setTimeout(() => {
-        postsRenderedRef.current = true;
-      }, 100);
-    }
-  }, [currentPosts.length]);
-
-  useEffect(() => {
-    scrollRestoredRef.current = false;
-    postsRenderedRef.current = false;
-  }, [activeTab]);
-
-  useEffect(() => {
-    return () => {
-      const container = postsContainerRef.current;
-      if (container) {
-        const currentScroll = container.scrollTop;
-        if (activeTab === 'forYou') {
-          setFeedScroll(currentScroll);
-        } else {
-          setOfficialScroll(currentScroll);
-        }
-      }
-    };
-  }, [activeTab, setFeedScroll, setOfficialScroll]);
-
   const handlePostClick = (postId: string) => {
-    const container = postsContainerRef.current;
-    if (container) {
-      const currentScroll = container.scrollTop;
-      if (activeTab === 'forYou') {
-        setFeedScroll(currentScroll);
-      } else {
-        setOfficialScroll(currentScroll);
-      }
-    }
     navigate(`/posts/${postId}`, { state: { backgroundLocation: location } });
   };
 
@@ -365,8 +284,11 @@ export default function Homepage() {
     try {
       setIsUploading(true);
 
+      if (!token) {
+        throw new Error('Authentication token is missing.');
+      }
       const mediaUrls = await Promise.all(
-        selectedFiles.map(file => uploadPostMedia(file, token))
+        selectedFiles.map(file => uploadPostMedia(file, token as string))
       );
 
       const postData = {
@@ -544,10 +466,11 @@ export default function Homepage() {
     setIsSearching(true);
     try {
       const params: any = {};
-      if (searchType !== 'all') params.type = searchType;
+      if (searchQuery.trim()) params.query = searchQuery.trim();
+      if (searchType && searchType !== 'all') params.type = searchType;
       if (searchFaculty) params.faculty = searchFaculty;
       if (searchDepartment) params.department = searchDepartment;
-      if (searchQuery.trim()) params.query = searchQuery.trim();
+
 
       const usersResponse = await axios.get(
         `${API_BASE_URL}/users/search/`,
@@ -605,35 +528,39 @@ export default function Homepage() {
     }
   }, [searchType, searchFaculty, searchDepartment]);
 
-  useEffect(() => {
-    if (!searchQuery.trim()) return;
-    debouncedSearch();
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [searchQuery, searchType, searchFaculty, searchDepartment]);
 
-  const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [handleSearch]);
+
+const debouncedSearch = useMemo(() => debounce(() => {
+  handleSearch();
+}, 400), [searchQuery, searchType, searchFaculty, searchDepartment]);
+
+
+
+useEffect(() => {
+  if (searchQuery.trim()) {
+    debouncedSearch();
+  } else {
+    setSearchResults({ users: [], posts: [] }); // clear results when query is empty
+  }
+
+  return () => {
+    debouncedSearch.cancel();
+  };
+}, [searchQuery, searchType, searchFaculty, searchDepartment]);
+
+
 
   const { unreadCount } = useNotification();
 
   return (
-    <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto ${isFirstLoad ? 'animate-fade-in' : ''}`}>
-      <Sidebar1 />
+    <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative]`}>
+      
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
-        <div 
-          className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
-          ref={postsContainerRef}
-          style={{ 
-            overflowY: 'auto',
-            height: '100vh',
-            maxHeight: 'calc(100vh - 120px)',
-            paddingBottom: '20px',
-            WebkitOverflowScrolling: 'touch',
-            scrollBehavior: 'smooth'
-          }}
-        >
+       <div className={`flex w-full lg:w-[100%] items-start justify-center flex-row`}>
+              <div 
+              className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
+                >
+
           <div className="hidden lg:flex items-center justify-between animate-fade-in">
             <div
               onClick={() => {
@@ -850,7 +777,7 @@ export default function Homepage() {
           </div>
         </div>
 
-        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
+        <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
@@ -863,7 +790,7 @@ export default function Homepage() {
         </div>
       </div>
 
-      <BottomNav />
+      {/* <BottomNav /> */}
       
 
       {isSearchOpen && (
@@ -918,6 +845,7 @@ export default function Homepage() {
                   value={searchType}
                   onChange={e => setSearchType(e.target.value as any)}
                 >
+                  <option value="all">All</option>
                   <option value="student">Students</option>
                   <option value="organization">Organizations</option>
                 </select>

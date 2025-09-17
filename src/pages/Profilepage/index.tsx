@@ -400,9 +400,9 @@ export default function Profile() {
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
       <div className="flex w-full items-start justify-center bg-white">
-        <Sidebar1 />
+        
 
-        <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row animate-slide-up">
+        <div className="flex w-full lg:w-[100%] items-start justify-center h-auto flex-row animate-slide-up">
           <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
             {isLoading ? (
               <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
@@ -691,7 +691,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <BottomNav />
+        {/* <BottomNav /> */}
       </div>
     </div>
   );

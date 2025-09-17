@@ -85,9 +85,9 @@ export default function Chatpage() {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      <Sidebar1 />
+      
 
-      <div className="flex flex-row-reverse w-full lg:w-[85%] items-start justify-center h-auto">
+      <div className="flex flex-row-reverse w-full lg:w-[105%] items-start justify-center h-auto">
         <div className="hidden lg:flex mt-[38px] lg:mt-[0px] flex-1 items-center justify-center gap-[4px] md:flex-col md:self-stretch p-5"> 
           <Text as="h2" className="text-left w-[30%] text-[24px] font-extrabold">
             No Messages Yet
@@ -185,7 +185,7 @@ export default function Chatpage() {
 
       </div>
 
-      <BottomNav />
+      {/* <BottomNav /> */}
     </div>
   );
 }

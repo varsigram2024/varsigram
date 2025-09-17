@@ -179,16 +179,13 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      {/* Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar1 />
-      </div>
+     
 
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center w-full max-w-[1200px]">
         {/* Header */}
         <div className="flex items-center justify-between w-full p-4 bg-white shadow-sm">
-          <Heading size="lg" className="text-gray-900">
+          <Heading size="h3_semibold" className="text-gray-900">
             Notifications
           </Heading>
           {unreadCount > 0 && (
@@ -281,7 +278,7 @@ export default function NotificationsPage() {
 
       {/* Bottom Navigation for Mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
-        <BottomNav />
+        {/* <BottomNav /> */}
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
-import API from "../services/API";
 import { toast } from "react-toastify";
 
 export const Login = () => {
@@ -50,6 +49,15 @@ export const Login = () => {
     } finally {
       setIsLoading(false);
     }
+    try {
+  await login(formData.email, formData.password);
+  // ✅ Trigger popup ONLY after login
+  sessionStorage.setItem("justLoggedIn", "true");
+  navigate("/home"); // or wherever you redirect after login
+} catch (error) {
+  console.error("Login failed:", error);
+}
+
   };
 
   return (

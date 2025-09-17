@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Welcome } from './pages/Welcome';
+import ErrorBoundary from './components/ErrorBoundary';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
 import ProfilepageOrganizationPage from './pages/Profilepage';
@@ -34,8 +35,12 @@ import PostPage from "./pages/PostPage";
 import { VerifiedRoute } from './components/VerifiedRoute';
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
-import { NotificationProvider } from './context/NotificationContext';
+import { NotificationProvider, useNotification } from './context/NotificationContext';
 import NotificationsPage from './pages/Notifications/index.tsx';
+import { useEffect, useState } from 'react';
+
+
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -50,9 +55,30 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function AppContent() {
-  const { signUp: originalSignUp, isLoading } = useAuth();
-  const location = useLocation();
-  const state = location.state as { backgroundLocation?: Location };
+  const { token, login, isLoading } = useAuth();
+  const {
+    notificationPermission,
+    isNotificationEnabled,
+    requestNotificationPermission,
+  } = useNotification();
+
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    await requestNotificationPermission();
+    setShowNotificationPrompt(false);
+  };
+
+;
+
+  useEffect(() => {
+  if (sessionStorage.getItem("justLoggedIn") === "true") {
+    sessionStorage.removeItem("justLoggedIn");
+    setShowNotificationPrompt(true);
+  }
+}, []);
+
+
 
   if (isLoading) {
     return (
@@ -90,38 +116,70 @@ function AppContent() {
       </div>
     );
   }
-  
-  
-  
-  
-  const adaptedSignUp = async (data: SignUpData) => {
-    console.log('App received signup data:', data);
-    await originalSignUp(data.email, data.password, data.fullName, data);
+
+  // Import or define your signUp function here
+  const signUp = async (data: any) => {
+    // Implement sign up logic or import from your context/service
+    // Example: await someSignUpService(data);
   };
 
   return (
-    <SignUpProvider signUp={adaptedSignUp}>
-      <Toaster 
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        }}
+    <SignUpProvider signUp={signUp}>
+      <Toaster
+      position="top-center"
+      toastOptions={{
+        duration: 3000,
+        style: {
+        background: '#222',
+        color: '#fff',
+        borderRadius: '8px',
+        fontSize: '1rem',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+        },
+      }}
       />
-      <Routes location={state?.backgroundLocation || location}>
-        {/* Public Routes */}
-        <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
-        <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
-        <Route path="/academic-details" element={<PublicRoute><AcademicDetails /></PublicRoute>} />
-        <Route path="/about-yourself" element={<PublicRoute><AboutYourself /></PublicRoute>} />
-        <Route path="/academic-level" element={<PublicRoute><AcademicLevel /></PublicRoute>} />
+      <Routes>
+      {/* Public Routes */}
+      <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><MultiStepSignUp onLogin={() => {}} /></PublicRoute>} />
+      <Route path="/phone-verification" element={<PublicRoute><PhoneVerification onNext={() => {}} /></PublicRoute>} />
+      <Route
+        path="/academic-details"
+        element={
+          <PublicRoute>
+            <AcademicDetails
+              onNext={() => {/* handle next step */}}
+              onBack={() => {/* handle back step */}}
+            />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/about-yourself"
+        element={
+          <PublicRoute>
+            <AboutYourself
+              onNext={() => {/* handle next step */}}
+              onBack={() => {/* handle back step */}}
+            />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/academic-level"
+        element={
+          <PublicRoute>
+            <AcademicLevel
+              onNext={() => {/* handle next step */}}
+              onBack={() => {/* handle back step */}}
+            />
+          </PublicRoute>
+        }
+      />
 
-        {/* Protected Routes */}
+      {/* Protected Routes */}
+      <Route element={<MainLayout />}>
         <Route path="/home" element={<VerifiedRoute><Homepage /></VerifiedRoute>} />
         <Route path="/chat" element={<VerifiedRoute><Chatpage /></VerifiedRoute>} />
         <Route path="/connections" element={<VerifiedRoute><Connectionspage /></VerifiedRoute>} />
@@ -138,19 +196,37 @@ function AppContent() {
         <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
         <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
         <Route path="/posts/:id" element={<PostPage />} />
+      </Route>
 
-        {/* Root route - redirect to welcome */}
-        <Route path="/" element={<Navigate to="/welcome" replace />} />
-        
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/welcome" replace />} />
+      {/* Root route - redirect to welcome */}
+      <Route path="/" element={<Navigate to="/welcome" replace />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/welcome" replace />} />
       </Routes>
 
-      {/* Show the modal route if backgroundLocation is set */}
-      {state?.backgroundLocation && (
-        <Routes>
-          <Route path="/posts/:id" element={<PostPage isModal />} />
-        </Routes>
+      {/* Notification Prompt */}
+      {showNotificationPrompt && (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full">
+        <h2 className="text-xl font-bold mb-3 text-[#750015]">Enable Notifications</h2>
+        <p className="text-base text-gray-700 mb-6">
+          Stay updated with the latest notifications from Varsigram.
+        </p>
+        <button
+          onClick={handleEnableNotifications}
+          className="px-5 py-2 bg-[#750015] text-white rounded-lg font-medium shadow hover:bg-[#a0001f] transition-colors"
+        >
+          Enable Notifications
+        </button>
+        <button
+          onClick={() => setShowNotificationPrompt(false)}
+          className="mt-4 text-sm text-gray-500 hover:underline focus:outline-none"
+        >
+          Maybe later
+        </button>
+        </div>
+      </div>
       )}
     </SignUpProvider>
   );
@@ -165,7 +241,9 @@ function App() {
             <Analytics />
             <SpeedInsights />
             <EmailVerificationBanner />
-            <AppContent />
+            <ErrorBoundary>
+              <AppContent />
+            </ErrorBoundary>
           </FeedProvider>
         </NotificationProvider>
       </AuthProvider>

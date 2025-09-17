@@ -72,7 +72,7 @@ export default function Settings() {
       // Show instructions for disabling notifications
       toast.info(
         'To disable notifications, please go to your browser settings and block notifications for this site.',
-        { duration: 5000 }
+        { autoClose: 5000 }
       );
       
       // Optionally, you could show a modal with instructions
@@ -93,7 +93,7 @@ export default function Settings() {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative animate-fade-in">
-      <Sidebar1 onComplete={handleNavigation} currentPage="settings" />
+
 
       {/* Edit Profile Side Panel (desktop only) */}
       <div className="hidden lg:block">
@@ -103,7 +103,7 @@ export default function Settings() {
         />
       </div>
 
-      <div className="flex w-full lg:w-[85%] pb-5 items-start justify-center  flex-row animate-slide-up">
+      <div className="flex w-full lg:w-[100%] pb-5 items-start justify-center  flex-row animate-slide-up">
         <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
           {/* Mobile Header */}
           <div className="mt-5 lg:hidden flex flex-row justify-between animate-fade-in">
@@ -287,7 +287,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <BottomNav onComplete={handleNavigation} currentPage="settings" />
+      
     </div>
   );
 }
