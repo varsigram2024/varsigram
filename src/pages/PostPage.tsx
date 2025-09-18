@@ -10,7 +10,7 @@ import BottomNav from "./../components/BottomNav";
 import ProfileOrganizationSection from "./Profilepage/ProfilepageOrganizationSection.tsx";
 import WhoToFollowSidePanel from "../components/whoToFollowSidePanel/index.tsx";
 import { toast } from "react-hot-toast";
-import { ArrowLeft, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreVertical, Edit, Trash2, MessageSquare } from "lucide-react";
 import { useMediaQuery } from 'react-responsive';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -29,6 +29,9 @@ interface Comment {
   profile_pic_url?: string;
   display_name_slug?: string;
   author_name?: string;
+  parent_comment_id?: string; // for replies
+  reply_count?: number;
+  replies?: Comment[]; // nested replies
 }
 
 interface Post {
@@ -59,6 +62,7 @@ interface CommentItemProps {
   onCommentUpdate: (commentId: string, newText: string) => void;
   onCommentDelete: (commentId: string) => void;
   navigate: (path: string) => void;
+  onStartReply: (commentId: string, authorName: string) => void; // Add this
 }
 
 export default function PostPage({ isModal = false }) {
@@ -72,6 +76,8 @@ export default function PostPage({ isModal = false }) {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   // Add pagination state for comments
   const [commentsNextCursor, setCommentsNextCursor] = useState<string | null>(null);
@@ -177,30 +183,52 @@ export default function PostPage({ isModal = false }) {
   
 
   const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (!token) {
+    toast.error("Please sign up to comment");
+    navigate('/welcome');
+    return;
+  }
+  
+  const textToPost = replyingTo ? replyText : newComment;
+  if (!textToPost.trim()) return;
+  
+  setIsPosting(true);
+  try {
+    await axios.post(
+      `${API_BASE_URL}/posts/${id}/comments/create/`,
+      { 
+        text: textToPost,
+        parent_comment_id: replyingTo || undefined
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     
-    if (!token) {
-      toast.error("Please sign up to comment");
-      navigate('/welcome');
-      return;
-    }
-    
-    if (!newComment.trim()) return;
-    setIsPosting(true);
-    try {
-      await axios.post(
-        `${API_BASE_URL}/posts/${id}/comments/create/`,
-        { text: newComment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    if (replyingTo) {
+      setReplyText("");
+      setReplyingTo(null);
+    } else {
       setNewComment("");
-      fetchComments();
-    } catch (error) {
-      toast.error("Failed to add comment");
-    } finally {
-      setIsPosting(false);
     }
-  };
+    
+    fetchComments();
+  } catch (error) {
+    toast.error("Failed to add comment");
+  } finally {
+    setIsPosting(false);
+  }
+};
+
+const handleStartReply = (commentId: string, authorName: string) => {
+  if (!token) {
+    toast.error("Please sign up to reply");
+    navigate('/welcome');
+    return;
+  }
+  setReplyingTo(commentId);
+  setReplyText(`@${authorName} `);
+};
 
   const handleBack = () => {
     if (isModal) {
@@ -437,36 +465,71 @@ export default function PostPage({ isModal = false }) {
               </div>
             )}
             
-            <form onSubmit={handleAddComment} className="flex gap-2 mb-6">
-              <input
-                className="flex-1 border rounded-full px-4 py-2"
-                placeholder={token ? "Add a comment..." : "Sign up to comment..."}
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                disabled={isPosting || !token}
-              />
-              <button
-                type="submit"
-                className={`px-4 py-2 rounded-full flex items-center justify-center min-w-[70px] ${
-                  token 
-                    ? 'bg-[#750015] text-white' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                disabled={!newComment.trim() || isPosting || !token}
-              >
-                {isPosting ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
-                    Posting...
-                  </>
-                ) : (
-                  "Post"
-                )}
-              </button>
-            </form>
+            <form onSubmit={handleAddComment} className="flex gap-2 mb-6 bg-gray-50 p-4 rounded-lg">
+  <input
+    className="flex-1 border rounded-lg px-4 py-2"
+    placeholder={token ? "Add a comment..." : "Sign up to comment..."}
+    value={newComment}
+    onChange={(e) => setNewComment(e.target.value)}
+    disabled={isPosting || !token}
+  />
+  <button
+    type="submit"
+    className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-[70px] ${
+      token 
+        ? 'bg-[#750015] text-white' 
+        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+    }`}
+    disabled={!newComment.trim() || isPosting || !token}
+  >
+    {isPosting ? (
+      <>
+        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-1"></div>
+        Posting...
+      </>
+    ) : (
+      "Post"
+    )}
+  </button>
+</form>
+
+
+              {replyingTo && (
+  <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-[#750015]">
+    <div className="flex justify-between items-center mb-2">
+      <span className="text-sm text-gray-600 font-medium">Replying to a comment</span>
+      <button 
+        onClick={() => setReplyingTo(null)}
+        className="text-gray-500 hover:text-gray-700 text-sm"
+      >
+        Cancel reply
+      </button>
+    </div>
+    <form onSubmit={handleAddComment} className="flex gap-2">
+      <input
+        className="flex-1 border rounded-lg px-4 py-2"
+        placeholder="Write your reply..."
+        value={replyText}
+        onChange={(e) => setReplyText(e.target.value)}
+        disabled={isPosting}
+        autoFocus
+      />
+      <button
+        type="submit"
+        className="px-4 py-2 bg-[#750015] text-white rounded-lg min-w-[70px] disabled:opacity-50"
+        disabled={!replyText.trim() || isPosting}
+      >
+        {isPosting ? (
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+          </div>
+        ) : (
+          "Reply"
+        )}
+      </button>
+    </form>
+  </div>
+)}
             
             <div className="space-y-6">
               {comments.length === 0 && !isLoadingComments ? (
@@ -481,6 +544,7 @@ export default function PostPage({ isModal = false }) {
                       onCommentUpdate={handleCommentUpdate}
                       onCommentDelete={handleCommentDelete}
                       navigate={navigate}
+                      onStartReply={handleStartReply}
                     />
                   ))}
                   
@@ -536,7 +600,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
   currentUserId, 
   onCommentUpdate, 
   onCommentDelete,
-  navigate 
+  navigate,
+  onStartReply 
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
@@ -722,6 +787,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </div>
           <Text className="block">{comment.text}</Text>
+          
+
+           
+          <button 
+            onClick={() => onStartReply(comment.id, authorName)}
+            className="text-sm text-[#750015] mt-2 flex items-center gap-1"
+          >
+            <MessageSquare size={14} /> Reply
+          </button>
+
+          {comment.reply_count > 0 && (
+            <button 
+              onClick={() => {/* Implement view replies functionality */}}
+              className="text-sm text-[#750015] mt-2 ml-3"
+            >
+              View {comment.reply_count} {comment.reply_count === 1 ? 'reply' : 'replies'}
+            </button>
+          )}
         </div>
       </div>
 
