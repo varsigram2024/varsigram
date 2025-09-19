@@ -26,7 +26,7 @@ export const ViewTrackingProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/posts/batch_view/`,
+        `${import.meta.env.VITE_API_BASE_URL}/posts/batch-view/`,
         { post_ids: postIds },
         {
           headers: {
