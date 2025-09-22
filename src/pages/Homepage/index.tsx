@@ -111,6 +111,9 @@ export default function Homepage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [feedPage, setFeedPage] = useState(1);
+  const [feedSessionId, setFeedSessionId] = useState<string | null>(null);
+
 
   const {
     feedPosts, setFeedPosts,
@@ -149,86 +152,126 @@ export default function Homepage() {
     return activeTab === 'forYou' ? isFeedLoading : isOfficialLoading;
   }, [activeTab, isFeedLoading, isOfficialLoading]);
 
-  const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
-    if (!token || (type === 'feed' ? isFeedLoading : isOfficialLoading)) return;
 
-    const now = Date.now();
-    const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
-    const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
 
-    if (shouldSkip && !startAfter) {
-      return;
+
+const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
+  if (!token || (type === 'feed' ? isFeedLoading : isOfficialLoading)) return;
+
+  const now = Date.now();
+  const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
+  const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
+
+  if (shouldSkip && !startAfter) {
+    return;
+  }
+
+  if (type === 'feed') {
+    setIsFeedLoading(true);
+  } else {
+    setIsOfficialLoading(true);
+  }
+
+  try {
+    const endpoint = type === 'feed' ? '/posts/' : '/official/';
+
+    // Different parameters for feed vs official
+    const params: any = {
+      page_size: 10,
+    };
+    
+    if (type === 'feed') {
+      params.page = feedPage;
+      if (feedSessionId) {
+        params.session_id = feedSessionId;
+      }
+    } else {
+      params.start_after = startAfter;
     }
+
+    const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      params,
+    });
+
+    // Log the response to see the actual structure
+    console.log(`${type} response:`, response.data);
+
+    let results, nextPageInfo;
 
     if (type === 'feed') {
-      setIsFeedLoading(true);
-    } else {
-      setIsOfficialLoading(true);
-    }
-
-    try {
-      const endpoint = type === 'feed' ? '/posts/' : '/official/';
-
-      const params: any = {
-        page_size: 10,
-        start_after: startAfter
+      // For feed, check if the response has the expected structure
+      results = response.data.results || [];
+      nextPageInfo = {
+        session_id: response.data.session_id,
+        has_next: response.data.has_next
       };
+    } else {
+      // For official, use the existing structure
+      results = response.data.results;
+      nextPageInfo = {
+        next_cursor: response.data.next_cursor
+      };
+    }
 
-      const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        params,
-      });
-
-      const { results, next_cursor } = response.data;
-
-      if (Array.isArray(results) && results.length > 0) {
-        if (type === 'feed') {
-          setFeedPosts(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
-            return [...prev, ...uniquePosts];
-          });
-          setFeedNextCursor(next_cursor);
-          setFeedHasMore(!!next_cursor);
-          setLastFeedFetch(now);
-        } else {
-          setOfficialPosts(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
-            return [...prev, ...uniquePosts];
-          });
-          setOfficialNextCursor(next_cursor);
-          setOfficialHasMore(!!next_cursor);
-          setLastOfficialFetch(now);
-        }
-      }
-    } catch (error) {
-      if (type === 'feed') setFeedHasMore(false);
-      else setOfficialHasMore(false);
-    } finally {
+    if (Array.isArray(results) && results.length > 0) {
       if (type === 'feed') {
-        setIsFeedLoading(false);
+        setFeedPosts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const uniquePosts = results.filter(post => !existingIds.has(post.id));
+          return [...prev, ...uniquePosts];
+        });
+        
+        // Update feed-specific state
+        if (nextPageInfo.session_id) {
+          setFeedSessionId(nextPageInfo.session_id);
+        }
+        setFeedHasMore(nextPageInfo.has_next);
+        setFeedPage(prev => prev + 1);
+        setLastFeedFetch(now);
       } else {
-        setIsOfficialLoading(false);
+        setOfficialPosts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const uniquePosts = results.filter(post => !existingIds.has(post.id));
+          return [...prev, ...uniquePosts];
+        });
+        setOfficialNextCursor(nextPageInfo.next_cursor);
+        setOfficialHasMore(!!nextPageInfo.next_cursor);
+        setLastOfficialFetch(now);
+      }
+    } else if (Array.isArray(results) && results.length === 0) {
+      // No more posts
+      if (type === 'feed') {
+        setFeedHasMore(false);
+      } else {
+        setOfficialHasMore(false);
       }
     }
-  };
+  } catch (error) {
+    console.error(`Error fetching ${type} posts:`, error);
+    if (type === 'feed') setFeedHasMore(false);
+    else setOfficialHasMore(false);
+  } finally {
+    if (type === 'feed') {
+      setIsFeedLoading(false);
+    } else {
+      setIsOfficialLoading(false);
+    }
+  }
+};
 
   const loadMorePosts = async () => {
-    if (currentIsLoading || !currentHasMore) return;
+  if (currentIsLoading || !currentHasMore) return;
 
-    const type = activeTab === 'forYou' ? 'feed' : 'official';
-    const cursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
-
-    try {
-      await fetchPosts(type, cursor);
-    } catch (error) {
-      console.error('Failed to load more posts:', error);
-    }
-  };
+  if (activeTab === 'forYou') {
+    await fetchPosts('feed', null);
+  } else {
+    await fetchPosts('official', officialNextCursor);
+  }
+};
 
   useEffect(() => {
     if (!token) return;
@@ -448,13 +491,13 @@ export default function Homepage() {
   };
 
   const refreshPosts = async () => {
-    setError(null);
-    if (activeTab === 'forYou') {
-      setFeedPosts([]);
-      setFeedNextCursor(null);
-      setFeedHasMore(true);
-      await fetchPosts('feed', null);
-    } else {
+  if (activeTab === 'forYou') {
+    setFeedPosts([]);
+    setFeedPage(1);
+    setFeedSessionId(null);
+    setFeedHasMore(true);
+    await fetchPosts('feed', null);
+  } else {
       setOfficialPosts([]);
       setOfficialNextCursor(null);
       setOfficialHasMore(true);

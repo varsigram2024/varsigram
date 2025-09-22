@@ -62,7 +62,8 @@ interface CommentItemProps {
   onCommentUpdate: (commentId: string, newText: string) => void;
   onCommentDelete: (commentId: string) => void;
   navigate: (path: string) => void;
-  onStartReply: (commentId: string, authorName: string) => void; // Add this
+  onStartReply: (commentId: string, authorName: string) => void;
+  postId: string;
 }
 
 export default function PostPage({ isModal = false }) {
@@ -545,6 +546,7 @@ const handleStartReply = (commentId: string, authorName: string) => {
                       onCommentDelete={handleCommentDelete}
                       navigate={navigate}
                       onStartReply={handleStartReply}
+                      postId={id}
                     />
                   ))}
                   
@@ -603,12 +605,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
   navigate,
   onStartReply 
 }) => {
+  const { token } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
   const [showOptions, setShowOptions] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+   const [showReplies, setShowReplies] = useState(false);
+  const [replies, setReplies] = useState<Comment[]>([]);
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false);
+
 
   // Fix the author comparison - convert both to strings for comparison
   const isAuthor = currentUserId && comment.author_id && 
@@ -622,7 +629,41 @@ const CommentItem: React.FC<CommentItemProps> = ({
   
   // Get the correct display name slug
   const displayNameSlug = comment.author_display_name_slug || comment.display_name_slug;
+   // Function to fetch replies
+  const fetchReplies = async () => {
+    if (!comment.id || isLoadingReplies) return;
+    
+    setIsLoadingReplies(true);
+    try {
+      const headers: any = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      
+      // Assuming the API has an endpoint to fetch replies for a comment
+      const res = await axios.get(
+        `${API_BASE_URL}/posts/${comment.post_id}/comments/${comment.id}/replies/`, 
+        { headers }
+      );
+      
+      setReplies(res.data.results || []);
+      setShowReplies(true);
+    } catch (error) {
+      console.error('Failed to fetch replies:', error);
+      toast.error('Failed to load replies');
+    } finally {
+      setIsLoadingReplies(false);
+    }
+  };
 
+  // Toggle showing replies
+  const toggleReplies = () => {
+    if (showReplies) {
+      setShowReplies(false);
+    } else if (comment.reply_count > 0 && replies.length === 0) {
+      fetchReplies();
+    } else {
+      setShowReplies(true);
+    }
+  };
   const handleEdit = () => {
     setIsEditing(true);
     setEditText(comment.text);
@@ -729,6 +770,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   return (
     <>
+    <div className="commment-container">
       <div className="flex gap-3 items-start">
         <Img
           src={profilePicUrl}
@@ -797,16 +839,48 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <MessageSquare size={14} /> Reply
           </button>
 
-          {comment.reply_count > 0 && (
-            <button 
-              onClick={() => {/* Implement view replies functionality */}}
-              className="text-sm text-[#750015] mt-2 ml-3"
-            >
-              View {comment.reply_count} {comment.reply_count === 1 ? 'reply' : 'replies'}
-            </button>
-          )}
+          {/* Reply count and toggle button */}
+            {comment.reply_count > 0 && (
+              <button 
+                onClick={toggleReplies}
+                disabled={isLoadingReplies}
+                className="text-sm text-[#750015] mt-2 flex items-center gap-1"
+              >
+                {isLoadingReplies ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-[#750015]"></div>
+                ) : (
+                  <>
+                    {showReplies ? 'Hide' : 'View'} {comment.reply_count} {comment.reply_count === 1 ? 'reply' : 'replies'}
+                  </>
+                )}
+              </button>
+
+              )}
         </div>
+        </div>
+
+
+         {/* Replies section */}
+        {showReplies && (
+          <div className="ml-8 mt-2 border-l-2 border-gray-200 pl-4">
+            {replies.length > 0 ? (
+              replies.map((reply) => (
+                <CommentItem 
+                  key={reply.id}
+                  comment={reply}
+                  currentUserId={currentUserId}
+                  onCommentUpdate={onCommentUpdate}
+                  onCommentDelete={onCommentDelete}
+                  navigate={navigate}
+                  onStartReply={onStartReply}
+                  postId={id}
+                />
+              ))
+            ) : (
+              <Text className="text-gray-500 text-sm">No replies yet</Text>
+            )}
       </div>
+      )}
 
       {/* Custom Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -859,6 +933,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </div>
         </div>
       )}
+    </div>
     </>
   );
 };
