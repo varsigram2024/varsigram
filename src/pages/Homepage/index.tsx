@@ -173,7 +173,7 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
   }
 
   try {
-    const endpoint = type === 'feed' ? '/posts/' : '/official/';
+    const endpoint = type === 'feed' ? '/feed/' : '/official/';
 
     // Different parameters for feed vs official
     const params: any = {
