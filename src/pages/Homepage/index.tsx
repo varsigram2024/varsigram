@@ -61,16 +61,14 @@ interface User {
 }
 
 interface SearchResult {
-  users: {
-    id: string;
-    email: string;
-    fullName: string;
-    profile_pic_url?: string;
-    display_name_slug?: string;
-    bio?: string;
-    type: 'student' | 'organization';
-  }[];
-  posts: Post[];
+  type: 'student' | 'organization';
+  email: string;
+  display_name_slug: string;
+  faculty?: string;
+  department?: string;
+  name?: string;
+  organization_name?: string;
+  exclusive?: boolean;
 }
 
 const useIntersectionObserver = (
@@ -505,77 +503,131 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
     }
   };
 
-  const handleSearch = async () => {
-    setIsSearching(true);
-    try {
-      const params: any = {};
-      if (searchQuery.trim()) params.query = searchQuery.trim();
-      if (searchType && searchType !== 'all') params.type = searchType;
-      if (searchFaculty) params.faculty = searchFaculty;
-      if (searchDepartment) params.department = searchDepartment;
+  // Update the handleSearch function
+const handleSearch = async () => {
+  // Don't search if no criteria provided
+  if (!searchQuery.trim() && !searchFaculty && !searchDepartment) {
+    setSearchResults({ users: [], posts: [] });
+    toast.error('Please provide at least one search criteria');
+    return;
+  }
 
+  setIsSearching(true);
+  try {
+    const params: any = {};
+    
+    // Use the correct parameter names expected by the API
+    if (searchQuery.trim()) params.query = searchQuery.trim();
+    if (searchFaculty) params.faculty = searchFaculty;
+    if (searchDepartment) params.department = searchDepartment;
+    
+    // The API doesn't have a 'type' parameter - it searches both by default
+    // Remove the type parameter as it's not supported
 
-      const usersResponse = await axios.get(
-        `${API_BASE_URL}/users/search/`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          params,
-        }
-      );
+    const response = await axios.get(
+      `${API_BASE_URL}/users/search/`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      }
+    );
 
-      const mappedUsers = usersResponse.data.map((user: any, idx: number) => {
-        if (user.name) {
-          return {
-            id: user.display_name_slug || user.email || idx,
-            email: user.email,
-            fullName: user.name,
-            profile_pic_url: user.profile_pic_url || "",
-            display_name_slug: user.display_name_slug,
-            type: "student",
-            faculty: user.faculty,
-            department: user.department,
-          };
-        } else if (user.organization_name) {
-          return {
-            id: user.display_name_slug || user.email || idx,
-            email: user.email,
-            fullName: user.organization_name,
-            profile_pic_url: user.profile_pic_url || "",
-            display_name_slug: user.display_name_slug,
-            type: "organization",
-          };
-        }
-        return null;
-      }).filter(Boolean);
+    console.log('Search response:', response.data); // Debug log
 
-      mappedUsers.sort((a, b) =>
-        a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase())
-      );
+    // Map the response data correctly
+    const mappedUsers = response.data.map((user: SearchResultUser, idx: number) => {
+      // For students
+      if (user.type === 'student' && user.name) {
+        return {
+          id: user.display_name_slug || user.email || `student-${idx}`,
+          email: user.email,
+          fullName: user.name,
+          display_name_slug: user.display_name_slug,
+          type: 'student' as const,
+          faculty: user.faculty,
+          department: user.department,
+        };
+      }
+      // For organizations
+      else if (user.type === 'organization' && user.organization_name) {
+        return {
+          id: user.display_name_slug || user.email || `org-${idx}`,
+          email: user.email,
+          fullName: user.organization_name,
+          display_name_slug: user.display_name_slug,
+          type: 'organization' as const,
+          exclusive: user.exclusive,
+        };
+      }
+      return null;
+    }).filter(Boolean);
 
-      setSearchResults({
-        users: mappedUsers,
-        posts: [],
-      });
-    } catch (error) {
-      console.error("Search error:", error);
+    // Sort alphabetically
+    mappedUsers.sort((a: any, b: any) =>
+      a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase())
+    );
+
+    setSearchResults({
+      users: mappedUsers,
+      posts: [], // Posts search not implemented yet
+    });
+
+  } catch (error: any) {
+    console.error("Search error:", error);
+    
+    // Handle specific error cases
+    if (error.response?.status === 400) {
+      const errorMessage = error.response.data?.message || 'Invalid search parameters';
+      toast.error(errorMessage);
+    } else if (error.response?.status === 401) {
+      toast.error('Please login to search');
+    } else {
       toast.error('Failed to fetch search results');
-      setSearchResults({ users: [], posts: [] });
-    } finally {
-      setIsSearching(false);
     }
-  };
+    
+    setSearchResults({ users: [], posts: [] });
+  } finally {
+    setIsSearching(false);
+  }
+};
 
-  useEffect(() => {
-    if (isSearchOpen) {
-      handleSearch();
-    }
-  }, [searchType, searchFaculty, searchDepartment]);
+    useEffect(() => {
+      if (isSearchOpen && (searchQuery.trim() || searchFaculty || searchDepartment)) {
+        const timer = setTimeout(() => {
+          handleSearch();
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
+    }, [searchType, searchFaculty, searchDepartment, isSearchOpen]);
 
 
 
 const debouncedSearch = useMemo(() => debounce(() => {
   handleSearch();
 }, 400), [searchQuery, searchType, searchFaculty, searchDepartment]);
+
+
+
+const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setSearchQuery(value);
+  
+  // Clear results if search is empty
+  if (!value.trim() && !searchFaculty && !searchDepartment) {
+    setSearchResults({ users: [], posts: [] });
+    return;
+  }
+};
+
+
+const handleSearchButtonClick = () => {
+  if (!searchQuery.trim() && !searchFaculty && !searchDepartment) {
+    toast.error('Please provide at least one search criteria');
+    return;
+  }
+  handleSearch();
+};
 
 
 
@@ -843,6 +895,9 @@ useEffect(() => {
             setIsSearchOpen(false);
             setSearchQuery("");
             setSearchResults({ users: [], posts: [] });
+            setSearchFaculty("");
+            setSearchDepartment("");
+            setSearchType('all');
           }}
         >
           <div
@@ -857,37 +912,43 @@ useEffect(() => {
                     setIsSearchOpen(false);
                     setSearchQuery("");
                     setSearchResults({ users: [], posts: [] });
+                    setSearchFaculty("");
+                    setSearchDepartment("");
+                    setSearchType('all');
                   }}
                 >
                   <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
                 </div>
-                <input
-                  type="text"
-                  className="flex-1 text-lg border-none outline-none"
-                  placeholder="Search Varsigram..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
-                  }}
-                  autoFocus
-                />
-                {searchQuery && (
-                  <button
-                    className="text-[#750015] font-medium"
-                    onClick={handleSearch}
-                    disabled={isSearching}
+                 <input
+                          type="text"
+                          className="flex-1 text-lg border-none outline-none"
+                          placeholder="Search by name, faculty, or department..."
+                          value={searchQuery}
+                          onChange={handleSearchInputChange}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSearchButtonClick();
+                          }}
+                          autoFocus
+                    />
+                 <button
+                    className="text-[#750015] font-medium disabled:text-gray-400"
+                    onClick={handleSearchButtonClick}
+                    disabled={isSearching || (!searchQuery.trim() && !searchFaculty && !searchDepartment)}
                   >
-                    Search
+                    {isSearching ? 'Searching...' : 'Search'}
                   </button>
-                )}
               </div>
+
+
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
                 <select
                   className="border rounded px-2 py-1"
                   value={searchType}
-                  onChange={e => setSearchType(e.target.value as any)}
-                >
+                  onChange={e => {
+                  setSearchFaculty(e.target.value);
+                  setSearchDepartment("");
+              }}
+            >
                   <option value="all">All</option>
                   <option value="student">Students</option>
                   <option value="organization">Organizations</option>
@@ -916,6 +977,9 @@ useEffect(() => {
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
+                <div className="text-xs text-gray-500 flex items-center">
+                  {searchResults.users.length > 0 && `${searchResults.users.length} results`}
+                </div>
               </div>
             </div>
 
@@ -926,65 +990,53 @@ useEffect(() => {
                 </div>
               ) : (
                 <div className="p-4">
-                  {searchResults.users.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">People</h3>
-                      <div className="space-y-4">
-                        {searchResults.users.map((user) => (
-                          <div key={user.id} className="flex flex-col gap-1 cursor-pointer" onClick={() => {
-                            if (user.display_name_slug) {
-                              navigate(`/user-profile/${user.display_name_slug}`);
-                              setIsSearchOpen(false);
-                            }
-                          }}>
-                            <div className="font-semibold">{user.fullName}</div>
-                            {user.type === "student" && (
-                              <div className="text-xs text-gray-500">
-                                {user.faculty} {user.department && `- ${user.department}`}
-                              </div>
-                            )}
-                            {user.type === "organization" && (
-                              <div className="text-xs text-gray-500">Organization</div>
+              {searchResults.users.length > 0 ? (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">
+                    {searchResults.users.length} {searchResults.users.length === 1 ? 'Result' : 'Results'}
+                  </h3>
+                  <div className="space-y-4">
+                    {searchResults.users.map((user) => (
+                      <div 
+                        key={user.id} 
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                        onClick={() => {
+                          if (user.display_name_slug) {
+                            navigate(`/user-profile/${user.display_name_slug}`);
+                            setIsSearchOpen(false);
+                          }
+                        }}
+                      >
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">{user.fullName}</div>
+                          <div className="text-sm text-gray-500">
+                            {user.type === "student" ? (
+                              <>
+                                {user.faculty} {user.department && `• ${user.department}`}
+                              </>
+                            ) : (
+                              <>Organization {user.exclusive && '• Verified'}</>
                             )}
                           </div>
-                        ))}
+                        </div>
+                        <div className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
+                          {user.type}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {searchResults.posts.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">Posts</h3>
-                      <div className="space-y-4">
-                        {searchResults.posts.map((post) => (
-                          <Post
-                            key={post.id}
-                            post={post}
-                            onPostUpdate={handlePostUpdate}
-                            onPostDelete={handlePostDelete}
-                            onPostEdit={handlePostEdit}
-                            currentUserId={user?.id}
-                            currentUserEmail={user?.email}
-                            onClick={() => {
-                              const currentScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
-                              sessionStorage.setItem('homepageScroll', currentScroll.toString());
-                              navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {searchQuery && 
-                   !isSearching && 
-                   searchResults.users.length === 0 && 
-                   searchResults.posts.length === 0 && (
-                    <div className="text-center py-10 text-gray-500">
-                      No results found for "{searchQuery}"
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
+              ) : searchQuery || searchFaculty || searchDepartment ? (
+                <div className="text-center py-10 text-gray-500">
+                  No results found for your search criteria
+                </div>
+              ) : (
+                <div className="text-center py-10 text-gray-400">
+                  Enter search terms or select filters to begin
+                </div>
+              )
+              }
+            </div>
               )}
             </div>
           </div>
