@@ -158,9 +158,11 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
 
   const now = Date.now();
   const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
-  const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
+  
+  // Only skip if we're not paginating (no startAfter) and it's been less than 5 minutes
+  const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000 && !startAfter;
 
-  if (shouldSkip && !startAfter) {
+  if (shouldSkip) {
     return;
   }
 
@@ -173,18 +175,19 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
   try {
     const endpoint = type === 'feed' ? '/feed/' : '/official/';
 
-    // Different parameters for feed vs official
+    // Use consistent cursor-based pagination for both endpoints
     const params: any = {
       page_size: 10,
     };
     
-    if (type === 'feed') {
-      params.page = feedPage;
-      if (feedSessionId) {
-        params.session_id = feedSessionId;
-      }
-    } else {
+    // For both feed and official, use cursor-based pagination
+    if (startAfter) {
       params.start_after = startAfter;
+    }
+    
+    // Only include session_id for feed if we have one
+    if (type === 'feed' && feedSessionId && !startAfter) {
+      params.session_id = feedSessionId;
     }
 
     const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
@@ -195,49 +198,60 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
       params,
     });
 
-    // Log the response to see the actual structure
     console.log(`${type} response:`, response.data);
 
-    let results, nextPageInfo;
+    let results, nextCursor, sessionId;
 
     if (type === 'feed') {
-      // For feed, check if the response has the expected structure
+      // Feed endpoint returns different structure
       results = response.data.results || [];
-      nextPageInfo = {
-        session_id: response.data.session_id,
-        has_next: response.data.has_next
-      };
+      sessionId = response.data.session_id;
+      nextCursor = response.data.next_cursor; // Feed should also return next_cursor
+      
+      // If feed doesn't return next_cursor, we need to implement a fallback
+      if (!nextCursor && results.length >= 10) {
+        // Use the last post's ID as the next cursor
+        nextCursor = results[results.length - 1]?.id || null;
+      }
     } else {
-      // For official, use the existing structure
-      results = response.data.results;
-      nextPageInfo = {
-        next_cursor: response.data.next_cursor
-      };
+      // Official endpoint
+      results = response.data.results || [];
+      nextCursor = response.data.next_cursor;
     }
 
     if (Array.isArray(results) && results.length > 0) {
       if (type === 'feed') {
         setFeedPosts(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const uniquePosts = results.filter(post => !existingIds.has(post.id));
-          return [...prev, ...uniquePosts];
+          if (startAfter) {
+            // Append for pagination
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            // Replace for initial load
+            return results;
+          }
         });
         
         // Update feed-specific state
-        if (nextPageInfo.session_id) {
-          setFeedSessionId(nextPageInfo.session_id);
+        if (sessionId && !startAfter) {
+          setFeedSessionId(sessionId);
         }
-        setFeedHasMore(nextPageInfo.has_next);
-        setFeedPage(prev => prev + 1);
+        setFeedNextCursor(nextCursor);
+        setFeedHasMore(!!nextCursor || results.length >= 10); // Has more if we got a full page
         setLastFeedFetch(now);
       } else {
         setOfficialPosts(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const uniquePosts = results.filter(post => !existingIds.has(post.id));
-          return [...prev, ...uniquePosts];
+          if (startAfter) {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            return results;
+          }
         });
-        setOfficialNextCursor(nextPageInfo.next_cursor);
-        setOfficialHasMore(!!nextPageInfo.next_cursor);
+        setOfficialNextCursor(nextCursor);
+        setOfficialHasMore(!!nextCursor || results.length >= 10);
         setLastOfficialFetch(now);
       }
     } else if (Array.isArray(results) && results.length === 0) {
@@ -261,25 +275,24 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
   }
 };
 
-  const loadMorePosts = async () => {
+ const loadMorePosts = async () => {
   if (currentIsLoading || !currentHasMore) return;
 
-  if (activeTab === 'forYou') {
-    await fetchPosts('feed', null);
-  } else {
-    await fetchPosts('official', officialNextCursor);
-  }
+  const nextCursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
+  
+  await fetchPosts(activeTab === 'forYou' ? 'feed' : 'official', nextCursor);
 };
 
-  useEffect(() => {
-    if (!token) return;
+useEffect(() => {
+  if (!token) return;
 
-    if (activeTab === 'forYou' && feedPosts.length === 0) {
-      fetchPosts('feed', null);
-    } else if (activeTab === 'official' && officialPosts.length === 0) {
-      fetchPosts('official', null);
-    }
-  }, [activeTab, token]);
+  // Always refresh when switching tabs or on initial load
+  if (activeTab === 'forYou' && (feedPosts.length === 0 || feedNextCursor === null)) {
+    fetchPosts('feed', null);
+  } else if (activeTab === 'official' && (officialPosts.length === 0 || officialNextCursor === null)) {
+    fetchPosts('official', null);
+  }
+}, [activeTab, token]);
 
   const loadMoreCallback = useCallback(() => {
     if (!currentIsLoading && currentHasMore && token) {
@@ -491,17 +504,17 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
   const refreshPosts = async () => {
   if (activeTab === 'forYou') {
     setFeedPosts([]);
-    setFeedPage(1);
+    setFeedNextCursor(null);
     setFeedSessionId(null);
     setFeedHasMore(true);
     await fetchPosts('feed', null);
   } else {
-      setOfficialPosts([]);
-      setOfficialNextCursor(null);
-      setOfficialHasMore(true);
-      await fetchPosts('official');
-    }
-  };
+    setOfficialPosts([]);
+    setOfficialNextCursor(null);
+    setOfficialHasMore(true);
+    await fetchPosts('official', null);
+  }
+};
 
   // Update the handleSearch function
 const handleSearch = async () => {
