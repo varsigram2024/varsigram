@@ -26,7 +26,7 @@ export default function MainLayout() {
   return (
     <div className="flex items-start justify-center w-full relative bg-[#f6f6f6] min-h-screen">
       {/* Desktop Sidebar */}
-      <div className="hidden md:block sticky top-0 h-screen">
+      <div className="sticky top-0 h-screen">
         <Sidebar1 />
       </div>
       
@@ -52,7 +52,7 @@ export default function MainLayout() {
         </div>
         
         {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 md:hidden z-40">
+        <div className="fixed bottom-0 left-0 right-0 z-40">
           <BottomNav />
         </div>
       </main>

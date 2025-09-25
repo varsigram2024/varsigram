@@ -34,7 +34,6 @@ import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
 import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import PostPage from "./pages/PostPage";
-import { VerifiedRoute } from './components/VerifiedRoute';
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
 import { NotificationProvider, useNotification } from './context/NotificationContext';

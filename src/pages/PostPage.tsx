@@ -717,7 +717,7 @@ export default function PostPage({ isModal = false }) {
         ${isModal && !isMobile ? 'max-h-[90vh] overflow-y-auto' : ''}
       `}>
         <div className={`
-          ${isMobile ? 'w-full max-w-full px-0' : 'w-full max-w-2xl mx-auto bg-white p-4'}
+          ${isMobile ? 'w-full px-0' : 'w-full max-w-2xl mx-auto bg-white p-4'}
           ${isModal && !isMobile ? 'rounded-xl shadow-lg' : ''}
         `}>
           
