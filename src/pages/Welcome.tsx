@@ -1,9 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
+import { useEffect, useState } from 'react';
+
 
 export const Welcome = () => {
   const navigate = useNavigate();
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    // Detect if user is on Android
+    if (/Android/i.test(navigator.userAgent)) {
+      setIsAndroid(true);
+    }
+  }, []);
+
 
   const handleSignUp = () => {
     navigate('/signup');
@@ -23,19 +34,19 @@ export const Welcome = () => {
         <div className="flex flex-row items-center justify-between">
           <div className="flex flex-row items-center">
             <img src="/images/varsigramlogowhite.png" className="w-10 h-10 lg:w-16 lg:h-16" alt="Welcome" />
-            <h2 className="text-xl hidden lg:block text-end font-bold text-white">Varsigram</h2>
+            <h2 className="hidden text-xl font-bold text-white lg:block text-end">Varsigram</h2>
           </div>
 
           <div>
-            <a href="https://www.linkedin.com/company/varsigram/" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-xl text-end font-bold text-white">Linkedin</a>
+            <a href="https://www.linkedin.com/company/varsigram/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-white lg:text-xl text-end">Linkedin</a>
           </div>
 
           <div>
-            <a href="https://www.instagram.com/thevarsigram?igsh=YzljYTk1ODg3Zg==" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-xl text-end font-bold text-white">Instagram</a>
+            <a href="https://www.instagram.com/thevarsigram?igsh=YzljYTk1ODg3Zg==" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-white lg:text-xl text-end">Instagram</a>
           </div>
           
           <div>
-            <a href="https://x.com/thevarsigram?t=7jkCKWXhaPOe1o9Sn99SLg&s=08" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-xl text-end font-bold text-white">X</a>
+            <a href="https://x.com/thevarsigram?t=7jkCKWXhaPOe1o9Sn99SLg&s=08" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-white lg:text-xl text-end">X</a>
           </div>
           
           <div>
@@ -51,16 +62,16 @@ export const Welcome = () => {
         </div>
       </header>
 
-      <div className="flex-1 flex gap-8 flex-col w-full items-center justify-center">
+      <div className="flex flex-col items-center justify-center flex-1 w-full gap-8">
         <div className="text-center space-y-5 animate-fade-in max-w-[89%] lg:max-w-[65%] w-full">
           <div className="">
-            <h1 className="text-2xl lg:text-3xl font-bold text-white mobile-slide-up"> <br />
+            <h1 className="text-2xl font-bold text-white lg:text-3xl mobile-slide-up"> <br />
               Get your hands on the most verified information on campus with Varsigram
             </h1>
           </div>
 
           <div>
-            <p className="text-white text-xs">
+            <p className="text-xs text-white">
               Access real-time information on Varsigram to stay up to date on campus news, directly from verified sources. 
               Connect with other students across various departments and faculties, and showcase your talent.
             </p>
@@ -85,6 +96,17 @@ export const Welcome = () => {
               Log In
             </Button>
           </div>
+
+          {/* ✅ Show only for Android users */}
+          {isAndroid && (
+            <a href="/base1.apk" download className="mt-4">
+              <Button
+                className="sm:w-auto bg-transparent mt-3 border hover:bg-white hover:text-[#750015] transition-all duration-300">
+                Download here
+              </Button>
+            </a>
+          )}
+
         </div>
 
         <div className="flex items-center justify-center w-full">
