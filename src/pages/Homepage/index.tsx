@@ -1,16 +1,9 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
- 
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 
 import debounce from "lodash/debounce";
-import { useAuth } from "../../auth/AuthContext";
-import { Post } from "../../components/Post.tsx";
-import axios from "axios";
+import { useAuth } from '../../auth/AuthContext';
+import { Post } from '../../components/Post.tsx';
+import axios from 'axios';
 import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-dom";
 
 import { Text } from "../../components/Text/index.tsx";
@@ -18,13 +11,13 @@ import { Img } from "../../components/Img/index.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
 import BottomNav from "../../components/BottomNav";
-import { toast } from "react-hot-toast";
-import { uploadPostMedia } from "../../utils/fileUpload";
-import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.tsx";
-import CreatePostModal from "../../components/CreatePostModal";
+import { toast } from 'react-hot-toast';
+import { uploadPostMedia } from '../../utils/fileUpload';
+import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
+import CreatePostModal from '../../components/CreatePostModal';
 import { faculties, facultyDepartments } from "../../constants/academic";
-import { useFeed } from "../../context/FeedContext";
-import { useNotification } from "../../context/NotificationContext";
+import { useFeed } from '../../context/FeedContext';
+import { useNotification } from '../../context/NotificationContext';
 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -68,7 +61,7 @@ interface User {
 }
 
 interface SearchResult {
-  type: "student" | "organization";
+  type: 'student' | 'organization';
   email: string;
   display_name_slug: string;
   faculty?: string;
@@ -80,12 +73,12 @@ interface SearchResult {
 
 const useIntersectionObserver = (
   callback: () => void,
-  options = { threshold: 0, rootMargin: "300px" }
+  options = { threshold: 0, rootMargin: '300px' }
 ) => {
   const observerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
+    const observer = new IntersectionObserver(entries => {
       const [entry] = entries;
       if (entry.isIntersecting && entry.intersectionRatio > 0) {
         callback();
@@ -105,7 +98,7 @@ const useIntersectionObserver = (
 
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
-  const [activeTab, setActiveTab] = useState<"forYou" | "official">("forYou");
+  const [activeTab, setActiveTab] = useState<'forYou' | 'official'>('forYou');
   const [error, setError] = useState<string | null>(null);
   const { token, user, logout, isLoading: isAuthLoading } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -121,31 +114,6 @@ export default function Homepage() {
 
 
   const {
-    feedPosts,
-    setFeedPosts,
-    feedNextCursor,
-    setFeedNextCursor,
-    feedHasMore,
-    setFeedHasMore,
-    feedScroll,
-    setFeedScroll,
-    isFeedLoading,
-    setIsFeedLoading,
-    lastFeedFetch,
-    setLastFeedFetch,
-
-    officialPosts,
-    setOfficialPosts,
-    officialNextCursor,
-    setOfficialNextCursor,
-    officialHasMore,
-    setOfficialHasMore,
-    officialScroll,
-    setOfficialScroll,
-    isOfficialLoading,
-    setIsOfficialLoading,
-    lastOfficialFetch,
-    setLastOfficialFetch,
     feedPosts, setFeedPosts,
     feedNextCursor, setFeedNextCursor,
     feedHasMore, setFeedHasMore,
@@ -158,34 +126,28 @@ export default function Homepage() {
     lastOfficialFetch, setLastOfficialFetch,
   } = useFeed();
 
-
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult>({
-    users: [],
-    posts: [],
-  });
+  const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
   const [isSearching, setIsSearching] = useState(false);
-  const [searchType, setSearchType] = useState<
-    "all" | "student" | "organization"
-  >("all");
-  const [searchFaculty, setSearchFaculty] = useState("");
-  const [searchDepartment, setSearchDepartment] = useState("");
+  const [searchType, setSearchType] = useState<'all' | 'student' | 'organization'>('all');
+  const [searchFaculty, setSearchFaculty] = useState('');
+  const [searchDepartment, setSearchDepartment] = useState('');
 
   const currentPosts = useMemo(() => {
-    return activeTab === "forYou" ? feedPosts : officialPosts;
+    return activeTab === 'forYou' ? feedPosts : officialPosts;
   }, [activeTab, feedPosts, officialPosts]);
 
   const currentHasMore = useMemo(() => {
-    return activeTab === "forYou" ? feedHasMore : officialHasMore;
+    return activeTab === 'forYou' ? feedHasMore : officialHasMore;
   }, [activeTab, feedHasMore, officialHasMore]);
 
   const currentNextCursor = useMemo(() => {
-    return activeTab === "forYou" ? feedNextCursor : officialNextCursor;
+    return activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
   }, [activeTab, feedNextCursor, officialNextCursor]);
 
   const currentIsLoading = useMemo(() => {
-    return activeTab === "forYou" ? isFeedLoading : isOfficialLoading;
+    return activeTab === 'forYou' ? isFeedLoading : isOfficialLoading;
   }, [activeTab, isFeedLoading, isOfficialLoading]);
 
 
@@ -336,13 +298,7 @@ useEffect(() => {
     if (!currentIsLoading && currentHasMore && token) {
       loadMorePosts();
     }
-  }, [
-    currentIsLoading,
-    currentHasMore,
-    token,
-    currentPosts.length,
-    loadMorePosts,
-  ]);
+  }, [currentIsLoading, currentHasMore, token, currentPosts.length, loadMorePosts]);
 
   const loadingRef = useIntersectionObserver(loadMoreCallback);
 
@@ -354,28 +310,28 @@ useEffect(() => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    const validFiles = files.filter((file) => {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please upload only image files");
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload only image files');
         return false;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size should be less than 5MB");
+        toast.error('File size should be less than 5MB');
         return false;
       }
       return true;
     });
 
-    setSelectedFiles((prev) => [...prev, ...validFiles].slice(0, 5));
+    setSelectedFiles(prev => [...prev, ...validFiles].slice(0, 5));
   };
 
   const handleRemoveFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim() && selectedFiles.length === 0) {
-      toast.error("Please enter some content or select at least one image");
+      toast.error('Please enter some content or select at least one image');
       return;
     }
 
@@ -391,7 +347,7 @@ useEffect(() => {
 
       const postData = {
         content: newPostContent,
-        author_username: user?.email || "",
+        author_username: user?.email || '',
         author_profile_pic_url: user?.profile_pic_url || null,
         media_urls: mediaUrls,
         timestamp: new Date().toISOString(),
@@ -401,69 +357,73 @@ useEffect(() => {
         has_liked: false,
         trending_score: 0,
         last_engagement_at: null,
-        author_display_name: user?.fullName || "Unknown User",
-        author_name: user?.fullName || "Unknown User",
-        author_display_name_slug: user?.display_name_slug || "",
-        author_faculty: (user as any)?.faculty || "",
-        author_department: (user as any)?.department || "",
-        author_exclusive: (user as any)?.exclusive || false,
+        author_display_name: user?.fullName || 'Unknown User',
+        author_name: user?.fullName || 'Unknown User',
+        author_display_name_slug: user?.display_name_slug || '',
+        author_faculty: (user as any)?.faculty || '',
+        author_department: (user as any)?.department || '',
+        author_exclusive: (user as any)?.exclusive || false
       };
 
       const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
       const completePost = {
         ...response.data,
-        author_display_name: user?.fullName || "Unknown User",
-        author_name: user?.fullName || "Unknown User",
-        author_display_name_slug: user?.display_name_slug || "",
-        author_faculty: (user as any)?.faculty || "",
-        author_department: (user as any)?.department || "",
+        author_display_name: user?.fullName || 'Unknown User',
+        author_name: user?.fullName || 'Unknown User',
+        author_display_name_slug: user?.display_name_slug || '',
+        author_faculty: (user as any)?.faculty || '',
+        author_department: (user as any)?.department || '',
         author_exclusive: (user as any)?.exclusive || false,
-        author_profile_pic_url: user?.profile_pic_url || null,
+        author_profile_pic_url: user?.profile_pic_url || null
       };
 
-      setFeedPosts((prev) => [completePost, ...prev]);
+      setFeedPosts(prev => [completePost, ...prev]);
 
-      setNewPostContent("");
+      setNewPostContent('');
       setSelectedFiles([]);
       setIsCreatePostOpen(false);
-      toast.success("Post created successfully");
+      toast.success('Post created successfully');
     } catch (error) {
-      console.error("Error creating post:", error);
-      toast.error("Failed to create post. Please try again.");
+      console.error('Error creating post:', error);
+      toast.error('Failed to create post. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleCancelPost = () => {
-    setNewPostContent("");
+    setNewPostContent('');
     setSelectedFiles([]);
     setIsCreatePostOpen(false);
   };
 
   const handlePostUpdate = (updatedPost: Post) => {
-    setFeedPosts((prevPosts) =>
-      prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
+    setFeedPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
     );
-    setOfficialPosts((prevPosts) =>
-      prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
+    setOfficialPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
     );
   };
 
   const handlePostDelete = async (post: Post) => {
     if (!post.id) {
-      toast.error("Cannot delete post: missing post identifier");
+      toast.error('Cannot delete post: missing post identifier');
       return;
     }
 
-    setFeedPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
-    setOfficialPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
+    setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+    setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
   };
 
   const handlePostEdit = (post: Post) => {
@@ -480,8 +440,8 @@ useEffect(() => {
         { content: editedContent },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -491,9 +451,9 @@ useEffect(() => {
 
       setIsEditModalOpen(false);
       setEditingPost(null);
-      toast.success("Post updated successfully");
+      toast.success('Post updated successfully');
     } catch (error) {
-      toast.error("Failed to update post");
+      toast.error('Failed to update post');
     }
   };
 
@@ -501,19 +461,19 @@ useEffect(() => {
     navigate(`/${path}`);
   };
 
-  const handlePostLikeUpdate = (
-    postId: string,
-    like_count: number,
-    has_liked: boolean
-  ) => {
+  const handlePostLikeUpdate = (postId: string, like_count: number, has_liked: boolean) => {
     setFeedPosts((prevPosts) =>
       prevPosts.map((post) =>
-        post.id === postId ? { ...post, like_count, has_liked } : post
+        post.id === postId
+          ? { ...post, like_count, has_liked }
+          : post
       )
     );
     setOfficialPosts((prevPosts) =>
       prevPosts.map((post) =>
-        post.id === postId ? { ...post, like_count, has_liked } : post
+        post.id === postId
+          ? { ...post, like_count, has_liked }
+          : post
       )
     );
   };
@@ -534,11 +494,7 @@ useEffect(() => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      handlePostLikeUpdate(
-        post.id,
-        response.data.like_count,
-        response.data.has_liked
-      );
+      handlePostLikeUpdate(post.id, response.data.like_count, response.data.has_liked);
     } catch (error) {
       handlePostLikeUpdate(post.id, prevLikeCount, prevHasLiked);
       console.error("Failed to like/unlike post:", error);
@@ -721,11 +677,11 @@ useEffect(() => {
                 } else {
                   toast.error("Profile link unavailable");
                 }
-              }}
+              }}  
               className="hover:opacity-80 transition-opacity cursor-pointer"
             >
               <Text as="p" className="text-[24px] font-medium md:text-[22px]">
-                Welcome back, {user?.fullName || "User"} 👋
+                Welcome back, {user?.fullName || 'User'} 👋
               </Text>
             </div>
             <Img
@@ -742,13 +698,37 @@ useEffect(() => {
               />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </div>
               )}
             </Link>
           </div>
+         
+          <div className="lg:mt-5 flex justify-between animate-slide-up">
+            <div
+              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
+              onClick={() => setActiveTab('forYou')}
+            >
+              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
+                For you
+              </Text>
+            </div>
+            <div
+              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
+              onClick={() => setActiveTab('official')}
+            >
+              <Text
+                as="p"
+                className={`text-[14px] font-medium md:text-[22px] ${
+                  activeTab === 'official' ? '' : '!text-[#adacb2]'
+                }`}
+              >
+                Official
+              </Text>
+            </div>
+          </div>
 
-          <div className="mt-2 lg:hidden flex flex-row justify-between items-center animate-fade-in">
+          <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
             <div
               onClick={() => {
                 if (user?.display_name_slug) {
@@ -770,18 +750,14 @@ useEffect(() => {
               <Text className="font-semibold text-xl">Varsigram</Text>
             </div>
 
-            <div className="flex flex-row justify-between items-center space-x-2">
+            <div className='flex flex-row justify-between items-center space-x-2'>
               <div
-                onClick={() => handleNavigation("settings")}
+                onClick={() => handleNavigation('settings')}
                 className="hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <Img
-                  src="images/settings-icon.svg"
-                  alt="Settings"
-                  className="h-[24px] w-[24px]"
-                />
+               <Img src="images/settings-icon.svg" alt="Settings" className="h-[24px] w-[24px]" />
               </div>
-
+           
               <Link to="/notifications" className="relative">
                 <Img
                   src="/images/vectors/bell.svg"
@@ -790,47 +766,17 @@ useEffect(() => {
                 />
                 {unreadCount > 0 && (
                   <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                    {unreadCount > 99 ? '99+' : unreadCount}
                   </div>
                 )}
               </Link>
-            </div>
-          </div>
-
-          <div className="lg:mt-2 flex justify-between animate-slide-up">
-            <div
-              className={`flex px-3 cursor-pointer ${
-                activeTab === "forYou"
-                  ? "border-b-2 border-solid border-[#750015]"
-                  : ""
-              }`}
-              onClick={() => setActiveTab("forYou")}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === "forYou" ? "" : "!text-[#adacb2]"
-                }`}
-              >
-                For you
-              </Text>
-            </div>
-            <div
-              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${
-                activeTab === "official"
-                  ? "border-[#750015]"
-                  : "border-transparent"
-              }`}
-              onClick={() => setActiveTab("official")}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === "official" ? "" : "!text-[#adacb2]"
-                }`}
-              >
-                Official
-              </Text>
+           
+              <Img
+                src="/images/search.svg"
+                alt="Search"
+                className="h-[24px] w-[24px] cursor-pointer"
+                onClick={() => setIsSearchOpen(true)}
+              />
             </div>
           </div>
 
@@ -869,11 +815,7 @@ useEffect(() => {
                   }}
                   className="cursor-pointer"
                 >
-                  <Img
-                    src="images/vectors/image.svg"
-                    alt="Image"
-                    className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]"
-                  />
+                  <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
                 </button>
               </div>
             </div>
@@ -898,29 +840,22 @@ useEffect(() => {
               </div>
             )}
 
-            {!currentIsLoading &&
-              !isAuthLoading &&
-              !error &&
-              currentPosts.length === 0 && (
-                <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-                  <Text
-                    as="p"
-                    className="text-[14px] font-normal text-[#adacb2]"
-                  >
-                    No {activeTab === "forYou" ? "posts" : "official posts"} in
-                    your feed yet.
-                  </Text>
-                </div>
-              )}
+            {!currentIsLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
+              <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                  No {activeTab === 'forYou' ? 'posts' : 'official posts'} in your feed yet.
+                </Text>
+              </div>
+            )}
 
             {!isAuthLoading && currentPosts.length > 0 && (
               <div className="space-y-6 w-full">
                 {currentPosts.map((post, idx) => {
                   const uniqueKey = `${post.id}-${idx}`;
                   return (
-                    <div
+                    <div 
                       key={uniqueKey}
-                      className="animate-slide-up"
+                      className="animate-slide-up" 
                       style={{ animationDelay: `${idx * 60}ms` }}
                     >
                       <Post
@@ -936,11 +871,8 @@ useEffect(() => {
                     </div>
                   );
                 })}
-
-                <div
-                  ref={loadingRef}
-                  className="h-20 flex items-center justify-center mt-4"
-                >
+                
+                <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
                   {currentIsLoading && (
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
                   )}
@@ -983,7 +915,7 @@ useEffect(() => {
         >
           <div
             className="bg-white rounded-t-2xl md:rounded-[32px] w-full h-full md:h-auto max-h-screen md:max-h-[80vh] overflow-y-auto shadow-lg p-4 md:p-6"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
@@ -998,11 +930,7 @@ useEffect(() => {
                     setSearchType('all');
                   }}
                 >
-                  <Img
-                    src="images/vectors/x.svg"
-                    alt="Close"
-                    className="h-6 w-6"
-                  />
+                  <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
                 </div>
                  <input
                           type="text"
@@ -1041,29 +969,25 @@ useEffect(() => {
                 <select
                   className="border rounded px-2 py-1"
                   value={searchFaculty}
-                  onChange={(e) => {
+                  onChange={e => {
                     setSearchFaculty(e.target.value);
                     setSearchDepartment("");
                   }}
                 >
                   <option value="">Select Faculties</option>
-                  {faculties.map((faculty) => (
-                    <option key={faculty} value={faculty}>
-                      {faculty}
-                    </option>
+                  {faculties.map(faculty => (
+                    <option key={faculty} value={faculty}>{faculty}</option>
                   ))}
                 </select>
                 <select
                   className="border rounded px-2 py-1"
                   value={searchDepartment}
-                  onChange={(e) => setSearchDepartment(e.target.value)}
+                  onChange={e => setSearchDepartment(e.target.value)}
                   disabled={!searchFaculty}
                 >
                   <option value="">Select Departments</option>
-                  {(facultyDepartments[searchFaculty] || []).map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
-                    </option>
+                  {(facultyDepartments[searchFaculty] || []).map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
                 <div className="text-xs text-gray-500 flex items-center">
