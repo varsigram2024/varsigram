@@ -61,7 +61,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col sm:flex-row font-archivo">
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-archivo">
       {/* Mobile Header */}
       <div className="sm:hidden p-6 flex items-center">
       <a href="/welcome" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -70,7 +70,7 @@ export const Login = () => {
       </div>
 
       {/* Desktop Left Section */}
-      <div className="hidden sm:flex w-[740px] p-8 flex-col">
+      <div className="hidden sm:flex w-auto p-8 flex-col">
         <a href="/welcome"><Logo /></a>
         <div className="flex-1 flex flex-col items-center justify-center">
           <img
