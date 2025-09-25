@@ -697,8 +697,7 @@ export default function PostPage({ isModal = false }) {
       ${isMobile ? 'fixed inset-0 z-[1000] bg-white flex flex-col' : ''}
       ${isModal && !isMobile ? 'fixed top-0 left-0 w-full h-full z-[1000] flex items-center justify-center bg-black bg-opacity-50' : ''}
     `}>
-      {/* Sticky header for mobile */}
-      <div className={`
+      {/* <div className={`
         ${isMobile ? 'sticky top-0 z-10 bg-white flex items-center px-4 py-3 border-b' : 'hidden'}
       `}>
         <button
@@ -710,7 +709,7 @@ export default function PostPage({ isModal = false }) {
         <div className="flex items-center gap-2">
           Vars
         </div>
-      </div>
+      </div> */}
 
       {/* Main content */}
       <div className={`
@@ -721,8 +720,8 @@ export default function PostPage({ isModal = false }) {
           ${isMobile ? 'w-full max-w-full px-0' : 'w-full max-w-2xl mx-auto bg-white p-4'}
           ${isModal && !isMobile ? 'rounded-xl shadow-lg' : ''}
         `}>
-          {/* Back button for desktop/modal */}
-          {!isMobile && (
+          
+          {/* {!isMobile && (
             <button
               className="flex items-center gap-2 text-[#750015] font-medium mb-4"
               onClick={handleBack}
@@ -730,7 +729,7 @@ export default function PostPage({ isModal = false }) {
               <ArrowLeft className="h-5 w-5" />
               Vars
             </button>
-          )}
+          )} */}
 
           {/* Post */}
           <div className="mb-6">

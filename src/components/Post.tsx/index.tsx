@@ -654,7 +654,7 @@ export const Post: React.FC<PostProps> = ({
             {/* Share button */}
             <div className="relative">
               <Img
-                src="/images/vectors/share.svg"
+                src="/images/vectors/sharearrow.svg"
                 alt="Share"
                 className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
                 onClick={handleShareClick}
