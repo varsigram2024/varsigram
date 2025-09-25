@@ -18,7 +18,7 @@ import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.ts
 import { ClickableUser } from "../../components/ClickableUser";
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post.tsx/index.tsx";
-import { uploadProfilePicture } from '../../utils/fileUpload.ts';
+import { uploadProfilePicture } from "../../utils/fileUpload.ts";
 import { Pencil, Save } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -68,7 +68,7 @@ interface UserProfile {
   is_verified: boolean;
   followers_count: number;
   following_count: number;
-  account_type: 'student' | 'organization';
+  account_type: "student" | "organization";
   name?: string;
   organization_name?: string;
   faculty?: string;
@@ -119,13 +119,19 @@ export default function Profile() {
       setIsLoading(true);
       try {
         const headers: any = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (token) headers["Authorization"] = `Bearer ${token}`;
         const profileResponse = await axios.get(
           `${API_BASE_URL}/profile/${display_name_slug}/`,
           { headers }
         );
-        const { profile_type, profile, is_following, followers_count, following_count } = profileResponse.data;
-    
+        const {
+          profile_type,
+          profile,
+          is_following,
+          followers_count,
+          following_count,
+        } = profileResponse.data;
+
         setUserProfile({
           id: profile.user.id,
           email: profile.user.email,
@@ -133,8 +139,10 @@ export default function Profile() {
           profile_pic_url: profile.user.profile_pic_url,
           bio: profile.user.bio,
           is_verified: profile.user?.is_verified || false,
-          followers_count: typeof followers_count === "number" ? followers_count : 0,
-          following_count: typeof following_count === "number" ? following_count : 0,
+          followers_count:
+            typeof followers_count === "number" ? followers_count : 0,
+          following_count:
+            typeof following_count === "number" ? following_count : 0,
           account_type: profile_type,
           name: profile.name,
           organization_name: profile.organization_name,
@@ -171,11 +179,15 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFollowing(false);
-        setUserProfile(prev => prev
-          ? { ...prev, followers_count: Math.max(0, Number(prev.followers_count) - 1) }
-          : null
+        setUserProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                followers_count: Math.max(0, Number(prev.followers_count) - 1),
+              }
+            : null
         );
-        toast.success('Unfollowed successfully');
+        toast.success("Unfollowed successfully");
       } else {
         await axios.post(
           `${API_BASE_URL}/users/follow/`,
@@ -183,14 +195,15 @@ export default function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFollowing(true);
-        setUserProfile(prev => prev
-          ? { ...prev, followers_count: Number(prev.followers_count) + 1 }
-          : null
+        setUserProfile((prev) =>
+          prev
+            ? { ...prev, followers_count: Number(prev.followers_count) + 1 }
+            : null
         );
-        toast.success('Followed successfully');
+        toast.success("Followed successfully");
       }
     } catch (error) {
-      toast.error('Failed to update follow status');
+      toast.error("Failed to update follow status");
     }
   };
 
@@ -200,18 +213,24 @@ export default function Profile() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file || !userProfile) return;
 
     try {
       setIsUploading(true);
       const jwtToken = token;
-      const public_download_url = await uploadProfilePicture(file, jwtToken, userProfile.account_type);
-      toast.success('Profile picture uploaded successfully!');
+      const public_download_url = await uploadProfilePicture(
+        file,
+        jwtToken,
+        userProfile.account_type
+      );
+      toast.success("Profile picture uploaded successfully!");
       await fetchUserData();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to upload profile picture.');
+      toast.error(error.message || "Failed to upload profile picture.");
     } finally {
       setIsUploading(false);
     }
@@ -223,14 +242,15 @@ export default function Profile() {
         `${API_BASE_URL}/profile/${display_name_slug}/`,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
       if (response.data && response.data.profile) {
-        const { profile_type, profile, followers_count, following_count } = response.data;
+        const { profile_type, profile, followers_count, following_count } =
+          response.data;
         setUserProfile({
           id: profile.user.id,
           email: profile.user.email,
@@ -238,8 +258,10 @@ export default function Profile() {
           profile_pic_url: profile.user.profile_pic_url,
           bio: profile.user.bio,
           is_verified: profile.user?.is_verified || false,
-          followers_count: typeof followers_count === "number" ? followers_count : 0,
-          following_count: typeof following_count === "number" ? following_count : 0,
+          followers_count:
+            typeof followers_count === "number" ? followers_count : 0,
+          following_count:
+            typeof following_count === "number" ? following_count : 0,
           account_type: profile_type,
           name: profile.name,
           organization_name: profile.organization_name,
@@ -274,17 +296,21 @@ export default function Profile() {
 
   useEffect(() => {
     if (!userProfile || !token) return;
-    axios.get(
-      `${API_BASE_URL}/users/following/?follower_type=${userProfile.account_type}&follower_id=${userProfile.id}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    .then(response => {
-      console.log('/following/ on user-profile page:', response.data);
-      setFollowing(response.data);
-    })
-    .catch(error => {
-      console.error('Error fetching /following/ on user-profile page:', error);
-    });
+    axios
+      .get(
+        `${API_BASE_URL}/users/following/?follower_type=${userProfile.account_type}&follower_id=${userProfile.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then((response) => {
+        console.log("/following/ on user-profile page:", response.data);
+        setFollowing(response.data);
+      })
+      .catch((error) => {
+        console.error(
+          "Error fetching /following/ on user-profile page:",
+          error
+        );
+      });
   }, [userProfile, token]);
 
   useEffect(() => {
@@ -307,7 +333,7 @@ export default function Profile() {
 
   const fetchPosts = async (startAfter: string | null = null) => {
     if (!userProfile?.id || !token) return;
-    
+
     // Use different loading states for initial load vs pagination
     if (startAfter) {
       if (isLoadingMore) return; // Prevent multiple calls
@@ -316,24 +342,29 @@ export default function Profile() {
       if (isLoadingPosts) return; // Prevent multiple calls
       setIsLoadingPosts(true); // Use the posts-specific loading state
     }
-    
+
     try {
       const params: any = { page_size: 10 };
       if (startAfter) params.start_after = startAfter;
-      
-      const response = await axios.get(`${API_BASE_URL}/users/${userProfile.id}/posts/`, {
-        params,
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+
+      const response = await axios.get(
+        `${API_BASE_URL}/users/${userProfile.id}/posts/`,
+        {
+          params,
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       const { results, next_cursor } = response.data;
-      
+
       if (Array.isArray(results) && results.length > 0) {
         if (startAfter) {
           // Append posts for pagination
-          setPosts(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+          setPosts((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const uniquePosts = results.filter(
+              (post) => !existingIds.has(post.id)
+            );
             return [...prev, ...uniquePosts];
           });
         } else {
@@ -350,7 +381,7 @@ export default function Profile() {
         setHasMore(false);
       }
     } catch (err) {
-      console.error('Failed to fetch posts:', err);
+      console.error("Failed to fetch posts:", err);
       setHasMore(false);
     } finally {
       if (startAfter) {
@@ -378,11 +409,17 @@ export default function Profile() {
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !isLoadingPosts && !isLoadingMore && nextCursor) {
+        if (
+          entry.isIntersecting &&
+          hasMore &&
+          !isLoadingPosts &&
+          !isLoadingMore &&
+          nextCursor
+        ) {
           fetchPosts(nextCursor);
         }
       },
-      { threshold: 0, rootMargin: '300px' }
+      { threshold: 0, rootMargin: "300px" }
     );
 
     const currentRef = loadingRef.current;
@@ -395,14 +432,21 @@ export default function Profile() {
         observer.unobserve(currentRef);
       }
     };
-  }, [hasMore, isLoadingPosts, isLoadingMore, nextCursor, userProfile?.id, token]);
+  }, [
+    hasMore,
+    isLoadingPosts,
+    isLoadingMore,
+    nextCursor,
+    userProfile?.id,
+    token,
+  ]);
 
   return (
     <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
       <div className="flex w-full items-start justify-center bg-white">
-        <Sidebar1 />
+        
 
-        <div className="flex w-full lg:w-[85%] items-start justify-center h-auto flex-row animate-slide-up">
+        <div className="flex w-full lg:w-[100%] items-start justify-center h-auto flex-row animate-slide-up">
           <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
             {isLoading ? (
               <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
@@ -417,7 +461,18 @@ export default function Profile() {
                 {/* Cover photo section */}
                 <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full animate-fade-in">
                   <div className="flex w-full flex-col self-stretch gap-2.5">
-                    <div className="flex h-[170px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5" style={{ backgroundImage: `url(${userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http') ? userProfile.profile_pic_url : '/images/cover-photo-bg.svg'})`, backgroundSize: 'cover' }}>
+                    <div
+                      className="flex h-[170px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5"
+                      style={{
+                        backgroundImage: `url(${
+                          userProfile?.profile_pic_url &&
+                          userProfile.profile_pic_url.startsWith("http")
+                            ? userProfile.profile_pic_url
+                            : "/images/cover-photo-bg.svg"
+                        })`,
+                        backgroundSize: "cover",
+                      }}
+                    >
                       {/* <Text as="h4" className="text-[28px] font-semibold text-white md:text-[26px] sm:text-[24px]">
                         {userProfile.organization_name || 'User Profile'}
                       </Text> */}
@@ -425,7 +480,7 @@ export default function Profile() {
                     <div className="overflow-hidden relative ml-4 mt-[-46px] w-[120px] h-[120px] rounded-[50%] border-[5px] border-[#ffdbe2] bg-white">
                       {user?.email === userProfile?.email ? (
                         <>
-                          <div 
+                          <div
                             onClick={handleProfilePicClick}
                             className="relative w-full h-full rounded-full overflow-hidden cursor-pointer group"
                           >
@@ -437,7 +492,10 @@ export default function Profile() {
                               <>
                                 <Img
                                   src={
-                                    userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http')
+                                    userProfile?.profile_pic_url &&
+                                    userProfile.profile_pic_url.startsWith(
+                                      "http"
+                                    )
                                       ? userProfile.profile_pic_url
                                       : "/images/user.png"
                                   }
@@ -445,7 +503,10 @@ export default function Profile() {
                                   className="w-full h-full object-cover"
                                 />
                                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-                                  <Text as="p" className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  <Text
+                                    as="p"
+                                    className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                  >
                                     Change Photo
                                   </Text>
                                 </div>
@@ -464,7 +525,8 @@ export default function Profile() {
                         <>
                           <Img
                             src={
-                              userProfile?.profile_pic_url && userProfile.profile_pic_url.startsWith('http')
+                              userProfile?.profile_pic_url &&
+                              userProfile.profile_pic_url.startsWith("http")
                                 ? userProfile.profile_pic_url
                                 : "/images/user.png"
                             }
@@ -478,37 +540,51 @@ export default function Profile() {
                     {/* User info and follow button */}
                     <div className="mx-3.5 ml-4 flex flex-col items-start gap-4">
                       <div className="flex items-center gap-[7px]">
-                        <Heading size="h3_semibold" as="h1" className="text-[28px] font-semibold md:text-[26px] sm:text-[24px]">
-                          {userProfile.name || userProfile.organization_name || userProfile.username}
+                        <Heading
+                          size="h3_semibold"
+                          as="h1"
+                          className="text-[28px] font-semibold md:text-[26px] sm:text-[24px]"
+                        >
+                          {userProfile.name ||
+                            userProfile.organization_name ||
+                            userProfile.username}
                         </Heading>
                         {userProfile.account_type === "organization" &&
-                         userProfile.is_verified &&
-                         userProfile.exclusive && (
-                          <Img 
-                            src="/images/vectors/verified.svg" 
-                            alt="Verified" 
-                            className="h-[16px] w-[16px]" 
-                          />
-                        )}
+                          userProfile.is_verified &&
+                          userProfile.exclusive && (
+                            <Img
+                              src="/images/vectors/verified.svg"
+                              alt="Verified"
+                              className="h-[16px] w-[16px]"
+                            />
+                          )}
                       </div>
 
-
-                          {/* Additional info for students */}
-                      {userProfile.account_type === 'student' && (
+                      {/* Additional info for students */}
+                      {userProfile.account_type === "student" && (
                         <div className="flex flex-row gap-2">
                           {userProfile.university && (
-                            <Text as="p" className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600">
+                            <Text
+                              as="p"
+                              className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600"
+                            >
                               {userProfile.university}
                             </Text>
                           )}
                           {userProfile.faculty && (
-                            <Text as="p" className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600">
+                            <Text
+                              as="p"
+                              className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600"
+                            >
                               {userProfile.faculty}
                             </Text>
                           )}
                           {userProfile.department && (
-                            <Text as="p" className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600">
-                               {userProfile.department}
+                            <Text
+                              as="p"
+                              className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600"
+                            >
+                              {userProfile.department}
                             </Text>
                           )}
                         </div>
@@ -520,7 +596,7 @@ export default function Profile() {
                             <input
                               type="text"
                               value={bioInput}
-                              onChange={e => setBioInput(e.target.value)}
+                              onChange={(e) => setBioInput(e.target.value)}
                               className="border rounded px-2 py-1 text-[16px] font-normal text-gray-600"
                               maxLength={160}
                               autoFocus
@@ -531,16 +607,24 @@ export default function Profile() {
                                     const payload = { user: { bio: bioInput } };
 
                                     await axios.patch(
-                                      userProfile.account_type === "organization"
+                                      userProfile.account_type ===
+                                        "organization"
                                         ? `${API_BASE_URL}/organization/update/`
                                         : `${API_BASE_URL}/student/update/`,
                                       payload,
-                                      { headers: { Authorization: `Bearer ${token}` } }
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
+                                      }
                                     );
                                     await fetchUserData();
                                     toast.success("Bio updated!");
                                   } catch (err: any) {
-                                    console.error("Failed to update bio", err?.response?.data || err);
+                                    console.error(
+                                      "Failed to update bio",
+                                      err?.response?.data || err
+                                    );
                                     toast.error("Failed to update bio");
                                   }
                                 }
@@ -549,8 +633,11 @@ export default function Profile() {
                           </>
                         ) : (
                           <>
-                            <Text as="p" className="text-[16px] font-normal text-gray-600">
-                              {userProfile.bio || 'No bio available'}
+                            <Text
+                              as="p"
+                              className="text-[16px] font-normal text-gray-600"
+                            >
+                              {userProfile.bio || "No bio available"}
                             </Text>
                             {user?.email === userProfile.email && (
                               <button
@@ -567,7 +654,7 @@ export default function Profile() {
                           </>
                         )}
                       </div>
-                      
+
                       {/* Follow button - only show if not viewing own profile */}
                       {token && user?.email !== userProfile.email && (
                         <Button
@@ -582,19 +669,30 @@ export default function Profile() {
                         </Button>
                       )}
 
-                        <div className="flex flex-wrap gap-6">
-                          <Text as="p" className="text-[16px] font-normal">
-                            <span className="font-semibold">{userProfile.followers_count}</span> Followers
-                          </Text>
-                          <Text as="p" className="text-[16px] font-normal">
-                            <span className="font-semibold">{userProfile.following_count}</span> Following
-                          </Text>
-                        </div>
-
-                    
+                      <div className="flex flex-wrap gap-6">
+                        <Text as="p" className="text-[16px] font-normal">
+                          <span className="font-semibold">
+                            {userProfile.followers_count}
+                          </span>{" "}
+                          Followers
+                        </Text>
+                        <Text as="p" className="text-[16px] font-normal">
+                          <span className="font-semibold">
+                            {userProfile.following_count}
+                          </span>{" "}
+                          Following
+                        </Text>
+                      </div>
                     </div>
                   </div>
                   <div className="h-px bg-[#d9d9d9]" />
+                </div>
+
+                <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
+                  <div className="text-[20px] font-semibold">
+                    My Posts
+                    <div className="h-[3px] w-20 bg-[#750015]"></div>
+                  </div>
                 </div>
 
                 {/* Posts Section */}
@@ -602,8 +700,8 @@ export default function Profile() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                     <p className="text-blue-800 text-sm">
                       💡 <strong>Want to engage with this user?</strong>
-                      <button 
-                        onClick={() => navigate('/welcome')}
+                      <button
+                        onClick={() => navigate("/welcome")}
                         className="text-blue-600 underline ml-1"
                       >
                         Sign up to follow, message, or comment
@@ -611,7 +709,7 @@ export default function Profile() {
                     </p>
                   </div>
                 )}
-                {token && (
+                {token &&
                   (userProfile.display_name_slug || userProfile.email) && (
                     <div className="w-full">
                       {isLoadingPosts && posts.length === 0 ? (
@@ -620,7 +718,10 @@ export default function Profile() {
                         </div>
                       ) : posts.length === 0 && !isLoadingPosts ? (
                         <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-                          <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                          <Text
+                            as="p"
+                            className="text-[14px] font-normal text-[#adacb2]"
+                          >
                             No posts yet.
                           </Text>
                         </div>
@@ -631,18 +732,26 @@ export default function Profile() {
                               // Add unique composite key like Homepage
                               const uniqueKey = `${post.id}-${idx}`;
                               return (
-                                <div 
+                                <div
                                   key={uniqueKey}
-                                  className="animate-slide-up mb-10" 
+                                  className="animate-slide-up mb-10"
                                   style={{ animationDelay: `${idx * 60}ms` }}
                                 >
                                   <Post
                                     post={post}
                                     onPostUpdate={(updatedPost) => {
-                                      setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+                                      setPosts((prev) =>
+                                        prev.map((p) =>
+                                          p.id === updatedPost.id
+                                            ? updatedPost
+                                            : p
+                                        )
+                                      );
                                     }}
                                     onPostDelete={(post) => {
-                                      setPosts(prev => prev.filter(p => p.id !== post.id));
+                                      setPosts((prev) =>
+                                        prev.filter((p) => p.id !== post.id)
+                                      );
                                     }}
                                     onPostEdit={(post) => {
                                       // This is now handled internally by the Post component
@@ -658,22 +767,26 @@ export default function Profile() {
                                 </div>
                               );
                             })}
-                            
+
                             {/* Loading trigger for infinite scroll */}
-                            <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
+                            <div
+                              ref={loadingRef}
+                              className="h-20 flex items-center justify-center mt-4"
+                            >
                               {isLoadingMore && (
                                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
                               )}
                               {!hasMore && posts.length > 0 && (
-                                <div className="text-gray-500">No more posts to load</div>
+                                <div className="text-gray-500">
+                                  No more posts to load
+                                </div>
                               )}
                             </div>
                           </div>
                         </>
                       )}
                     </div>
-                  )
-                )}
+                  )}
               </>
             )}
           </div>
@@ -691,7 +804,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <BottomNav />
+        {/* <BottomNav /> */}
       </div>
     </div>
   );

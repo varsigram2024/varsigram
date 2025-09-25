@@ -8,6 +8,8 @@ import { useAuth } from "../../auth/AuthContext";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface User {
   id: number;
   name?: string;
@@ -35,7 +37,7 @@ export default function WhoToFollowSidePanel() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://api.varsigram.com/api/v1/who-to-follow/", {
+        const response = await axios.get(`${API_BASE_URL}/who-to-follow/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(response.data);
@@ -128,7 +130,7 @@ export default function WhoToFollowSidePanel() {
       <Text as="p" className="mt-5 text-[24px] font-medium md:text-[22px]">
         Who to follow
       </Text>
-      <div className="my-3 flex flex-col gap-5 h-full overflow-auto scrollbar-hide">
+      <div className="my-3 flex flex-col gap-5 h-full overflow-y-scroll scrollbar-hide">
         {isLoading ? (
           <Text>Loading...</Text>
         ) : (

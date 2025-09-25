@@ -27,6 +27,7 @@ interface User {
   profile_pic_url?: string;
   username?: string;
   bio?: string;
+  exclusive?: boolean;
 
   // Student-specific fields
   name?: string;
@@ -230,7 +231,7 @@ export default function Connectionspage() {
     const followee = followeeOrg || followeeStudent;
     if (!followee) return null;
     // Use the user ID for comparison
-    return followee.user?.id;
+    return followee?.id;
   }));
   const filteredUsers = users.filter(user => !followedIds.has(user.user_id || user.id));
 
@@ -249,9 +250,9 @@ export default function Connectionspage() {
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto animate-fade-in">
 
-      <Sidebar1 />
+      
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
+      <div className="flex w-full lg:w-[100%] items-start justify-center h-[100vh] flex-row animate-slide-up">
         <div className="mt-[0px] lg:mt-[0px] flex flex-1 flex-col gap-[45px] md:flex-col md:self-stretch overflow-y-auto h-[100vh] scrollbar-hide">
           <div className="w-full flex-1 flex gap-5 flex-col px-4 py-4 overflow-hidden">
 
@@ -418,13 +419,18 @@ export default function Connectionspage() {
                             onClick={async (e) => {
                               e.stopPropagation();
                               // Create a proper user object for unfollow
+                              const id = followeeOrg?.id ?? followeeStudent?.id;
+                              if (typeof id !== "number") {
+                                toast.error("Invalid user id for unfollow.");
+                                return;
+                              }
                               const userToUnfollow = {
-                                id: followeeOrg?.id || followeeStudent?.id,
-                                user_id: userInfo?.id,
-                                type: followeeOrg ? "organization" : "student",
+                                id,
+                                user_id: followeeOrg?.id ?? followeeStudent?.id,
+                                type: (followeeOrg ? "organization" : "student") as "organization" | "student",
                                 email: userInfo?.email || "",
                                 profile_pic_url: userInfo?.profile_pic_url || "",
-                                account_type: followeeOrg ? "organization" : "student",
+                                account_type: (followeeOrg ? "organization" : "student") as "organization" | "student",
                                 display_name_slug: followeeOrg?.display_name_slug || followeeStudent?.display_name_slug,
                                 organization_name: followeeOrg?.organization_name,
                                 name: followeeStudent?.name,
@@ -447,7 +453,7 @@ export default function Connectionspage() {
         </div>
       </div>
 
-      <BottomNav />
+      {/* <BottomNav /> */}
     </div>
   );
 }

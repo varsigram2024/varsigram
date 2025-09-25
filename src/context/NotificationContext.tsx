@@ -228,33 +228,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Function to request notification permission from the user
   const requestNotificationPermission = useCallback(async () => {
     if (!isNotificationSupported) {
-      toast.error('Notifications are not supported in this browser.');
+      console.warn('Notifications are not supported in this browser.');
       return;
     }
 
     try {
       const permission = await Notification.requestPermission();
-      setNotificationPermission(permission); // Update React state with new permission
-
+      setNotificationPermission(permission);
       if (permission === 'granted') {
-        setIsNotificationEnabled(true); // User granted permission, so enable notifications
-        localStorage.setItem('notificationEnabled', 'true'); // Persist preference
-
-        // Attempt to register the device after permission is granted (show toasts)
-        await registerDeviceWithState(true);
-
-        toast.success('Notifications enabled successfully!');
-      } else {
-        setIsNotificationEnabled(false); // Permission denied
-        localStorage.setItem('notificationEnabled', 'false');
-        toast.error('Notification permission denied.');
+        // Enable notifications
+        setIsNotificationEnabled(true);
+        console.log('Notifications enabled successfully.');
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
-      toast.error('Failed to enable notifications.');
+      console.error('Failed to request notification permission:', error);
     }
-  }, [isNotificationSupported, registerDeviceWithState]); // registerDeviceWithState is a dependency
-
+  }, [isNotificationSupported]);
   // --- Auto-registration on Load/Login ---
   useEffect(() => {
     // Only proceed if authenticated, notifications are intended to be enabled,

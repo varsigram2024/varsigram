@@ -3,15 +3,19 @@ import Sidebar1 from "../../components/Sidebar1";
 import BottomNav from "../../components/BottomNav";
 import { Text } from "../../components/Text";
 import { Button } from "../../components/Button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigation } from "react-router-dom";
 
 export default function Marketplace() {
-  const navigate = useNavigate();
+const navigate = useNavigate();
+
+  const handleNavigation = (path: string) => {
+    navigate(`/${path}`);
+  };
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      <Sidebar1 />
-      <div className="flex flex-row-reverse w-full lg:w-[85%] items-start justify-center h-auto">
+     
+      <div className="flex flex-row-reverse w-full lg:w-[100%] items-start justify-center h-auto">
         <div className="hidden lg:flex mt-[38px] flex-1 items-center justify-center gap-[4px] md:flex-col md:self-stretch p-5">
           <Text as="h2" className="text-left w-[30%] text-[24px] font-extrabold">
             Marketplace Coming Soon!
@@ -20,12 +24,11 @@ export default function Marketplace() {
             Stay tuned! The marketplace feature is on its way to help you buy, sell, and connect on campus.
           </Text>
           <div className="text-left w-[30%]">
-            <Button
-              variant="outline"
+              <Button
+              variant="primary"
               color="gray_400_01"
-              size="2x1"
               className="mt-4 bg-[#750015] rounded-3xl p-4 text-white"
-              onClick={() => navigate("/home")}
+              onClick={() => handleNavigation("home")}
             >
               Back to Home
             </Button>
@@ -53,7 +56,7 @@ export default function Marketplace() {
           </div>
         </div>
       </div>
-      <BottomNav />
+      {/* <BottomNav /> */}
     </div>
   );
 }

@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+
 import debounce from "lodash/debounce";
 import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post.tsx';
 import axios from 'axios';
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-dom";
+
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
@@ -16,6 +18,7 @@ import CreatePostModal from '../../components/CreatePostModal';
 import { faculties, facultyDepartments } from "../../constants/academic";
 import { useFeed } from '../../context/FeedContext';
 import { useNotification } from '../../context/NotificationContext';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -36,6 +39,10 @@ interface Post {
   last_engagement_at: string | null;
   author_display_name: string;
   author_name?: string;
+  author_display_name_slug?: string;
+  account_type?: string;
+  is_verified?: boolean;
+  exclusive?: boolean;
 }
 
 interface User {
@@ -54,16 +61,14 @@ interface User {
 }
 
 interface SearchResult {
-  users: {
-    id: string;
-    email: string;
-    fullName: string;
-    profile_pic_url?: string;
-    display_name_slug?: string;
-    bio?: string;
-    type: 'student' | 'organization';
-  }[];
-  posts: Post[];
+  type: 'student' | 'organization';
+  email: string;
+  display_name_slug: string;
+  faculty?: string;
+  department?: string;
+  name?: string;
+  organization_name?: string;
+  exclusive?: boolean;
 }
 
 const useIntersectionObserver = (
@@ -104,23 +109,23 @@ export default function Homepage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
- 
+  const [feedPage, setFeedPage] = useState(1);
+  const [feedSessionId, setFeedSessionId] = useState<string | null>(null);
+
+
   const {
     feedPosts, setFeedPosts,
     feedNextCursor, setFeedNextCursor,
     feedHasMore, setFeedHasMore,
-    feedScroll, setFeedScroll,
     isFeedLoading, setIsFeedLoading,
     lastFeedFetch, setLastFeedFetch,
-    
     officialPosts, setOfficialPosts,
     officialNextCursor, setOfficialNextCursor,
     officialHasMore, setOfficialHasMore,
-    officialScroll, setOfficialScroll,
     isOfficialLoading, setIsOfficialLoading,
     lastOfficialFetch, setLastOfficialFetch,
   } = useFeed();
- 
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
@@ -128,12 +133,6 @@ export default function Homepage() {
   const [searchType, setSearchType] = useState<'all' | 'student' | 'organization'>('all');
   const [searchFaculty, setSearchFaculty] = useState('');
   const [searchDepartment, setSearchDepartment] = useState('');
-  const postsContainerRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
-
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const scrollRestoredRef = useRef(false);
-  const postsRenderedRef = useRef(false);
 
   const currentPosts = useMemo(() => {
     return activeTab === 'forYou' ? feedPosts : officialPosts;
@@ -151,96 +150,149 @@ export default function Homepage() {
     return activeTab === 'forYou' ? isFeedLoading : isOfficialLoading;
   }, [activeTab, isFeedLoading, isOfficialLoading]);
 
-  const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
-    if (!token || (type === 'feed' ? isFeedLoading : isOfficialLoading)) return;
 
-    const now = Date.now();
-    const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
-    const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000;
+
+
+const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null = null) => {
+  if (!token || (type === 'feed' ? isFeedLoading : isOfficialLoading)) return;
+
+  const now = Date.now();
+  const lastFetch = type === 'feed' ? lastFeedFetch : lastOfficialFetch;
+  
+  // Only skip if we're not paginating (no startAfter) and it's been less than 5 minutes
+  const shouldSkip = lastFetch && (now - lastFetch) < 5 * 60 * 1000 && !startAfter;
+
+  if (shouldSkip) {
+    return;
+  }
+
+  if (type === 'feed') {
+    setIsFeedLoading(true);
+  } else {
+    setIsOfficialLoading(true);
+  }
+
+  try {
+    const endpoint = type === 'feed' ? '/feed/' : '/official/';
+
+    // Use consistent cursor-based pagination for both endpoints
+    const params: any = {
+      page_size: 10,
+    };
     
-    if (shouldSkip && !startAfter) {
-      return;
+    // For both feed and official, use cursor-based pagination
+    if (startAfter) {
+      params.start_after = startAfter;
     }
+    
+    // Only include session_id for feed if we have one
+    if (type === 'feed' && feedSessionId && !startAfter) {
+      params.session_id = feedSessionId;
+    }
+
+    const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      params,
+    });
+
+    console.log(`${type} response:`, response.data);
+
+    let results, nextCursor, sessionId;
 
     if (type === 'feed') {
-      setIsFeedLoading(true);
+      // Feed endpoint returns different structure
+      results = response.data.results || [];
+      sessionId = response.data.session_id;
+      nextCursor = response.data.next_cursor; // Feed should also return next_cursor
+      
+      // If feed doesn't return next_cursor, we need to implement a fallback
+      if (!nextCursor && results.length >= 10) {
+        // Use the last post's ID as the next cursor
+        nextCursor = results[results.length - 1]?.id || null;
+      }
     } else {
-      setIsOfficialLoading(true);
+      // Official endpoint
+      results = response.data.results || [];
+      nextCursor = response.data.next_cursor;
     }
 
-    try {
-      const endpoint = type === 'feed' ? '/posts/' : '/official/';
-
-      const params: any = { 
-        page_size: 10,
-        start_after: startAfter
-      };
-      
-      const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        params,
-      });
-
-      const { results, next_cursor } = response.data;
-      
-      if (Array.isArray(results) && results.length > 0) {
-        if (type === 'feed') {
-          setFeedPosts(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
-            return [...prev, ...uniquePosts];
-          });
-          setFeedNextCursor(next_cursor);
-          setFeedHasMore(!!next_cursor);
-          setLastFeedFetch(now);
-        } else {
-          setOfficialPosts(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
-            return [...prev, ...uniquePosts];
-          });
-          setOfficialNextCursor(next_cursor);
-          setOfficialHasMore(!!next_cursor);
-          setLastOfficialFetch(now);
-        }
-      }
-    } catch (error) {
-      if (type === 'feed') setFeedHasMore(false);
-      else setOfficialHasMore(false);
-    } finally {
+    if (Array.isArray(results) && results.length > 0) {
       if (type === 'feed') {
-        setIsFeedLoading(false);
+        setFeedPosts(prev => {
+          if (startAfter) {
+            // Append for pagination
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            // Replace for initial load
+            return results;
+          }
+        });
+        
+        // Update feed-specific state
+        if (sessionId && !startAfter) {
+          setFeedSessionId(sessionId);
+        }
+        setFeedNextCursor(nextCursor);
+        setFeedHasMore(!!nextCursor || results.length >= 10); // Has more if we got a full page
+        setLastFeedFetch(now);
       } else {
-        setIsOfficialLoading(false);
+        setOfficialPosts(prev => {
+          if (startAfter) {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            return results;
+          }
+        });
+        setOfficialNextCursor(nextCursor);
+        setOfficialHasMore(!!nextCursor || results.length >= 10);
+        setLastOfficialFetch(now);
+      }
+    } else if (Array.isArray(results) && results.length === 0) {
+      // No more posts
+      if (type === 'feed') {
+        setFeedHasMore(false);
+      } else {
+        setOfficialHasMore(false);
       }
     }
-  };
-
-  const loadMorePosts = async () => {
-    if (currentIsLoading || !currentHasMore) return;
-
-    const type = activeTab === 'forYou' ? 'feed' : 'official';
-    const cursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
-
-    try {
-      await fetchPosts(type, cursor);
-    } catch (error) {
-      console.error('Failed to load more posts:', error);
+  } catch (error) {
+    console.error(`Error fetching ${type} posts:`, error);
+    if (type === 'feed') setFeedHasMore(false);
+    else setOfficialHasMore(false);
+  } finally {
+    if (type === 'feed') {
+      setIsFeedLoading(false);
+    } else {
+      setIsOfficialLoading(false);
     }
-  };
+  }
+};
 
-  useEffect(() => {
-    if (!token) return;
+ const loadMorePosts = async () => {
+  if (currentIsLoading || !currentHasMore) return;
 
-    if (activeTab === 'forYou' && feedPosts.length === 0) {
-      fetchPosts('feed', null);
-    } else if (activeTab === 'official' && officialPosts.length === 0) {
-      fetchPosts('official', null);
-    }
-  }, [activeTab, token]);
+  const nextCursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
+  
+  await fetchPosts(activeTab === 'forYou' ? 'feed' : 'official', nextCursor);
+};
+
+useEffect(() => {
+  if (!token) return;
+
+  // Always refresh when switching tabs or on initial load
+  if (activeTab === 'forYou' && (feedPosts.length === 0 || feedNextCursor === null)) {
+    fetchPosts('feed', null);
+  } else if (activeTab === 'official' && (officialPosts.length === 0 || officialNextCursor === null)) {
+    fetchPosts('official', null);
+  }
+}, [activeTab, token]);
 
   const loadMoreCallback = useCallback(() => {
     if (!currentIsLoading && currentHasMore && token) {
@@ -250,86 +302,7 @@ export default function Homepage() {
 
   const loadingRef = useIntersectionObserver(loadMoreCallback);
 
-  useEffect(() => {
-    const container = postsContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (
-        container.scrollTop + container.clientHeight >= container.scrollHeight - 300 &&
-        currentHasMore && !currentIsLoading
-      ) {
-        loadMorePosts();
-      }
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [currentHasMore, currentIsLoading, loadMorePosts]);
-
-  useEffect(() => {
-    if (currentPosts.length > 0) {
-      setTimeout(() => {
-        setIsFirstLoad(false);
-      }, 100);
-    }
-  }, [currentPosts.length]);
-
-  useEffect(() => {
-    const container = postsContainerRef.current;
-    if (!container) return;
-
-    const savedScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
-    
-    if (savedScroll > 0 && currentPosts.length > 0 && !scrollRestoredRef.current && postsRenderedRef.current) {
-      const delay = isFirstLoad ? 600 : 100;
-      
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          container.scrollTop = savedScroll;
-          scrollRestoredRef.current = true;
-        });
-      }, delay);
-    }
-  }, [activeTab, feedScroll, officialScroll, currentPosts.length, isFirstLoad]);
-
-  useEffect(() => {
-    if (currentPosts.length > 0) {
-      setTimeout(() => {
-        postsRenderedRef.current = true;
-      }, 100);
-    }
-  }, [currentPosts.length]);
-
-  useEffect(() => {
-    scrollRestoredRef.current = false;
-    postsRenderedRef.current = false;
-  }, [activeTab]);
-
-  useEffect(() => {
-    return () => {
-      const container = postsContainerRef.current;
-      if (container) {
-        const currentScroll = container.scrollTop;
-        if (activeTab === 'forYou') {
-          setFeedScroll(currentScroll);
-        } else {
-          setOfficialScroll(currentScroll);
-        }
-      }
-    };
-  }, [activeTab, setFeedScroll, setOfficialScroll]);
-
   const handlePostClick = (postId: string) => {
-    const container = postsContainerRef.current;
-    if (container) {
-      const currentScroll = container.scrollTop;
-      if (activeTab === 'forYou') {
-        setFeedScroll(currentScroll);
-      } else {
-        setOfficialScroll(currentScroll);
-      }
-    }
     navigate(`/posts/${postId}`, { state: { backgroundLocation: location } });
   };
 
@@ -365,8 +338,11 @@ export default function Homepage() {
     try {
       setIsUploading(true);
 
+      if (!token) {
+        throw new Error('Authentication token is missing.');
+      }
       const mediaUrls = await Promise.all(
-        selectedFiles.map(file => uploadPostMedia(file, token))
+        selectedFiles.map(file => uploadPostMedia(file, token as string))
       );
 
       const postData = {
@@ -526,114 +502,173 @@ export default function Homepage() {
   };
 
   const refreshPosts = async () => {
-    setError(null);
-    if (activeTab === 'forYou') {
-      setFeedPosts([]);
-      setFeedNextCursor(null);
-      setFeedHasMore(true);
-      await fetchPosts('feed', null);
+  if (activeTab === 'forYou') {
+    setFeedPosts([]);
+    setFeedNextCursor(null);
+    setFeedSessionId(null);
+    setFeedHasMore(true);
+    await fetchPosts('feed', null);
+  } else {
+    setOfficialPosts([]);
+    setOfficialNextCursor(null);
+    setOfficialHasMore(true);
+    await fetchPosts('official', null);
+  }
+};
+
+  // Update the handleSearch function
+const handleSearch = async () => {
+  // Don't search if no criteria provided
+  if (!searchQuery.trim() && !searchFaculty && !searchDepartment) {
+    setSearchResults({ users: [], posts: [] });
+    toast.error('Please provide at least one search criteria');
+    return;
+  }
+
+  setIsSearching(true);
+  try {
+    const params: any = {};
+    
+    // Use the correct parameter names expected by the API
+    if (searchQuery.trim()) params.query = searchQuery.trim();
+    if (searchFaculty) params.faculty = searchFaculty;
+    if (searchDepartment) params.department = searchDepartment;
+    
+    // The API doesn't have a 'type' parameter - it searches both by default
+    // Remove the type parameter as it's not supported
+
+    const response = await axios.get(
+      `${API_BASE_URL}/users/search/`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      }
+    );
+
+    console.log('Search response:', response.data); // Debug log
+
+    // Map the response data correctly
+    const mappedUsers = response.data.map((user: SearchResultUser, idx: number) => {
+      // For students
+      if (user.type === 'student' && user.name) {
+        return {
+          id: user.display_name_slug || user.email || `student-${idx}`,
+          email: user.email,
+          fullName: user.name,
+          display_name_slug: user.display_name_slug,
+          type: 'student' as const,
+          faculty: user.faculty,
+          department: user.department,
+        };
+      }
+      // For organizations
+      else if (user.type === 'organization' && user.organization_name) {
+        return {
+          id: user.display_name_slug || user.email || `org-${idx}`,
+          email: user.email,
+          fullName: user.organization_name,
+          display_name_slug: user.display_name_slug,
+          type: 'organization' as const,
+          exclusive: user.exclusive,
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // Sort alphabetically
+    mappedUsers.sort((a: any, b: any) =>
+      a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase())
+    );
+
+    setSearchResults({
+      users: mappedUsers,
+      posts: [], // Posts search not implemented yet
+    });
+
+  } catch (error: any) {
+    console.error("Search error:", error);
+    
+    // Handle specific error cases
+    if (error.response?.status === 400) {
+      const errorMessage = error.response.data?.message || 'Invalid search parameters';
+      toast.error(errorMessage);
+    } else if (error.response?.status === 401) {
+      toast.error('Please login to search');
     } else {
-      setOfficialPosts([]);
-      setOfficialNextCursor(null);
-      setOfficialHasMore(true);
-      await fetchPosts('official');
-    }
-  };
-
-  const handleSearch = async () => {
-    setIsSearching(true);
-    try {
-      const params: any = {};
-      if (searchType !== 'all') params.type = searchType;
-      if (searchFaculty) params.faculty = searchFaculty;
-      if (searchDepartment) params.department = searchDepartment;
-      if (searchQuery.trim()) params.query = searchQuery.trim();
-
-      const usersResponse = await axios.get(
-        `${API_BASE_URL}/users/search/`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          params,
-        }
-      );
-
-      const mappedUsers = usersResponse.data.map((user: any, idx: number) => {
-        if (user.name) {
-          return {
-            id: user.display_name_slug || user.email || idx,
-            email: user.email,
-            fullName: user.name,
-            profile_pic_url: user.profile_pic_url || "",
-            display_name_slug: user.display_name_slug,
-            type: "student",
-            faculty: user.faculty,
-            department: user.department,
-          };
-        } else if (user.organization_name) {
-          return {
-            id: user.display_name_slug || user.email || idx,
-            email: user.email,
-            fullName: user.organization_name,
-            profile_pic_url: user.profile_pic_url || "",
-            display_name_slug: user.display_name_slug,
-            type: "organization",
-          };
-        }
-        return null;
-      }).filter(Boolean);
-
-      mappedUsers.sort((a, b) =>
-        a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase())
-      );
-
-      setSearchResults({
-        users: mappedUsers,
-        posts: [],
-      });
-    } catch (error) {
-      console.error("Search error:", error);
       toast.error('Failed to fetch search results');
-      setSearchResults({ users: [], posts: [] });
-    } finally {
-      setIsSearching(false);
     }
-  };
+    
+    setSearchResults({ users: [], posts: [] });
+  } finally {
+    setIsSearching(false);
+  }
+};
 
-  useEffect(() => {
-    if (isSearchOpen) {
-      handleSearch();
-    }
-  }, [searchType, searchFaculty, searchDepartment]);
+    useEffect(() => {
+      if (isSearchOpen && (searchQuery.trim() || searchFaculty || searchDepartment)) {
+        const timer = setTimeout(() => {
+          handleSearch();
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
+    }, [searchType, searchFaculty, searchDepartment, isSearchOpen]);
 
-  useEffect(() => {
-    if (!searchQuery.trim()) return;
+
+
+const debouncedSearch = useMemo(() => debounce(() => {
+  handleSearch();
+}, 400), [searchQuery, searchType, searchFaculty, searchDepartment]);
+
+
+
+const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setSearchQuery(value);
+  
+  // Clear results if search is empty
+  if (!value.trim() && !searchFaculty && !searchDepartment) {
+    setSearchResults({ users: [], posts: [] });
+    return;
+  }
+};
+
+
+const handleSearchButtonClick = () => {
+  if (!searchQuery.trim() && !searchFaculty && !searchDepartment) {
+    toast.error('Please provide at least one search criteria');
+    return;
+  }
+  handleSearch();
+};
+
+
+
+useEffect(() => {
+  if (searchQuery.trim()) {
     debouncedSearch();
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [searchQuery, searchType, searchFaculty, searchDepartment]);
+  } else {
+    setSearchResults({ users: [], posts: [] }); // clear results when query is empty
+  }
 
-  const debouncedSearch = useMemo(() => debounce(handleSearch, 400), [handleSearch]);
+  return () => {
+    debouncedSearch.cancel();
+  };
+}, [searchQuery, searchType, searchFaculty, searchDepartment]);
+
+
 
   const { unreadCount } = useNotification();
 
   return (
-    <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative h-auto ${isFirstLoad ? 'animate-fade-in' : ''}`}>
-      <Sidebar1 />
+    <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative]`}>
+      
 
-      <div className="flex w-full lg:w-[85%] items-start justify-center h-[100vh] flex-row animate-slide-up">
-        <div 
-          className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
-          ref={postsContainerRef}
-          style={{ 
-            overflowY: 'auto',
-            height: '100vh',
-            maxHeight: 'calc(100vh - 120px)',
-            paddingBottom: '20px',
-            WebkitOverflowScrolling: 'touch',
-            scrollBehavior: 'smooth'
-          }}
-        >
+       <div className={`flex w-full lg:w-[100%] items-start justify-center flex-row`}>
+              <div 
+              className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
+                >
+
           <div className="hidden lg:flex items-center justify-between animate-fade-in">
             <div
               onClick={() => {
@@ -850,7 +885,7 @@ export default function Homepage() {
           </div>
         </div>
 
-        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
+        <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
             <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
@@ -863,7 +898,7 @@ export default function Homepage() {
         </div>
       </div>
 
-      <BottomNav />
+      {/* <BottomNav /> */}
       
 
       {isSearchOpen && (
@@ -873,6 +908,9 @@ export default function Homepage() {
             setIsSearchOpen(false);
             setSearchQuery("");
             setSearchResults({ users: [], posts: [] });
+            setSearchFaculty("");
+            setSearchDepartment("");
+            setSearchType('all');
           }}
         >
           <div
@@ -887,37 +925,44 @@ export default function Homepage() {
                     setIsSearchOpen(false);
                     setSearchQuery("");
                     setSearchResults({ users: [], posts: [] });
+                    setSearchFaculty("");
+                    setSearchDepartment("");
+                    setSearchType('all');
                   }}
                 >
                   <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
                 </div>
-                <input
-                  type="text"
-                  className="flex-1 text-lg border-none outline-none"
-                  placeholder="Search Varsigram..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
-                  }}
-                  autoFocus
-                />
-                {searchQuery && (
-                  <button
-                    className="text-[#750015] font-medium"
-                    onClick={handleSearch}
-                    disabled={isSearching}
+                 <input
+                          type="text"
+                          className="flex-1 text-lg border-none outline-none"
+                          placeholder="Search by name, faculty, or department..."
+                          value={searchQuery}
+                          onChange={handleSearchInputChange}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSearchButtonClick();
+                          }}
+                          autoFocus
+                    />
+                 <button
+                    className="text-[#750015] font-medium disabled:text-gray-400"
+                    onClick={handleSearchButtonClick}
+                    disabled={isSearching || (!searchQuery.trim() && !searchFaculty && !searchDepartment)}
                   >
-                    Search
+                    {isSearching ? 'Searching...' : 'Search'}
                   </button>
-                )}
               </div>
+
+
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
                 <select
                   className="border rounded px-2 py-1"
                   value={searchType}
-                  onChange={e => setSearchType(e.target.value as any)}
-                >
+                  onChange={e => {
+                  setSearchFaculty(e.target.value);
+                  setSearchDepartment("");
+              }}
+            >
+                  <option value="all">All</option>
                   <option value="student">Students</option>
                   <option value="organization">Organizations</option>
                 </select>
@@ -945,6 +990,9 @@ export default function Homepage() {
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
+                <div className="text-xs text-gray-500 flex items-center">
+                  {searchResults.users.length > 0 && `${searchResults.users.length} results`}
+                </div>
               </div>
             </div>
 
@@ -955,65 +1003,53 @@ export default function Homepage() {
                 </div>
               ) : (
                 <div className="p-4">
-                  {searchResults.users.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">People</h3>
-                      <div className="space-y-4">
-                        {searchResults.users.map((user) => (
-                          <div key={user.id} className="flex flex-col gap-1 cursor-pointer" onClick={() => {
-                            if (user.display_name_slug) {
-                              navigate(`/user-profile/${user.display_name_slug}`);
-                              setIsSearchOpen(false);
-                            }
-                          }}>
-                            <div className="font-semibold">{user.fullName}</div>
-                            {user.type === "student" && (
-                              <div className="text-xs text-gray-500">
-                                {user.faculty} {user.department && `- ${user.department}`}
-                              </div>
-                            )}
-                            {user.type === "organization" && (
-                              <div className="text-xs text-gray-500">Organization</div>
+              {searchResults.users.length > 0 ? (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">
+                    {searchResults.users.length} {searchResults.users.length === 1 ? 'Result' : 'Results'}
+                  </h3>
+                  <div className="space-y-4">
+                    {searchResults.users.map((user) => (
+                      <div 
+                        key={user.id} 
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                        onClick={() => {
+                          if (user.display_name_slug) {
+                            navigate(`/user-profile/${user.display_name_slug}`);
+                            setIsSearchOpen(false);
+                          }
+                        }}
+                      >
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">{user.fullName}</div>
+                          <div className="text-sm text-gray-500">
+                            {user.type === "student" ? (
+                              <>
+                                {user.faculty} {user.department && `• ${user.department}`}
+                              </>
+                            ) : (
+                              <>Organization {user.exclusive && '• Verified'}</>
                             )}
                           </div>
-                        ))}
+                        </div>
+                        <div className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
+                          {user.type}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {searchResults.posts.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">Posts</h3>
-                      <div className="space-y-4">
-                        {searchResults.posts.map((post) => (
-                          <Post
-                            key={post.id}
-                            post={post}
-                            onPostUpdate={handlePostUpdate}
-                            onPostDelete={handlePostDelete}
-                            onPostEdit={handlePostEdit}
-                            currentUserId={user?.id}
-                            currentUserEmail={user?.email}
-                            onClick={() => {
-                              const currentScroll = activeTab === 'forYou' ? feedScroll : officialScroll;
-                              sessionStorage.setItem('homepageScroll', currentScroll.toString());
-                              navigate(`/posts/${post.id}`, { state: { backgroundLocation: location } });
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {searchQuery && 
-                   !isSearching && 
-                   searchResults.users.length === 0 && 
-                   searchResults.posts.length === 0 && (
-                    <div className="text-center py-10 text-gray-500">
-                      No results found for "{searchQuery}"
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
+              ) : searchQuery || searchFaculty || searchDepartment ? (
+                <div className="text-center py-10 text-gray-500">
+                  No results found for your search criteria
+                </div>
+              ) : (
+                <div className="text-center py-10 text-gray-400">
+                  Enter search terms or select filters to begin
+                </div>
+              )
+              }
+            </div>
               )}
             </div>
           </div>
