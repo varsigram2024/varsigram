@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ViewTrackingProvider } from './context/viewTrackingContext.tsx';
 import { Welcome } from './pages/Welcome';
 import ErrorBoundary from './components/ErrorBoundary';
+import { AuthRoute } from './components/AuthRoute.tsx';
 import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
 import ProfilepageOrganizationPage from './pages/Profilepage';
@@ -139,72 +140,47 @@ function AppContent() {
         },
       }}
       />
-      <Routes>
-      {/* Public Routes */}
-      <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><MultiStepSignUp onLogin={() => {}} /></PublicRoute>} />
-      <Route path="/phone-verification" element={<PublicRoute><PhoneVerification onNext={() => {}} /></PublicRoute>} />
-      <Route
-        path="/academic-details"
-        element={
-          <PublicRoute>
-            <AcademicDetails
-              onNext={() => {/* handle next step */}}
-              onBack={() => {/* handle back step */}}
-            />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/about-yourself"
-        element={
-          <PublicRoute>
-            <AboutYourself
-              onNext={() => {/* handle next step */}}
-              onBack={() => {/* handle back step */}}
-            />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/academic-level"
-        element={
-          <PublicRoute>
-            <AcademicLevel
-              onNext={() => {/* handle next step */}}
-              onBack={() => {/* handle back step */}}
-            />
-          </PublicRoute>
-        }
-      />
+     
+        <Routes>
+          {/* Authentication Routes */}
+          <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-      {/* Protected Routes */}
-      <Route element={<MainLayout />}>
-        <Route path="/home" element={<VerifiedRoute><Homepage /></VerifiedRoute>} />
-        <Route path="/chat" element={<VerifiedRoute><Chatpage /></VerifiedRoute>} />
-        <Route path="/connections" element={<VerifiedRoute><Connectionspage /></VerifiedRoute>} />
-        <Route path="/notifications" element={<VerifiedRoute><NotificationsPage /></VerifiedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/user-profile/:display_name_slug" element={<ProfilePage />} />
-        <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/settings/edit-profile" element={<EditProfile />} />
-        <Route path="/settings/change-password" element={<ChangePassword />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/settings/email-verification" element={<EmailVerification />} />
-        <Route path="/settings/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
-        <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
-        <Route path="/posts/:id" element={<PostPage />} />
-      </Route>
+          {/* Multi-step Signup Routes */}
+          <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
+          <Route path="/academic-details" element={<PublicRoute><AcademicDetails /></PublicRoute>} />
+          <Route path="/about-yourself" element={<PublicRoute><AboutYourself /></PublicRoute>} />
+          <Route path="/academic-level" element={<PublicRoute><AcademicLevel /></PublicRoute>} />
 
-      {/* Root route - redirect to welcome */}
-      <Route path="/" element={<Navigate to="/welcome" replace />} />
+          {/* Main App Routes (Protected + Verified) */}
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Navigate to="/home" replace />} />
+            <Route path="home" element={<AuthRoute><Homepage /></AuthRoute>} />
+            <Route path="chat" element={<AuthRoute><Chatpage /></AuthRoute>} />
+            <Route path="connections" element={<AuthRoute><Connectionspage /></AuthRoute>} />
+            <Route path="notifications" element={<AuthRoute><NotificationsPage /></AuthRoute>} />
+            <Route path="marketplace" element={<AuthRoute><Marketplace /></AuthRoute>} />
+            <Route path="resources" element={<AuthRoute><Resources /></AuthRoute>} />
+            <Route path="posts/:id" element={<AuthRoute><PostPage /></AuthRoute>} />
+            
+            {/* Profile Routes */}
+            <Route path="profile/:username" element={<AuthRoute><Profile /></AuthRoute>} />
+            <Route path="user-profile/:display_name_slug" element={<ProfilePage />} />
+            
+            {/* Settings Routes */}
+            <Route path="settings" element={<AuthRoute><Settings /></AuthRoute>} />
+            <Route path="settings/edit-profile" element={<AuthRoute><EditProfile /></AuthRoute>} />
+            <Route path="settings/change-password" element={<AuthRoute><ChangePassword /></AuthRoute>} />
+            <Route path="settings/email-verification" element={<AuthRoute><EmailVerification /></AuthRoute>} />
+            <Route path="settings/privacy-policy" element={<AuthRoute><PrivacyPolicy /></AuthRoute>} />
+          </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/welcome" replace />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/welcome" replace />} />
+        </Routes>
 
       {/* Notification Prompt */}
       {showNotificationPrompt && (
