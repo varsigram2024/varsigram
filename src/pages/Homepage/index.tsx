@@ -60,15 +60,37 @@ interface User {
   user_exclusive?: boolean;
 }
 
-interface SearchResult {
+interface SearchResultUser {
   type: 'student' | 'organization';
   email: string;
-  display_name_slug: string;
   faculty?: string;
   department?: string;
   name?: string;
   organization_name?: string;
+  display_name_slug: string;
   exclusive?: boolean;
+}
+
+interface SearchApiResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: SearchResultUser[];
+}
+
+// Update your SearchResult interface to match what you're actually using
+interface SearchResult {
+  users: Array<{
+    id: string;
+    email: string;
+    fullName: string;
+    display_name_slug: string;
+    type: 'student' | 'organization';
+    faculty?: string;
+    department?: string;
+    exclusive?: boolean;
+  }>;
+  posts: any[]; // You can define this properly if needed
 }
 
 const useIntersectionObserver = (
@@ -128,7 +150,10 @@ export default function Homepage() {
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult>({ users: [], posts: [] });
+  const [searchResults, setSearchResults] = useState<{users: any[], posts: any[]}>({ 
+    users: [], 
+    posts: [] 
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<'all' | 'student' | 'organization'>('all');
   const [searchFaculty, setSearchFaculty] = useState('');
@@ -516,9 +541,8 @@ useEffect(() => {
   }
 };
 
-  // Update the handleSearch function
-const handleSearch = async () => {
-  // Don't search if no criteria provided
+  const handleSearch = async () => {
+  // Don't search if no criteria provided (matches API requirement)
   if (!searchQuery.trim() && !searchFaculty && !searchDepartment) {
     setSearchResults({ users: [], posts: [] });
     toast.error('Please provide at least one search criteria');
@@ -534,10 +558,10 @@ const handleSearch = async () => {
     if (searchFaculty) params.faculty = searchFaculty;
     if (searchDepartment) params.department = searchDepartment;
     
-    // The API doesn't have a 'type' parameter - it searches both by default
-    // Remove the type parameter as it's not supported
+    // Remove the 'type' parameter as it's not supported by the API
+    // The API searches both students and organizations by default
 
-    const response = await axios.get(
+    const response = await axios.get<SearchApiResponse>(
       `${API_BASE_URL}/users/search/`,
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -545,10 +569,13 @@ const handleSearch = async () => {
       }
     );
 
-    console.log('Search response:', response.data); // Debug log
+    console.log('Search response:', response.data);
 
-    // Map the response data correctly
-    const mappedUsers = response.data.map((user: SearchResultUser, idx: number) => {
+    // Map the response data correctly - the API returns results in response.data.results
+    const apiResults = response.data.results || [];
+
+    // Map the API response to your UI structure
+    const mappedUsers = apiResults.map((user: SearchResultUser, idx: number) => {
       // For students
       if (user.type === 'student' && user.name) {
         return {
@@ -604,6 +631,11 @@ const handleSearch = async () => {
   }
 };
 
+  // Filter results by type if not 'all'
+const filteredResults = searchType === 'all' 
+  ? searchResults.users 
+  : searchResults.users.filter(user => user.type === searchType);
+
     useEffect(() => {
       if (isSearchOpen && (searchQuery.trim() || searchFaculty || searchDepartment)) {
         const timer = setTimeout(() => {
@@ -625,12 +657,6 @@ const debouncedSearch = useMemo(() => debounce(() => {
 const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const value = e.target.value;
   setSearchQuery(value);
-  
-  // Clear results if search is empty
-  if (!value.trim() && !searchFaculty && !searchDepartment) {
-    setSearchResults({ users: [], posts: [] });
-    return;
-  }
 };
 
 
@@ -955,17 +981,15 @@ useEffect(() => {
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
                 <select
-                  className="border rounded px-2 py-1"
-                  value={searchType}
-                  onChange={e => {
-                  setSearchFaculty(e.target.value);
-                  setSearchDepartment("");
-              }}
-            >
-                  <option value="all">All</option>
-                  <option value="student">Students</option>
-                  <option value="organization">Organizations</option>
-                </select>
+                    className="border rounded px-2 py-1"
+                    value={searchType}
+                    onChange={e => setSearchType(e.target.value as 'all' | 'student' | 'organization')}
+                  >
+                    <option value="all">All</option>
+                    <option value="student">Students</option>
+                    <option value="organization">Organizations</option>
+                  </select>
+
                 <select
                   className="border rounded px-2 py-1"
                   value={searchFaculty}
@@ -1003,13 +1027,13 @@ useEffect(() => {
                 </div>
               ) : (
                 <div className="p-4">
-              {searchResults.users.length > 0 ? (
+              {filteredResults.length > 0 ? (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">
-                    {searchResults.users.length} {searchResults.users.length === 1 ? 'Result' : 'Results'}
+                    {filteredResults.length} {filteredResults.length === 1 ? 'Result' : 'Results'}
                   </h3>
                   <div className="space-y-4">
-                    {searchResults.users.map((user) => (
+                    {filteredResults.map((user) => (
                       <div 
                         key={user.id} 
                         className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
