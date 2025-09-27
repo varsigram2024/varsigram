@@ -442,7 +442,7 @@ export default function Profile() {
   ]);
 
   return (
-    <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
+    <div className="flex flex-col items-center justify-start w-full bg-white animate-fade-in">
       <div className="flex w-full items-start justify-center bg-white">
         
 
@@ -691,7 +691,7 @@ export default function Profile() {
                 <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
                   <div className="text-[20px] font-semibold">
                     My Posts
-                    <div className="h-[3px] w-20 bg-[#750015]"></div>
+                    <div className="h-[1px] w-20 bg-[#750015]"></div>
                   </div>
                 </div>
 

@@ -275,7 +275,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast('Please verify your email to continue.');
         navigate('/settings/email-verification');
       } else {
-        toast.success('Login successful! Welcome back');
         navigate('/home');
       }
 

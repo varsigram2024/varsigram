@@ -34,9 +34,10 @@ export default function MainLayout() {
       <main className="flex-1 flex flex-col w-full mx-auto min-h-screen">
         {/* Back Button for nested pages */}
         {showBackButton && (
-          <button
+          <div className="sticky top-0 z-10 bg-white border-b p-4">
+            <button
             onClick={handleBack}
-            className="flex items-center gap-2 px-4 py-3 text-[#750015] hover:bg-gray-100 transition-colors duration-200 ml-4 mt-4 self-start rounded-lg"
+            className="flex items-center gap-2 text-[#750015] font-medium hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors"
             aria-label="Go back"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,6 +45,7 @@ export default function MainLayout() {
             </svg>
             <span className="font-medium">Back</span>
           </button>
+          </div>
         )}
         
         {/* Page Content */}
