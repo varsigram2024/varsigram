@@ -8,46 +8,55 @@ export const useNotificationNavigation = () => {
   const { token } = useAuth();
 
   const handleNotificationClick = (notification: any) => {
-    // Mark as read first (optional)
-    // await markAsRead(notification.id);
+    // Extract data from notification - the payload fields are in notification.data
+    const data = notification.data || {};
     
     // Navigate based on notification type and target
-    switch (notification.type) {
-      case 'like':
+    switch (data.type) {
       case 'comment':
       case 'reply':
       case 'mention':
-        if (notification.target_post_id) {
-          // Navigate to post page
-          navigate(`/posts/${notification.target_post_id}`, {
-            state: {
-              scrollToComment: notification.target_comment_id,
-              highlightComment: notification.target_comment_id
-            }
-          });
-        } else if (notification.post?.id) {
-          // Fallback to post ID from post object
-          navigate(`/posts/${notification.post.id}`);
+        if (data.post_id) {
+          // Navigate to post page with comment highlighting
+          const params = new URLSearchParams();
+          if (data.comment_id) {
+            params.append('commentId', data.comment_id);
+            params.append('highlight', 'true');
+          }
+          navigate(`/posts/${data.post_id}?${params.toString()}`);
+        } else {
+          toast.error('Post not available');
+        }
+        break;
+
+      case 'like':
+      case 'new_post':
+        if (data.post_id) {
+          navigate(`/posts/${data.post_id}`);
         } else {
           toast.error('Post not available');
         }
         break;
 
       case 'follow':
-        if (notification.target_user_slug) {
-          navigate(`/user-profile/${notification.target_user_slug}`);
+        if (data.follower_id) {
+          // Navigate to follower's profile using their ID
+          navigate(`/profile/${data.follower_id}`);
         } else if (notification.sender?.username) {
-          navigate(`/user-profile/${notification.sender.username}`);
+          // Fallback to sender username if follower_id not available
+          navigate(`/profile/${notification.sender.username}`);
+        } else {
+          toast.error('User profile not available');
         }
         break;
 
       case 'system':
         // Handle system notifications - maybe show a modal or navigate to settings
-        toast.info(notification.title);
+        toast.info(notification.title || 'System notification');
         break;
 
       default:
-        // Default behavior - just mark as read
+        // Default behavior for unknown types
         toast.info('Notification clicked');
         break;
     }

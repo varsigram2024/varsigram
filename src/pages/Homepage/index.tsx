@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 
 import debounce from "lodash/debounce";
 import { useAuth } from '../../auth/AuthContext';
-import { Post } from '../../components/Post.tsx';
+import { Post } from '../../components/Post/index.tsx';
 import axios from 'axios';
 import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-dom";
 
@@ -778,7 +778,7 @@ useEffect(() => {
               />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {unreadCount > 99 ? '*' : unreadCount}
                 </div>
               )}
             </Link>

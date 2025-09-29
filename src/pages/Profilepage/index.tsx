@@ -8,16 +8,14 @@ import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import { Input } from "../../components/Input/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
-import { CloseSVG } from "../../components/Input/close.tsx";
-import Sidebar1 from "../../components/Sidebar1/index.tsx";
-import UserProfile1 from "../../components/UserProfile1/index.tsx";
+import { Share } from "lucide-react";
 import ProfileOrganizationSection from "./ProfilepageOrganizationSection.tsx";
 import BottomNav from "../../components/BottomNav/index.tsx";
 import { useAuth } from "../../auth/AuthContext";
 import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.tsx";
 import { ClickableUser } from "../../components/ClickableUser";
 import { Button } from "../../components/Button/index.tsx";
-import { Post } from "../../components/Post.tsx/index.tsx";
+import { Post } from "../../components/Post/index.tsx";
 import { uploadProfilePicture } from "../../utils/fileUpload.ts";
 import { Pencil, Save } from "lucide-react";
 
@@ -206,6 +204,37 @@ export default function Profile() {
       toast.error("Failed to update follow status");
     }
   };
+
+  const handleShareProfile = async () => {
+  if (!userProfile) return;
+
+  const profileUrl = `${window.location.origin}/profile/${userProfile.display_name_slug}`;
+  const shareText = `Check out ${userProfile.name || userProfile.organization_name || userProfile.username}'s profile on Varsigram!`;
+
+  try {
+    if (navigator.share) {
+      // Use Web Share API if available (mobile devices)
+      await navigator.share({
+        title: `${userProfile.name || userProfile.organization_name || userProfile.username}'s Profile`,
+        text: shareText,
+        url: profileUrl,
+      });
+    } else if (navigator.clipboard) {
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(profileUrl);
+      toast.success('Profile link copied to clipboard!');
+    } else {
+      // Final fallback: show the URL in an alert
+      alert(`Share this profile: ${profileUrl}`);
+    }
+  } catch (error) {
+    // User canceled the share or an error occurred
+    if (error instanceof Error && error.name !== 'AbortError') {
+      console.error('Error sharing:', error);
+      toast.error('Failed to share profile');
+    }
+  }
+};
 
   const handleClearSearch = () => setSearchBarValue("");
 
@@ -539,26 +568,36 @@ export default function Profile() {
 
                     {/* User info and follow button */}
                     <div className="mx-3.5 ml-4 flex flex-col items-start gap-4">
-                      <div className="flex items-center gap-[7px]">
-                        <Heading
-                          size="h3_semibold"
-                          as="h1"
-                          className="text-[28px] font-semibold md:text-[26px] sm:text-[24px]"
-                        >
-                          {userProfile.name ||
-                            userProfile.organization_name ||
-                            userProfile.username}
-                        </Heading>
-                        {userProfile.account_type === "organization" &&
-                          userProfile.is_verified &&
-                          userProfile.exclusive && (
-                            <Img
-                              src="/images/vectors/verified.svg"
-                              alt="Verified"
-                              className="h-[16px] w-[16px]"
-                            />
-                          )}
-                      </div>
+                      <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-[7px]">
+                            <Heading
+                              size="h3_semibold"
+                              as="h1"
+                              className="text-[28px] font-semibold md:text-[26px] sm:text-[24px]"
+                            >
+                              {userProfile.name ||
+                                userProfile.organization_name ||
+                                userProfile.username}
+                            </Heading>
+                            {userProfile.account_type === "organization" &&
+                              userProfile.is_verified &&
+                              userProfile.exclusive && (
+                                <Img
+                                  src="/images/vectors/verified.svg"
+                                  alt="Verified"
+                                  className="h-[16px] w-[16px]"
+                                />
+                              )}
+                          </div>
+                          
+                          <button
+                            onClick={handleShareProfile}
+                            className="flex items-center gap-2 p-2 rounded-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            title="Share Profile"
+                          >
+                            <Share size={18} />
+                          </button>
+                        </div>
 
                       {/* Additional info for students */}
                       {userProfile.account_type === "student" && (
@@ -683,6 +722,7 @@ export default function Profile() {
                           Following
                         </Text>
                       </div>
+                      
                     </div>
                   </div>
                   <div className="h-px bg-[#d9d9d9]" />

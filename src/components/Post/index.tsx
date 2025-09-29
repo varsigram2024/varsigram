@@ -39,6 +39,7 @@ interface Post {
   author_faculty?: string;
   author_department?: string;
   author_exclusive?: boolean;
+  author_pg_id?: string; 
   is_shared?: boolean;
   original_post?: Post;
   account_type: string;
@@ -106,6 +107,9 @@ export const Post: React.FC<PostProps> = ({
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
 
   
 
@@ -195,6 +199,203 @@ export const Post: React.FC<PostProps> = ({
       );
     }
   };
+
+
+
+
+
+// In the Post component, update the handleFollow function:
+
+const handleFollow = async () => {
+  if (!user || !token) {
+    toast.error("Please login to follow users.");
+    navigate("/welcome");
+    return;
+  }
+
+  try {
+    setIsFollowLoading(true);
+    
+    const follower_type = user.account_type || "student";
+    const follower_id = user.id;
+    const followee_type = post.account_type || "student";
+    
+    // Debug the author_pg_id and author_id to see what they contain
+    console.log("Follow debug - post author IDs:", {
+      author_pg_id: post.author_pg_id,
+      author_id: post.author_id,
+      author_pg_id_type: typeof post.author_pg_id,
+      author_id_type: typeof post.author_id
+    });
+
+    // Extract a single followee_id value
+    let followee_id;
+    
+    if (post.author_pg_id) {
+      // If author_pg_id is an array, take the first element
+      if (Array.isArray(post.author_pg_id)) {
+        followee_id = post.author_pg_id[0];
+        console.warn("author_pg_id is an array, using first element:", followee_id);
+      } else {
+        followee_id = post.author_pg_id;
+      }
+    } else if (post.author_id) {
+      // If author_id is an array, take the first element
+      if (Array.isArray(post.author_id)) {
+        followee_id = post.author_id[0];
+        console.warn("author_id is an array, using first element:", followee_id);
+      } else {
+        followee_id = post.author_id;
+      }
+    } else {
+      toast.error("Cannot follow: user information missing");
+      return;
+    }
+
+    // Ensure followee_id is a number (convert if it's a string)
+    if (typeof followee_id === 'string') {
+      followee_id = parseInt(followee_id, 10);
+      if (isNaN(followee_id)) {
+        toast.error("Invalid user ID format");
+        return;
+      }
+    }
+
+    console.log("Final follow attempt:", {
+      follower_type,
+      follower_id,
+      followee_type,
+      followee_id
+    });
+
+    if (isFollowing) {
+      // Unfollow logic
+      await axios.post(
+        `${API_BASE_URL}/users/unfollow/`,
+        { follower_type, follower_id, followee_type, followee_id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsFollowing(false);
+      toast.success("Unfollowed successfully");
+    } else {
+      // Follow logic
+      await axios.post(
+        `${API_BASE_URL}/users/follow/`,
+        { follower_type, follower_id, followee_type, followee_id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsFollowing(true);
+      toast.success("Followed successfully");
+    }
+  } catch (error: any) {
+    console.error("Follow error details:", {
+      error: error?.response?.data,
+      status: error?.response?.status,
+      fullError: error
+    });
+    
+    if (error.response?.status === 400) {
+      const errorData = error.response.data;
+      if (errorData.followee_id) {
+        toast.error(`Followee ID error: ${errorData.followee_id[0]}`);
+      } else {
+        toast.error(errorData.detail || errorData.message || "Invalid request");
+      }
+    } else {
+      toast.error("Failed to follow user");
+    }
+  } finally {
+    setIsFollowLoading(false);
+  }
+};
+
+// Update the follow status check useEffect:
+
+useEffect(() => {
+  const checkIfFollowing = async () => {
+    if (!token || !user?.id) {
+      console.log("Cannot check follow status: missing token or user ID");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/users/following/`,
+        {
+          params: {
+            follower_type: user.account_type || "student",
+            follower_id: user.id,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Follow status check - following list:", response.data);
+
+      // Extract a single author ID to compare against
+      let authorIdToCheck;
+      
+      if (post.author_pg_id) {
+        authorIdToCheck = Array.isArray(post.author_pg_id) ? post.author_pg_id[0] : post.author_pg_id;
+      } else if (post.author_id) {
+        authorIdToCheck = Array.isArray(post.author_id) ? post.author_id[0] : post.author_id;
+      } else {
+        console.log("No author ID available for follow check");
+        setIsFollowing(false);
+        return;
+      }
+
+      // Convert to number if it's a string
+      if (typeof authorIdToCheck === 'string') {
+        authorIdToCheck = parseInt(authorIdToCheck, 10);
+      }
+
+      const isUserFollowing = response.data.some((followingItem: any) => {
+        const followeeOrg = followingItem.followee_organization;
+        const followeeStudent = followingItem.followee_student;
+        const followee = followeeOrg || followeeStudent;
+        
+        if (!followee || !followee.user?.id) return false;
+        
+        // Compare using the PostgreSQL user ID
+        const followeeUserId = followee.user.id;
+        return followeeUserId === authorIdToCheck;
+      });
+      
+      console.log("Is user following?", isUserFollowing);
+      setIsFollowing(!!isUserFollowing);
+      
+    } catch (error) {
+      console.error("Error checking follow status:", error);
+      setIsFollowing(false);
+    }
+  };
+
+  checkIfFollowing();
+}, [token, user, post.author_pg_id, post.author_id]);
+
+
+
+
+// Add this debug useEffect to understand your post data structure
+useEffect(() => {
+  console.log("Post data structure for follow:", {
+    postId: post.id,
+    author_pg_id: post.author_pg_id,
+    author_id: post.author_id,
+    author_pg_id_type: typeof post.author_pg_id,
+    author_id_type: typeof post.author_id,
+    author_pg_id_is_array: Array.isArray(post.author_pg_id),
+    author_id_is_array: Array.isArray(post.author_id),
+    account_type: post.account_type,
+    author_name: post.author_name || post.author_display_name
+  });
+}, [post]);
+
+
+
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -498,29 +699,45 @@ export const Post: React.FC<PostProps> = ({
                   }}
                 />
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="font-semibold lg:text-[20px] text-[20px] text-[#750015] cursor-pointer hover:underline"
-                      onClick={() => {
-                        console.log(
-                          "Clicked name",
-                          post.author_display_name_slug
-                        );
-                        if (post.author_display_name_slug) {
-                          navigate(
-                            `/user-profile/${post.author_display_name_slug}`
-                          );
-                        }
-                      }}
-                    >
-                      {post.author_name || post.author_display_name}
-                    </span>
-                    {post.author_exclusive && (
-                      <img
-                        src="/images/vectors/verified.svg"
-                        alt="verified"
-                        className="h-[16px] w-[16px]"
-                      />
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="font-semibold lg:text-[20px] text-[14px] text-[#750015] cursor-pointer hover:underline"
+                        onClick={() => {
+                          console.log("Clicked name", post.author_display_name_slug);
+                          if (post.author_display_name_slug) {
+                            navigate(`/user-profile/${post.author_display_name_slug}`);
+                          }
+                        }}
+                      >
+                        {post.author_name || post.author_display_name}
+                      </span>
+                      {post.author_exclusive && (
+                        <img
+                          src="/images/vectors/verified.svg"
+                          alt="verified"
+                          className="h-[16px] w-[16px]"
+                        />
+                      )}
+                      
+                      {/* Add Follow Button - Only show if not the author and not already following */}
+                      {!isAuthor && token && !isFollowing && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFollow();
+                          }}
+                          disabled={isFollowLoading}
+                          className="ml-2 px-3 py-1 bg-[#750015] text-white text-[0.5rem] rounded-full hover:bg-[#5a0010] disabled:opacity-50 transition-colors"
+                      >
+                        {isFollowLoading ? "..." : "FOLLOW"}
+                      </button>
+                    )}
+                    
+                    {/* Show Following badge if already following */}
+                    {!isAuthor && token && isFollowing && (
+                      <span className="ml-2 px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">
+                        Following
+                      </span>
                     )}
                   </div>
                   {(post.author_faculty || post.author_department) && (

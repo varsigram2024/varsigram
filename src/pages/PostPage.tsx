@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../auth/AuthContext";
-import { Post as PostComponent } from "../components/Post.tsx";
+import { Post as PostComponent } from "../components/Post/index.tsx";
 import { Text } from "../components/Text";
 import { Img } from "../components/Img";
 import { toast } from "react-hot-toast";

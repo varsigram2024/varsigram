@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Img } from '../Img';
-import { Post } from '../Post.tsx';
+import { Post } from '../Post/index.tsx';
 import { faculties, facultyDepartments } from '../../constants/academic';
 
 interface SearchProps {
