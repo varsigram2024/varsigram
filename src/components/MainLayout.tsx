@@ -8,20 +8,39 @@ export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [showBackButton, setShowBackButton] = useState(false);
+  const isMobile = window.innerWidth < 768;
 
-  // Determine if back button should be shown
   useEffect(() => {
     const pathsWithoutBackButton = ['/home', '/welcome', '/chat', '/connections', '/notifications'];
     setShowBackButton(!pathsWithoutBackButton.includes(location.pathname));
-  }, [location.pathname]);
+    
+    // Store current path for back navigation
+    if (isMobile) {
+      const visitedPaths = JSON.parse(sessionStorage.getItem('mobileVisitedPaths') || '[]');
+      visitedPaths.push(location.pathname);
+      sessionStorage.setItem('mobileVisitedPaths', JSON.stringify(visitedPaths));
+    }
+  }, [location.pathname, isMobile]);
 
   const handleBack = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1); // Go back in history
+  const isMobile = window.innerWidth < 768;
+
+  if (isMobile) {
+    // Try browser back first, then fallback to home
+    if (window.history.length > 1) {
+      window.history.back();
     } else {
-      navigate('/home'); // Fallback to home if no history
+      navigate('/home');
     }
-  };
+  } else {
+    // Desktop - use React Router navigation
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/home');
+    }
+  }
+};
 
   return (
     <div className="flex items-start justify-center w-full relative bg-[#f6f6f6] min-h-screen">

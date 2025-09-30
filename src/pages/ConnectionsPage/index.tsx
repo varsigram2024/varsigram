@@ -15,7 +15,6 @@ import BottomNav from "../../components/BottomNav/index.tsx";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../auth/AuthContext';
-import { ClickableUser } from "../../components/ClickableUser";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 interface User {

@@ -19,7 +19,7 @@ interface Notification {
     type: string;
     post_id?: string;
     comment_id?: string;
-    follower_id?: string;
+    follower_display_name_slug?: string; // Add this field
     liker_id?: string;
     commenter_id?: string;
   } | null;
@@ -30,12 +30,12 @@ interface Notification {
     id: number;
     username: string;
     profile_pic_url: string | null;
+    follower_display_name_slug?: string; // Add this field
   };
   post?: {
     id: string;
     content: string;
   };
-  
 }
 
 export default function NotificationsPage() {
@@ -64,15 +64,25 @@ export default function NotificationsPage() {
 };
 
 
-     const handleNotificationItemClick = async (notification: Notification) => {
-    // Mark as read if not already read
-    if (!notification.is_read) {
-      await markAsRead(notification.id);
-    }
-    
-    // Handle navigation
-    handleNotificationClick(notification);
-  };
+  const handleNotificationItemClick = async (notification: Notification) => {
+  console.log('=== NOTIFICATION ITEM CLICK DEBUG ===');
+  console.log('Notification clicked:', notification);
+  console.log('Notification ID:', notification.id);
+  console.log('Is read:', notification.is_read);
+  console.log('Notification data:', notification.data);
+  
+  // Mark as read if not already read
+  if (!notification.is_read) {
+    console.log('Marking notification as read...');
+    await markAsRead(notification.id);
+  } else {
+    console.log('Notification already read, skipping mark as read');
+  }
+  
+  // Handle navigation
+  console.log('Calling handleNotificationClick...');
+  handleNotificationClick(notification);
+};
 
 
   // Combine fetching notifications and unread count

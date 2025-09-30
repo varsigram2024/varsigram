@@ -8,7 +8,6 @@ import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import { Input } from "../../components/Input/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
-import { Share } from "lucide-react";
 import ProfileOrganizationSection from "./ProfilepageOrganizationSection.tsx";
 import BottomNav from "../../components/BottomNav/index.tsx";
 import { useAuth } from "../../auth/AuthContext";
@@ -17,7 +16,7 @@ import { ClickableUser } from "../../components/ClickableUser";
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post/index.tsx";
 import { uploadProfilePicture } from "../../utils/fileUpload.ts";
-import { Pencil, Save } from "lucide-react";
+import { Pencil, Save, Share, Users, X } from "lucide-react"; // Added missing imports
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -81,11 +80,29 @@ interface UserProfile {
   exclusive?: boolean;
 }
 
-// const makeProfilePicUrl = (url: string) => {
-//   if (!url) return "/images/user.png";
-//   if (url.startsWith("http")) return url; console.log(url)
-//   return `https://storage.googleapis.com/versigram-pd.firebasestorage.app/${url}`;
-// };
+// Add the missing interface
+interface FollowerFollowingUser {
+  id: number;
+  user?: {
+    id: number;
+    email: string;
+    username: string;
+    profile_pic_url: string;
+    bio: string;
+    is_verified: boolean;
+  };
+  name?: string;
+  organization_name?: string;
+  faculty?: string;
+  department?: string;
+  display_name_slug: string;
+  account_type: "student" | "organization";
+  profile_pic_url?: string;
+  email?: string;
+  username?: string;
+  bio?: string;
+  is_verified?: boolean;
+}
 
 // Update component to accept props
 export default function Profile() {
@@ -100,12 +117,182 @@ export default function Profile() {
   const { user, token, updateUser } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { display_name_slug } = useParams(); // Change from username to display_name_slug
+  const { display_name_slug } = useParams();
   const navigate = useNavigate();
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
+  const [followers, setFollowers] = useState<FollowerFollowingUser[]>([]);
+  const [following, setFollowing] = useState<FollowerFollowingUser[]>([]);
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
+  
+  // Add missing state variables
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
+
+  // Add missing functions
+  const handleOpenFollowers = () => {
+    setShowFollowersModal(true);
+    fetchFollowers();
+  };
+
+  const handleOpenFollowing = () => {
+    setShowFollowingModal(true);
+    fetchFollowing();
+  };
+
+  const handleFollowInModal = async (targetUserId: number, targetUserType: "student" | "organization", isCurrentlyFollowing: boolean) => {
+    if (!user || !token) return;
+
+    try {
+      const payload = {
+        follower_type: user.account_type,
+        follower_id: user.id,
+        followee_type: targetUserType,
+        followee_id: targetUserId
+      };
+
+      if (isCurrentlyFollowing) {
+        await axios.post(
+          `${API_BASE_URL}/users/unfollow/`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Unfollowed successfully");
+      } else {
+        await axios.post(
+          `${API_BASE_URL}/users/follow/`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Followed successfully");
+      }
+
+      // Refresh the lists
+      if (showFollowersModal) fetchFollowers();
+      if (showFollowingModal) fetchFollowing();
+      
+    } catch (error) {
+      toast.error("Failed to update follow status");
+    }
+  };
+
+  const handleNavigateToProfile = (displayNameSlug: string) => {
+    navigate(`/profile/${displayNameSlug}`);
+    setShowFollowersModal(false);
+    setShowFollowingModal(false);
+  };
+
+  const handleShareProfile = async () => {
+    if (!userProfile) return;
+
+    const profileUrl = `${window.location.origin}/profile/${userProfile.display_name_slug}`;
+    const shareText = `Check out ${userProfile.name || userProfile.organization_name || userProfile.username}'s profile on Varsigram!`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${userProfile.name || userProfile.organization_name || userProfile.username}'s Profile`,
+          text: shareText,
+          url: profileUrl,
+        });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(profileUrl);
+        toast.success('Profile link copied to clipboard!');
+      } else {
+        alert(`Share this profile: ${profileUrl}`);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        toast.error('Failed to share profile');
+      }
+    }
+  };
+
+  // Add the fetchFollowers and fetchFollowing functions
+  const fetchFollowers = async () => {
+    if (!userProfile || !token) return;
+    
+    setIsLoadingFollowers(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/users/followers/`,
+        {
+          params: {
+            followee_type: userProfile.account_type,
+            followee_id: userProfile.id
+          },
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      console.log("Followers response:", response.data);
+      
+      const processedData = response.data.map((item: any) => {
+        if (item.user) {
+          return {
+            ...item,
+            profile_pic_url: item.user.profile_pic_url,
+            email: item.user.email,
+            username: item.user.username,
+            bio: item.user.bio,
+            is_verified: item.user.is_verified
+          };
+        }
+        return item;
+      });
+      
+      setFollowers(processedData);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      toast.error("Failed to load followers");
+    } finally {
+      setIsLoadingFollowers(false);
+    }
+  };
+
+  const fetchFollowing = async () => {
+    if (!userProfile || !token) return;
+    
+    setIsLoadingFollowing(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/users/following/`,
+        {
+          params: {
+            follower_type: userProfile.account_type,
+            follower_id: userProfile.id
+          },
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      console.log("Following response:", response.data);
+      
+      const processedData = response.data.map((item: any) => {
+        if (item.user) {
+          return {
+            ...item,
+            profile_pic_url: item.user.profile_pic_url,
+            email: item.user.email,
+            username: item.user.username,
+            bio: item.user.bio,
+            is_verified: item.user.is_verified
+          };
+        }
+        return item;
+      });
+      
+      setFollowing(processedData);
+    } catch (error) {
+      console.error("Error fetching following:", error);
+      toast.error("Failed to load following");
+    } finally {
+      setIsLoadingFollowing(false);
+    }
+  };
+
 
   const handleNavigation = (path: string) => {
     navigate(`/${path}`);
@@ -205,115 +392,208 @@ export default function Profile() {
     }
   };
 
-  const handleShareProfile = async () => {
-  if (!userProfile) return;
+  const handleClearSearch = () => setSearchBarValue("");
 
-  const profileUrl = `${window.location.origin}/profile/${userProfile.display_name_slug}`;
-  const shareText = `Check out ${userProfile.name || userProfile.organization_name || userProfile.username}'s profile on Varsigram!`;
+const handleProfilePicClick = () => {
+  fileInputRef.current?.click();
+};
+
+const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file || !userProfile) return;
 
   try {
-    if (navigator.share) {
-      // Use Web Share API if available (mobile devices)
-      await navigator.share({
-        title: `${userProfile.name || userProfile.organization_name || userProfile.username}'s Profile`,
-        text: shareText,
-        url: profileUrl,
-      });
-    } else if (navigator.clipboard) {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(profileUrl);
-      toast.success('Profile link copied to clipboard!');
-    } else {
-      // Final fallback: show the URL in an alert
-      alert(`Share this profile: ${profileUrl}`);
-    }
-  } catch (error) {
-    // User canceled the share or an error occurred
-    if (error instanceof Error && error.name !== 'AbortError') {
-      console.error('Error sharing:', error);
-      toast.error('Failed to share profile');
-    }
+    setIsUploading(true);
+    const jwtToken = token;
+    const public_download_url = await uploadProfilePicture(
+      file,
+      jwtToken,
+      userProfile.account_type
+    );
+    toast.success("Profile picture uploaded successfully!");
+    await fetchUserData();
+  } catch (error: any) {
+    toast.error(error.message || "Failed to upload profile picture.");
+  } finally {
+    setIsUploading(false);
   }
 };
 
-  const handleClearSearch = () => setSearchBarValue("");
-
-  const handleProfilePicClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file || !userProfile) return;
-
-    try {
-      setIsUploading(true);
-      const jwtToken = token;
-      const public_download_url = await uploadProfilePicture(
-        file,
-        jwtToken,
-        userProfile.account_type
-      );
-      toast.success("Profile picture uploaded successfully!");
-      await fetchUserData();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to upload profile picture.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const fetchUserData = async () => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/profile/${display_name_slug}/`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data && response.data.profile) {
-        const { profile_type, profile, followers_count, following_count } =
-          response.data;
-        setUserProfile({
-          id: profile.user.id,
-          email: profile.user.email,
-          username: profile.user.username,
-          profile_pic_url: profile.user.profile_pic_url,
-          bio: profile.user.bio,
-          is_verified: profile.user?.is_verified || false,
-          followers_count:
-            typeof followers_count === "number" ? followers_count : 0,
-          following_count:
-            typeof following_count === "number" ? following_count : 0,
-          account_type: profile_type,
-          name: profile.name,
-          organization_name: profile.organization_name,
-          faculty: profile.faculty,
-          department: profile.department,
-          year: profile.year,
-          religion: profile.religion,
-          phone_number: profile.phone_number,
-          sex: profile.sex,
-          university: profile.university,
-          date_of_birth: profile.date_of_birth,
-          display_name_slug: profile.display_name_slug,
-          exclusive: profile.exclusive,
-        });
-      } else {
-        setUserProfile(null);
+const fetchUserData = async () => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/profile/${display_name_slug}/`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
-    } catch (error) {
+    );
+
+    if (response.data && response.data.profile) {
+      const { profile_type, profile, followers_count, following_count } =
+        response.data;
+      setUserProfile({
+        id: profile.user.id,
+        email: profile.user.email,
+        username: profile.user.username,
+        profile_pic_url: profile.user.profile_pic_url,
+        bio: profile.user.bio,
+        is_verified: profile.user?.is_verified || false,
+        followers_count:
+          typeof followers_count === "number" ? followers_count : 0,
+        following_count:
+          typeof following_count === "number" ? following_count : 0,
+        account_type: profile_type,
+        name: profile.name,
+        organization_name: profile.organization_name,
+        faculty: profile.faculty,
+        department: profile.department,
+        year: profile.year,
+        religion: profile.religion,
+        phone_number: profile.phone_number,
+        sex: profile.sex,
+        university: profile.university,
+        date_of_birth: profile.date_of_birth,
+        display_name_slug: profile.display_name_slug,
+        exclusive: profile.exclusive,
+      });
+    } else {
       setUserProfile(null);
-    } finally {
-      setIsLoading(false);
     }
+  } catch (error) {
+    setUserProfile(null);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// Replace the entire UsersListModal component with this correct implementation:
+
+const UsersListModal = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  users, 
+  isLoading, 
+  onUserClick,
+  onFollowClick,
+  currentUserId 
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  users: FollowerFollowingUser[];
+  isLoading: boolean;
+  onUserClick: (displayNameSlug: string) => void;
+  onFollowClick: (userId: number, userType: "student" | "organization", isFollowing: boolean) => void;
+  currentUserId?: string;
+}) => {
+  if (!isOpen) return null;
+
+  // Helper function to get profile picture URL safely
+  const getProfilePicUrl = (userItem: FollowerFollowingUser) => {
+    const url = userItem.profile_pic_url || userItem.user?.profile_pic_url;
+    return url && url.startsWith("http") ? url : "/images/user.png";
   };
+
+  // Helper function to get display name safely
+  const getDisplayName = (userItem: FollowerFollowingUser) => {
+    return userItem.name || userItem.organization_name || userItem.user?.username || userItem.username || 'Unknown User';
+  };
+
+  // Helper function to get user ID safely
+  const getUserId = (userItem: FollowerFollowingUser) => {
+    return userItem.user?.id || userItem.id;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <Heading size="h3_semibold" as="h2" className="text-[20px]">
+            {title}
+          </Heading>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Users List */}
+        <div className="overflow-y-auto max-h-[60vh]">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users size={48} className="mx-auto mb-2 text-gray-300" />
+              <Text>No {title.toLowerCase()} found</Text>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {users.map((userItem) => (
+                <div
+                  key={userItem.id}
+                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <div 
+                    className="flex items-center gap-3 flex-1"
+                    onClick={() => onUserClick(userItem.display_name_slug)}
+                  >
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                      <Img
+                        src={getProfilePicUrl(userItem)}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Text as="p" className="font-semibold text-gray-900 truncate">
+                        {getDisplayName(userItem)}
+                      </Text>
+                      {userItem.account_type === "student" && userItem.faculty && (
+                        <Text as="p" className="text-sm text-gray-500 truncate">
+                          {userItem.faculty}
+                          {userItem.department && ` • ${userItem.department}`}
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Follow/Unfollow button - only show if not current user */}
+                  {currentUserId && getUserId(userItem).toString() !== currentUserId && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // For now, we'll assume the user is not following
+                        // In a real implementation, you'd track this state per user
+                        onFollowClick(userItem.id, userItem.account_type, false);
+                      }}
+                      className={`px-4 py-1 rounded-full text-sm font-semibold transition-colors ${
+                        false // Replace with actual following state
+                          ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          : "bg-[#750015] text-white hover:bg-[#a0001f]"
+                      }`}
+                    >
+                      {false ? "Unfollow" : "Follow"} {/* Replace with actual following state */}
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
   useEffect(() => {
     if (token) {
@@ -323,38 +603,10 @@ export default function Profile() {
     }
   }, [token]);
 
-  useEffect(() => {
-    if (!userProfile || !token) return;
-    axios
-      .get(
-        `${API_BASE_URL}/users/following/?follower_type=${userProfile.account_type}&follower_id=${userProfile.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then((response) => {
-        console.log("/following/ on user-profile page:", response.data);
-        setFollowing(response.data);
-      })
-      .catch((error) => {
-        console.error(
-          "Error fetching /following/ on user-profile page:",
-          error
-        );
-      });
-  }, [userProfile, token]);
+ 
 
-  useEffect(() => {
-    const fetchFollowers = async () => {
-      if (!userProfile) return;
-      // now safe to use userProfile.account_type
-    };
-    if (token && userProfile?.organization_name) {
-      fetchFollowers();
-    }
-  }, [token, userProfile?.organization_name]);
 
-  useEffect(() => {
-    console.log("Followers array:", followers);
-  }, [followers]);
+
 
   // Add intersection observer for infinite scrolling
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -471,7 +723,7 @@ export default function Profile() {
   ]);
 
   return (
-    <div className="flex flex-col items-center justify-start w-full bg-white animate-fade-in">
+    <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
       <div className="flex w-full items-start justify-center bg-white">
         
 
@@ -708,21 +960,30 @@ export default function Profile() {
                         </Button>
                       )}
 
-                      <div className="flex flex-wrap gap-6">
-                        <Text as="p" className="text-[16px] font-normal">
-                          <span className="font-semibold">
-                            {userProfile.followers_count}
-                          </span>{" "}
-                          Followers
-                        </Text>
-                        <Text as="p" className="text-[16px] font-normal">
-                          <span className="font-semibold">
-                            {userProfile.following_count}
-                          </span>{" "}
-                          Following
-                        </Text>
-                      </div>
-                      
+                       <div className="flex flex-wrap gap-6">
+                          <button
+                            onClick={handleOpenFollowers}
+                            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                          >
+                            <Text as="p" className="text-[16px] font-normal">
+                              <span className="font-semibold">
+                                {userProfile.followers_count}
+                              </span>{" "}
+                              Followers
+                            </Text>
+                          </button>
+                          <button
+                            onClick={handleOpenFollowing}
+                            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                          >
+                            <Text as="p" className="text-[16px] font-normal">
+                              <span className="font-semibold">
+                                {userProfile.following_count}
+                              </span>{" "}
+                              Following
+                            </Text>
+                          </button>
+                        </div>
                     </div>
                   </div>
                   <div className="h-px bg-[#d9d9d9]" />
@@ -731,7 +992,7 @@ export default function Profile() {
                 <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
                   <div className="text-[20px] font-semibold">
                     My Posts
-                    <div className="h-[1px] w-20 bg-[#750015]"></div>
+                    <div className="h-[3px] w-20 bg-[#750015]"></div>
                   </div>
                 </div>
 
@@ -846,6 +1107,29 @@ export default function Profile() {
 
         {/* <BottomNav /> */}
       </div>
-    </div>
+
+      {/* Modals - placed at the bottom */}
+    <UsersListModal
+      isOpen={showFollowersModal}
+      onClose={() => setShowFollowersModal(false)}
+      title="Followers"
+      users={followers}
+      isLoading={isLoadingFollowers}
+      onUserClick={handleNavigateToProfile}
+      onFollowClick={handleFollowInModal}
+      currentUserId={user?.id}
+    />
+
+    <UsersListModal
+      isOpen={showFollowingModal}
+      onClose={() => setShowFollowingModal(false)}
+      title="Following"
+      users={following}
+      isLoading={isLoadingFollowing}
+      onUserClick={handleNavigateToProfile}
+      onFollowClick={handleFollowInModal}
+      currentUserId={user?.id}
+    />
+  </div>
   );
 }

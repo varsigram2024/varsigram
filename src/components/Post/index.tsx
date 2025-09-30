@@ -9,7 +9,6 @@ import { storage } from "../../firebase/config";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { MoreVertical, Edit, Trash2 } from "lucide-react";
-import { ClickableUser } from "../ClickableUser";
 import { useNavigate, useLocation } from "react-router-dom";
 import CommentSection from "../CommentSection";
 import { useAuth } from "../../auth/AuthContext";
@@ -641,16 +640,13 @@ useEffect(() => {
   const shouldShowReadMore = post.content.length > 200;
 
   const handleCommentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const postPagePath = `/posts/${post.id}`;
-    if (location.pathname !== postPagePath) {
-      navigate(postPagePath, { state: { backgroundLocation: location } });
-    } else {
-      setShowComments(true);
-    }
-  };
+  e.stopPropagation();
+  const postPagePath = `/posts/${post.id}`;
+  
+  // Always navigate to the post page as a full page, not as modal
+  navigate(postPagePath);
+};
 
-  console.log("Post props in Post.tsx:", post);
 
   // Helper function to make links clickable
   const makeLinksClickable = (text: string) => {
@@ -912,23 +908,20 @@ useEffect(() => {
               <span>{post.view_count || 0}</span>
             </div>
 
-            {/* Comment button */}
-            <div 
-              className={`flex items-center gap-2 ${token ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} 
-              onClick={token ? handleCommentClick : () => {
-                toast.error('Please sign up to view comments');
-                navigate('/welcome');
-              }}
-            >
-              <Img
-                src="/images/vectors/vars.svg"
-                alt="Comment"
-                className="h-[20px] w-[20px]"
-              />
-              <Text as="p" className="text-[14px] font-normal">
-                {post.comment_count}
-              </Text>
-            </div>
+              {/* Comment button */}
+                <div 
+                  className="flex items-center gap-2 cursor-pointer" 
+                  onClick={handleCommentClick}
+                >
+                  <Img
+                    src="/images/vectors/vars.svg"
+                    alt="Comment"
+                    className="h-[20px] w-[20px]"
+                  />
+                  <Text as="p" className="text-[14px] font-normal">
+                    {post.comment_count}
+                  </Text>
+                </div>
 
             {/* Share button */}
             <div className="relative">
