@@ -83,7 +83,7 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen w-full bg-green-100">
+      <div className="flex items-center justify-center h-screen w-full bg-white">
         <div className="flex flex-col items-center space-y-4">
           <svg
           width="64"
