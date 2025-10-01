@@ -43,10 +43,7 @@ export const Login = () => {
     console.log("Submitting login with:", formData);
     try {
       await login(formData.email, formData.password);
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      
-    } finally {
+    }  finally {
       setIsLoading(false);
     }
     try {

@@ -1,3 +1,4 @@
+
 # VARSIGRAM BACKEND
 
 # API Documentation
@@ -18,7 +19,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
 ### User Authentication and Management
 
-*   **`GET /welcome/`**  [name='welcome']
+*   **`GET /welcome/`**  [name='welcome']
 
     *   Description: Welcomes the user to the API.
     *   Request: `GET`
@@ -27,7 +28,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
         {"message": "Welcome to the API!"}
         ```
 
-*   **`POST /register/`**  [name='user register']
+*   **`POST /register/`**  [name='user register']
 
     *   Description: Registers a new user (student or organization).
     *   Request: `POST`
@@ -57,7 +58,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     *   Response (201 Created): Returns a JWT token and a success message.
     *   Response (400 Bad Request): If registration fails (e.g., invalid input, email already exists, both student and organization provided, or neither).
 
-*   **`POST /login/`**  [name='login']
+*   **`POST /login/`**  [name='login']
 
     *   Description: Logs in an existing user.
     *   Request: `POST`
@@ -71,14 +72,14 @@ Most endpoints require authentication. Authentication is handled using token-bas
     *   Response (200 OK): Returns a JWT token and a success message.
     *   Response (401 Unauthorized): If login fails (e.g., incorrect credentials).
 
-*   **`POST /logout/`**  [name='logout']
+*   **`POST /logout/`**  [name='logout']
 
     *   Description: Logs out the current user (invalidates the token).
     *   Request: `POST`
     *   Authentication: Required
     *   Response (200 OK): On successful logout.
 
-*   **`POST /password-reset/`**  [name='password-reset']
+*   **`POST /password-reset/`**  [name='password-reset']
 
     *   Description: Initiates the password reset process by sending a reset link to the user's email.
     *   Request: `POST`
@@ -90,7 +91,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): On successful email send.
 
-*   **`POST /password-reset-confirm/`**  [name='password-reset-confirm']
+*   **`POST /password-reset-confirm/`**  [name='password-reset-confirm']
 
     *   Description: Confirms the password reset with the provided `uid` and `token` received via email and the new password.
     *   Request: `POST`
@@ -106,7 +107,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     *   Response (204 No Content): On successful password reset.
     *   Response (400 Bad Request): If the `uid`, `token`, or new password are invalid or if the reset process fails.
 
-*   **`PUT /student/update/`**  [name='student-update']
+*   **`PUT /student/update/`**  [name='student-update']
 
     *   Description: Updates the authenticated student user's profile.
     *   Request: `PUT`
@@ -114,7 +115,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     *   Request Body (JSON): (Only the fields to be updated are required)
     *   Response (200 OK): Returns updated student profile data.
 
-*   **`PUT /organization/update/`**  [name='organization-update']
+*   **`PUT /organization/update/`**  [name='organization-update']
 
     *   Description: Updates the authenticated organization user's profile.
     *   Request: `PUT`
@@ -122,7 +123,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
     *   Request Body (JSON): (Only the fields to be updated are required)
     *   Response (200 OK): Returns updated organization profile data.
 
-*   **`POST /change-password/`**  [name='change-password']
+*   **`POST /change-password/`**  [name='change-password']
 
     *   Description: Changes the authenticated user's password.
     *   Request: `POST`
@@ -137,7 +138,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): On successful password change.
 
-*   **`GET /profile/`**  [name='user-profile']
+*   **`GET /profile/`**  [name='user-profile']
 
     *   Description: Retrieves the authenticated user's profile (student or organization).
     *   Request: `GET`
@@ -148,7 +149,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
 ## 🌐 API Endpoint Documentation: User Search
 
-  * **`GET /users/search/`**  \[name='user-search']
+  * **`GET /users/search/`**  \[name='user-search']
 
       * **Description**: Search for users (students or organizations) using filters such as name, faculty, and department. This endpoint searches both **Student** and **Organization** models and returns a unified, **paginated** result set.
       * **Request**: `GET`
@@ -202,7 +203,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
   * **Search Type**: All searches are **case-insensitive** and support **partial matches**.
   * **Pagination**: The default page size is **10**, and the maximum allowed page size is **50**.
 
-*   **`POST /deactivate/`**  [name='user-deactivate']
+*   **`POST /deactivate/`**  [name='user-deactivate']
 
     *   Description: Deactivates the authenticated user's account.
     *   Request: `POST`
@@ -215,7 +216,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): On successful deactivation.
 
-*   **`POST /reactivate/`**  [name='user-reactivate']
+*   **`POST /reactivate/`**  [name='user-reactivate']
 
     *   Description: Reactivates the authenticated user's account.
     *   Request: `POST`
@@ -228,14 +229,14 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): On successful reactivation.
 
-*   **`POST /send-otp/`**  [name='send-otp']
+*   **`POST /send-otp/`**  [name='send-otp']
 
     *   Description: Sends an OTP to the user's registered email.
     *   Request: `POST`
     *   Authentication: Required
     *   Response (200 OK): On successful OTP send.
 
-*   **`POST /verify-otp/`**  [name='verify-otp']
+*   **`POST /verify-otp/`**  [name='verify-otp']
 
     *   Description: Verifies the provided OTP.
     *   Request: `POST`
@@ -248,14 +249,14 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): On successful verification.
 
-*   **`GET /check-verification/`**  [name='check-verification']
+*   **`GET /check-verification/`**  [name='check-verification']
 
     *   Description: Checks the verification status of a user.
     *   Request: `GET`
     *   Authentication: Required
     *   Response (200 OK): Returns verification status.
 
-*   **`POST /get-signed-upload-url/`**  [name='get-signed-upload-url']
+*   **`POST /get-signed-upload-url/`**  [name='get-signed-upload-url']
 
     *   Description: Returns a signed URL for uploading files (e.g., profile pictures) to Firebase Storage.
     *   Request: `POST`
@@ -269,7 +270,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): Returns the signed upload URL and file path.
 
-*   **`GET /profile/<slug:slug>/`**  [name='public-profile']
+*   **`GET /profile/<slug:slug>/`**  [name='public-profile']
 
     *   Description: Retrieves a user's public profile by `display_name_slug`.
     *   Request: `GET`
@@ -307,7 +308,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 
 ### Posts
 
-*   **`GET /posts/`**  [name='post-list-firestore']
+*   **`GET /posts/`**  [name='post-list-firestore']
 
     *   Description: Retrieves a paginated list of all posts from Firestore, ordered by `timestamp` (most recent first).
     *   Request: `GET`
@@ -358,7 +359,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 - Each post includes hydrated author information in the response context.
 - If authenticated, the `has_liked` field reflects whether the current user has
 
-*  **`POST /posts/`**  [name='post-list-create']
+*  **`POST /posts/`**  [name='post-list-create']
 
     *   **POST**: Creates a new post.
     *   Authentication: Required for POST.
@@ -372,13 +373,13 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (201 Created): Returns the created post.
 
-*   **`GET /posts/<str:post_id>/`**  [name='post-detail']
+*   **`GET /posts/<str:post_id>/`**  [name='post-detail']
 
     *   Retrieves a specific post by its ID.
     *   Request: GET
     *   Response (200 OK): Returns the post data.
 
-*   **`PUT /posts/<str:post_id>/`**  [name='post-detail']
+*   **`PUT /posts/<str:post_id>/`**  [name='post-detail']
 
     *   Updates a specific post.
     *   Authentication: Required
@@ -391,30 +392,30 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): Returns the updated post.
 
-*   **`DELETE /posts/<str:post_id>/`**  [name='post-detail']
+*   **`DELETE /posts/<str:post_id>/`**  [name='post-detail']
 
     *   Deletes a specific post.
     *   Authentication: Required
     *   Response (204 No Content): On successful deletion.
 
 
-*   **`POST /posts/<str:post_id>/like/`**  [name='post-like']
+*   **`POST /posts/<str:post_id>/like/`**  [name='post-like']
 
     *   Likes a specific post.
     *   Authentication: Required
 
-*   **`GET /posts/<str:post_id>/likes/`**  [name='post-likes-list']
+*   **`GET /posts/<str:post_id>/likes/`**  [name='post-likes-list']
 
     *   Retrieves likes for a specific post.
     *   Request: GET
 
-*   **`POST /posts/<str:post_id>/share/`**  [name='post-share']
+*   **`POST /posts/<str:post_id>/share/`**  [name='post-share']
 
     *   Shares a specific post.
     *   Authentication: Required
     *   Response (201 Created): Returns the share object.
 
-*   **`GET /users/<str:user_id>/posts/`**  [name='user-posts-firestore']
+*   **`GET /users/<str:user_id>/posts/`**  [name='user-posts-firestore']
 
     *   Description: Retrieves all posts authored by a specific user, including posts the user has shared. Supports cursor-based pagination.
     *   Request: `GET`
@@ -475,7 +476,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 - If authenticated, the `has_liked`
 
 
-*   **`GET /official`**  [name='exclusive-orgs-recent-posts']
+*   **`GET /official`**  [name='exclusive-orgs-recent-posts']
 
     *   Description: Retrieves recent posts from organizations marked as `exclusive=True`. Supports cursor-based pagination.
     *   Request: `GET`
@@ -745,7 +746,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 - This does not affect like
 
 <!-- 
-*   **`GET /trending/`**  [name='trending-posts']
+*   **`GET /trending/`**  [name='trending-posts']
 
     *   Retrieves trending posts (based on likes, shares, or other criteria).
     *   Request: GET
@@ -867,7 +868,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
 ...
 ### Organization Verification
 
-*   **`GET /verified-org-badge/`**  [name='verified-org-badge']
+*   **`GET /verified-org-badge/`**  [name='verified-org-badge']
 
     *   Description: Checks if the authenticated organization is both exclusive and verified.
     *   Request: `GET`
@@ -951,3 +952,84 @@ Most endpoints require authentication. Authentication is handled using token-bas
 - Devices must be registered to receive push notifications.
 - Unregistering a device disables notifications for that device only.
 - Only the authenticated user can register or unregister their own devices.
+
+**NOTIFICATION DATA PAYLOAD**
+
+## I. Standard Payload Fields
+
+All notifications contain these fields, with the required values being context-specific. The client should primarily use the **`type`** field to determine the necessary routing logic.
+
+| Field Name | Type | Description | Purpose for Client Routing |
+| :--- | :--- | :--- | :--- |
+| **`type`** | `string` | Defines the specific **event** that occurred (e.g., `'comment'`, `'like'`, `'follow'`, `'new_post'`). | **Primary discriminator** for client-side routing logic. |
+| **`post_id`** | `string` | The **Firestore ID** of the target post. | Used to build the deep-link path: `/posts/:post_id`. |
+| **`comment_id`** | `string` | The **Firestore ID** of a new comment or reply. | **Contextual cue**: Used to scroll to or highlight the specific comment on the Post Screen. |
+| **`follower_id`** | `string` | The **PostgreSQL ID** of the user who initiated a follow. | Used for redirection to a User Profile Screen: `/profile/:user_id`. |
+| **`commenter_id` / `liker_id`** | `string` | PostgreSQL ID of the user who performed the action. | Used for display or secondary profile lookup. |
+
+---
+
+## II. Client Redirection Logic by Event Type
+
+The client application's router should switch on the value of the **`type`** field to determine the correct target route.
+
+### 1. New Comment or Reply (`type: 'comment'` or `'reply'`)
+
+This notification redirects the user to the parent post and highlights the new comment.
+
+| Field Used | Action | Client Route Structure |
+| :--- | :--- | :--- |
+| **`post_id`** | Direct to the Post Screen. | `/posts/:post_id` |
+| **`comment_id`** | Pass as a query parameter for scrolling/highlighting. | `?commentId=:comment_id` |
+
+**Example Server Payload:**
+```json
+{
+    "type": "comment",
+    "post_id": "fskj34klj5h6g7f8d9s0a1",
+    "comment_id": "a1b2c3d4e5f6g7h8i9j0k1",
+    "commenter_id": "23456789-abcd-efgh-ijkl-1234567890ab"
+}
+
+### 2. Post Like or New Post (type: 'like' or 'new_post')
+
+These actions redirect the user directly to the target post.
+
+Field Used	Action	Client Route Structure
+post_id	Direct to the Post Screen.	/posts/:post_id
+
+
+**Example Server Payload (Like):**
+
+
+```json
+{
+    "type": "like",
+    "post_id": "fskj34klj5h6g7f8d9s0a1",
+    "liker_id": "23456789-abcd-efgh-ijkl-1234567890ab" 
+}
+
+### 3. New Follow (type: 'follow')
+
+This action redirects the user to the profile of the user who initiated the follow (the follower).
+
+Field Used	Action	Client Route Structure
+follower_display_name_slug	Direct to the User Profile Screen.	/profile/:follower_display_name_slug
+
+
+**Example Server Payload:**
+
+```json
+{
+    "type": "follow",
+    "follower_id": "12345678-abcd-efgh-ijkl-000000000001",
+    "follower_name": "ashdcugwiugwrf",
+    "follower_display_name_slug": "dshwydyd-1"
+}
+
+## III. Client Implementation Notes
+- Prioritization: The client should prioritize deep-linking based on the presence of the necessary ID fields. The check should prioritize follower_id for 'follow' events, and post_id for all others.
+
+- Route Construction: The client must dynamically construct the route path, appending optional query parameters (?commentId=...) only when the corresponding ID is present.
+
+- Fallback: If the notification data lacks the required ID for a deep link, the application should fall back to a safe route, such as the main /notifications screen or the Home Feed.

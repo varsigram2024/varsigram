@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../auth/AuthContext";
-import { Post as PostComponent } from "../components/Post.tsx";
+import { Post as PostComponent } from "../components/Post/index.tsx";
 import { Text } from "../components/Text";
 import { Img } from "../components/Img";
 import { toast } from "react-hot-toast";
@@ -361,7 +361,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 };
 
 // Main PostPage component
-export default function PostPage({ isModal = false }) {
+export default function PostPage() {
   const { id } = useParams<{ id: string }>();
   const { token, user, isLoading: authLoading } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
@@ -382,7 +382,7 @@ export default function PostPage({ isModal = false }) {
   const [commentsHasMore, setCommentsHasMore] = useState(true);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
-  useEffect(() => {
+   useEffect(() => {
     if (location.state) {
       const { scrollToComment, highlightComment } = location.state;
       if (scrollToComment) {
@@ -412,8 +412,6 @@ export default function PostPage({ isModal = false }) {
     }
   }, [scrollToComment, comments]);
 
-  // Add a media query for mobile
-  const isMobile = window.innerWidth <= 640;
 
   useEffect(() => {
     if (!id) {
@@ -564,17 +562,14 @@ export default function PostPage({ isModal = false }) {
     setReplyText(`@${authorName} `);
   };
 
-  const handleBack = () => {
-    if (isModal) {
+    const handleBack = () => {
+    if (window.history.length > 2) {
       navigate(-1);
     } else {
-      if (window.history.length > 2) {
-        navigate(-1);
-      } else {
-        navigate("/home");
-      }
+      navigate("/home");
     }
   };
+
 
   useEffect(() => {
     sessionStorage.setItem(`commentDraft-${id}`, newComment);
@@ -693,201 +688,162 @@ export default function PostPage({ isModal = false }) {
   }
 
   return (
-    <div className={`
-      ${isMobile ? 'fixed inset-0 z-[1000] bg-white flex flex-col' : ''}
-      ${isModal && !isMobile ? 'fixed top-0 left-0 w-full h-full z-[1000] flex items-center justify-center bg-black bg-opacity-50' : ''}
-    `}>
-      {/* <div className={`
-        ${isMobile ? 'sticky top-0 z-10 bg-white flex items-center px-4 py-3 border-b' : 'hidden'}
-      `}>
+    <div className="w-full max-w-2xl mx-auto bg-white min-h-screen">
+      {/* Back Button */}
+      {/* <div className="sticky top-0 z-10 bg-white border-b p-4">
         <button
-          className="mr-3 text-[#750015] font-medium"
           onClick={handleBack}
+          className="flex items-center gap-2 text-[#750015] font-medium hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors"
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowLeft className="h-5 w-5" />
+          Back
         </button>
-        <div className="flex items-center gap-2">
-          Vars
-        </div>
       </div> */}
 
-      {/* Main content */}
-      <div className={`
-        ${isMobile ? 'flex-1 w-full overflow-y-auto px-0 pb-24' : 'w-full h-full overflow-y-auto'}
-        ${isModal && !isMobile ? 'max-h-[90vh] overflow-y-auto' : ''}
-      `}>
-        <div className={`
-          ${isMobile ? 'w-full px-0' : 'w-full max-w-2xl mx-auto bg-white p-4'}
-          ${isModal && !isMobile ? 'rounded-xl shadow-lg' : ''}
-        `}>
-          
-          {/* {!isMobile && (
-            <button
-              className="flex items-center gap-2 text-[#750015] font-medium mb-4"
-              onClick={handleBack}
-            >
-              <ArrowLeft className="h-5 w-5" />
-              Vars
-            </button>
-          )} */}
+      {/* Post */}
+      <div className="p-4">
+        <PostComponent
+          post={post}
+          currentUserId={user?.id}
+          currentUserEmail={user?.email}
+          showFullContent={true}
+          isPublicView={!token}
+        />
+      </div>
 
-          {/* Post */}
-          <div className="mb-6">
-            <PostComponent
-              post={post}
-              currentUserId={user?.id}
-              currentUserEmail={user?.email}
-              showFullContent={true}
-              isPublicView={!token}
-            />
+      {/* Comments */}
+      <div className="bg-white p-4">
+        <Text as="h3" className="text-lg font-semibold mb-4">Comments</Text>
+        
+        {/* Show sign-up prompt for unauthenticated users */}
+        {!token && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-blue-800 text-sm">
+              💡 <strong>Want to join the conversation?</strong> 
+              <button 
+                onClick={() => navigate('/welcome')}
+                className="text-blue-600 underline ml-1"
+              >
+                Sign up to comment and like posts
+              </button>
+            </p>
           </div>
-
-          {/* Comments */}
-          <div className="bg-white p-5">
-            <Text as="h3" className="text-lg font-semibold mb-4">Comments</Text>
-            
-            {/* Show sign-up prompt for unauthenticated users */}
-            {!token && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-blue-800 text-sm">
-                  💡 <strong>Want to join the conversation?</strong> 
-                  <button 
-                    onClick={() => navigate('/welcome')}
-                    className="text-blue-600 underline ml-1"
-                  >
-                    Sign up to comment and like posts
-                  </button>
-                </p>
-              </div>
+        )}
+        
+        <form onSubmit={handleAddComment} className="flex gap-2 mb-6 bg-gray-50 p-4 rounded-lg">
+          <input
+            className="flex-1 border rounded-lg px-4 py-2"
+            placeholder={token ? "Add a comment..." : "Sign up to comment..."}
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            disabled={isPosting || !token}
+          />
+          <button
+            type="submit"
+            className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-[70px] ${
+              token 
+                ? 'bg-[#750015] text-white' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+            disabled={!newComment.trim() || isPosting || !token}
+          >
+            {isPosting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-1"></div>
+                Posting...
+              </>
+            ) : (
+              "Post"
             )}
-            
-            <form onSubmit={handleAddComment} className="flex gap-2 mb-6 bg-gray-50 p-4 rounded-lg">
+          </button>
+        </form>
+
+        {replyingTo && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-[#750015]">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-600 font-medium">Replying to a comment</span>
+              <button 
+                onClick={() => setReplyingTo(null)}
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Cancel reply
+              </button>
+            </div>
+            <form onSubmit={handleAddComment} className="flex gap-2">
               <input
                 className="flex-1 border rounded-lg px-4 py-2"
-                placeholder={token ? "Add a comment..." : "Sign up to comment..."}
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                disabled={isPosting || !token}
+                placeholder="Write your reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                disabled={isPosting}
+                autoFocus
               />
               <button
                 type="submit"
-                className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-[70px] ${
-                  token 
-                    ? 'bg-[#750015] text-white' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                disabled={!newComment.trim() || isPosting || !token}
+                className="px-4 py-2 bg-[#750015] text-white rounded-lg min-w-[70px] disabled:opacity-50"
+                disabled={!replyText.trim() || isPosting}
               >
                 {isPosting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-1"></div>
-                    Posting...
-                  </>
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  </div>
                 ) : (
-                  "Post"
+                  "Reply"
                 )}
               </button>
             </form>
-
-            {replyingTo && (
-              <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-[#750015]">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600 font-medium">Replying to a comment</span>
-                  <button 
-                    onClick={() => setReplyingTo(null)}
-                    className="text-gray-500 hover:text-gray-700 text-sm"
-                  >
-                    Cancel reply
-                  </button>
-                </div>
-                <form onSubmit={handleAddComment} className="flex gap-2">
-                  <input
-                    className="flex-1 border rounded-lg px-4 py-2"
-                    placeholder="Write your reply..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    disabled={isPosting}
-                    autoFocus
-                  />
+          </div>
+        )}
+        
+        <div className="space-y-6">
+          {comments.length === 0 && !isLoadingComments ? (
+            <Text>No comments yet.</Text>
+          ) : (
+            <>
+              {comments.map((comment) => (
+                <CommentItem 
+                  key={comment.id} 
+                  comment={comment} 
+                  currentUserId={user?.id}
+                  onCommentUpdate={handleCommentUpdate}
+                  onCommentDelete={handleCommentDelete}
+                  navigate={navigate}
+                  onStartReply={handleStartReply}
+                  postId={id || ''}
+                  depth={0}
+                />
+              ))}
+              
+              {/* Load more comments button */}
+              {commentsHasMore && (
+                <div className="flex justify-center mt-4">
                   <button
-                    type="submit"
-                    className="px-4 py-2 bg-[#750015] text-white rounded-lg min-w-[70px] disabled:opacity-50"
-                    disabled={!replyText.trim() || isPosting}
+                    onClick={loadMoreComments}
+                    disabled={isLoadingComments}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                   >
-                    {isPosting ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    {isLoadingComments ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-600"></div>
+                        Loading...
                       </div>
                     ) : (
-                      "Reply"
+                      'Load more comments'
                     )}
                   </button>
-                </form>
-              </div>
-            )}
-            
-            <div className="space-y-6">
-              {comments.length === 0 && !isLoadingComments ? (
-                <Text>No comments yet.</Text>
-              ) : (
-                <>
-                  {comments.map((comment) => (
-                    <CommentItem 
-                      key={comment.id} 
-                      comment={comment} 
-                      currentUserId={user?.id}
-                      onCommentUpdate={handleCommentUpdate}
-                      onCommentDelete={handleCommentDelete}
-                      navigate={navigate}
-                      onStartReply={handleStartReply}
-                      postId={id || ''}
-                      depth={0}
-                    />
-                  ))}
-                  
-                  {/* Load more comments button */}
-                  {commentsHasMore && (
-                    <div className="flex justify-center mt-4">
-                      <button
-                        onClick={loadMoreComments}
-                        disabled={isLoadingComments}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
-                      >
-                        {isLoadingComments ? (
-                          <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-600"></div>
-                            Loading...
-                          </div>
-                        ) : (
-                          'Load more comments'
-                        )}
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Loading indicator */}
-                  {isLoadingComments && comments.length > 0 && (
-                    <div className="flex justify-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#750015]"></div>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
-            </div>
-          </div>
+              
+              {/* Loading indicator */}
+              {isLoadingComments && comments.length > 0 && (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#750015]"></div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {/* Close button for modal on desktop */}
-      {isModal && !isMobile && (
-        <button 
-          onClick={handleBack}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          style={{ zIndex: 1002 }}
-        >
-          ✕
-        </button>
-      )}
     </div>
   );
 }

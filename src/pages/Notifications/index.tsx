@@ -15,7 +15,14 @@ interface Notification {
   id: number;
   title: string;
   body: string;
-  data: Record<string, any> | null;
+  data: {
+    type: string;
+    post_id?: string;
+    comment_id?: string;
+    follower_display_name_slug?: string; // Add this field
+    liker_id?: string;
+    commenter_id?: string;
+  } | null;
   is_read: boolean;
   created_at: string;
   read_at: string | null;
@@ -23,16 +30,12 @@ interface Notification {
     id: number;
     username: string;
     profile_pic_url: string | null;
+    follower_display_name_slug?: string; // Add this field
   };
   post?: {
-    id: string; // Changed to string to match Firestore ID
+    id: string;
     content: string;
   };
-  type: string;
-  // Add these new fields for navigation
-  target_post_id?: string; // The post ID to navigate to
-  target_comment_id?: string; // Optional comment ID for comment-related notifications
-  target_user_slug?: string; // For profile navigation
 }
 
 export default function NotificationsPage() {
@@ -44,25 +47,42 @@ export default function NotificationsPage() {
   
    const { handleNotificationClick } = useNotificationNavigation();
 
-   const getActionText = (type: string) => {
+  const getActionText = (type: string) => {
   switch (type) {
-    case 'like': return 'View post';
-    case 'comment': return 'View comments';
-    case 'reply': return 'View thread';
-    case 'follow': return 'View profile';
-    default: return 'View';
+    case 'like':
+    case 'new_post':
+      return 'View post';
+    case 'comment':
+    case 'reply':
+    case 'mention':
+      return 'View comments';
+    case 'follow':
+      return 'View profile';
+    default:
+      return 'View';
   }
 };
 
-     const handleNotificationItemClick = async (notification: Notification) => {
-    // Mark as read if not already read
-    if (!notification.is_read) {
-      await markAsRead(notification.id);
-    }
-    
-    // Handle navigation
-    handleNotificationClick(notification);
-  };
+
+  const handleNotificationItemClick = async (notification: Notification) => {
+  console.log('=== NOTIFICATION ITEM CLICK DEBUG ===');
+  console.log('Notification clicked:', notification);
+  console.log('Notification ID:', notification.id);
+  console.log('Is read:', notification.is_read);
+  console.log('Notification data:', notification.data);
+  
+  // Mark as read if not already read
+  if (!notification.is_read) {
+    console.log('Marking notification as read...');
+    await markAsRead(notification.id);
+  } else {
+    console.log('Notification already read, skipping mark as read');
+  }
+  
+  // Handle navigation
+  console.log('Calling handleNotificationClick...');
+  handleNotificationClick(notification);
+};
 
 
   // Combine fetching notifications and unread count
@@ -157,27 +177,26 @@ export default function NotificationsPage() {
     }
   };
 
-  // Helper to get icon based on notification 'type'
-  // Ensure your backend's 'data' JSONField contains a 'type' key
-  // or that 'type' is a direct field on your Notification model.
-  const getNotificationIcon = (type: string | undefined) => { // 'type' can be undefined if not present
-    switch (type) {
-      case 'like':
-        return '/images/vectors/like_filled.svg';
-      case 'comment':
-        return '/images/vectors/vars.svg';
-      case 'reply':
-        return '/images/vectors/vars.svg';
-      case 'follow':
-        return '/images/vectors/follow.svg';
-      case 'mention':
-        return '/images/vectors/at.svg';
-       case 'system': // Added system type icon
-         return '/images/vectors/settings.svg';
-      default:
-        return '/images/vectors/bell.svg'; // Default bell icon
-    }
-  };
+  // Update getNotificationIcon to use data.type
+const getNotificationIcon = (type: string | undefined) => {
+  switch (type) {
+    case 'like':
+      return '/images/vectors/like_filled.svg';
+    case 'comment':
+    case 'reply':
+    case 'mention':
+      return '/images/vectors/vars.svg';
+    case 'follow':
+      return '/images/vectors/follow.svg';
+    case 'new_post':
+      return '/images/vectors/bell.svg';
+    case 'system':
+      return '/images/vectors/settings.svg';
+    default:
+      return '/images/vectors/bell.svg';
+  }
+};
+
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -257,10 +276,11 @@ export default function NotificationsPage() {
                     {/* Notification Icon (derived from notification.type) */}
                     <div className="flex-shrink-0">
                       <Img
-                        src={getNotificationIcon(notification.data?.type)} // Access type from 'data' field
+                        src={getNotificationIcon(notification.data?.type)}
                         alt={notification.data?.type || 'notification'}
                         className="w-6 h-6"
                       />
+
                     </div>
 
                     {/* Notification Content */}
@@ -276,9 +296,10 @@ export default function NotificationsPage() {
                         <Text className="text-sm font-medium text-gray-900 flex-1">
                           {notification.title}
                         </Text>
-                        <span className="text-xs text-gray-400 transition-colors"> {/* group-hover:text-blue-600 */}
-          {getActionText(notification.type)} →
-        </span>
+                       <span className="text-xs text-gray-400 transition-colors">
+                          {getActionText(notification.data?.type || '')} →
+                        </span>
+
 
                         {!notification.is_read && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>

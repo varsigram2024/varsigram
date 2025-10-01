@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 
 import debounce from "lodash/debounce";
 import { useAuth } from '../../auth/AuthContext';
-import { Post } from '../../components/Post.tsx';
+import { Post } from '../../components/Post/index.tsx';
 import axios from 'axios';
 import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-dom";
 
@@ -133,6 +133,9 @@ export default function Homepage() {
   const navigate = useNavigate();
   const [feedPage, setFeedPage] = useState(1);
   const [feedSessionId, setFeedSessionId] = useState<string | null>(null);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
 
 
   const {
@@ -503,6 +506,53 @@ useEffect(() => {
     );
   };
 
+
+  useEffect(() => {
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+    
+    // Always show header at the top of the page
+    if (currentScrollY < 100) {
+      setIsHeaderVisible(true);
+      setLastScrollY(currentScrollY);
+      return;
+    }
+    
+    // If scrolling down, hide header; if scrolling up, show header immediately
+    if (currentScrollY > lastScrollY + 50) {
+      // Scrolling down - hide header
+      setIsHeaderVisible(false);
+    } else if (currentScrollY < lastScrollY - 10) {
+      // Scrolling up - show header immediately (even with small upward movement)
+      setIsHeaderVisible(true);
+    }
+    
+    setLastScrollY(currentScrollY);
+  };
+
+  // Throttle the scroll handler for better performance
+  const throttledScroll = throttle(handleScroll, 100);
+  
+  window.addEventListener('scroll', throttledScroll, { passive: true });
+  
+  return () => {
+    window.removeEventListener('scroll', throttledScroll);
+  };
+}, [lastScrollY]);
+
+// Simple throttle function (add this outside your component)
+function throttle(func, limit) {
+  let inThrottle;
+  return function(...args) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+
+
   const handleLike = async (post: Post) => {
     const prevLikeCount = post.like_count;
     const prevHasLiked = post.has_liked;
@@ -691,11 +741,15 @@ useEffect(() => {
       
 
        <div className={`flex w-full lg:w-[100%] items-start justify-center flex-row`}>
+        
               <div 
               className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
                 >
 
-          <div className="hidden lg:flex items-center justify-between animate-fade-in">
+          <div className={`sticky top-0 bg-[#f6f6f6] pt-5 pb-3 z-10 transition-transform duration-300 ${
+              isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+            }`}>
+            <div className="hidden lg:flex items-center justify-between animate-fade-in">
             <div
               onClick={() => {
                 if (user?.display_name_slug) {
@@ -724,7 +778,7 @@ useEffect(() => {
               />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {unreadCount > 99 ? '*' : unreadCount}
                 </div>
               )}
             </Link>
@@ -804,6 +858,7 @@ useEffect(() => {
                 onClick={() => setIsSearchOpen(true)}
               />
             </div>
+          </div>
           </div>
 
           {isCreatePostOpen && (
@@ -909,7 +964,7 @@ useEffect(() => {
               </div>
             )}
           </div>
-        </div>
+              </div>
 
         <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
