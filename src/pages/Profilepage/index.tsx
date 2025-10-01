@@ -365,6 +365,7 @@ useEffect(() => {
       try {
         const headers: any = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
+        
         const profileResponse = await axios.get(
           `${API_BASE_URL}/profile/${display_name_slug}/`,
           { headers }
