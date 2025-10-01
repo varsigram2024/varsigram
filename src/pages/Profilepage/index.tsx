@@ -104,6 +104,7 @@ interface FollowerFollowingUser {
   is_verified?: boolean;
 }
 
+
 // Update component to accept props
 export default function Profile() {
   const [searchBarValue, setSearchBarValue] = useState("");
@@ -129,7 +130,8 @@ export default function Profile() {
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
-
+  const [currentUserFollowing, setCurrentUserFollowing] = useState<FollowerFollowingUser[]>([]);
+  
   // Add missing functions
   const handleOpenFollowers = () => {
     setShowFollowersModal(true);
@@ -141,44 +143,45 @@ export default function Profile() {
     fetchFollowing();
   };
 
-  const handleFollowInModal = async (targetUserId: number, targetUserType: "student" | "organization", isCurrentlyFollowing: boolean) => {
-    if (!user || !token) return;
+ const handleFollowInModal = async (targetUserId: number, targetUserType: "student" | "organization", isCurrentlyFollowing: boolean) => {
+  if (!user || !token) return;
 
-    try {
-      const payload = {
-        follower_type: user.account_type,
-        follower_id: user.id,
-        followee_type: targetUserType,
-        followee_id: targetUserId
-      };
+  try {
+    const payload = {
+      follower_type: user.account_type,
+      follower_id: user.id,
+      followee_type: targetUserType,
+      followee_id: targetUserId
+    };
 
-      if (isCurrentlyFollowing) {
-        await axios.post(
-          `${API_BASE_URL}/users/unfollow/`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        toast.success("Unfollowed successfully");
-      } else {
-        await axios.post(
-          `${API_BASE_URL}/users/follow/`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        toast.success("Followed successfully");
-      }
-
-      // Refresh the lists
-      if (showFollowersModal) fetchFollowers();
-      if (showFollowingModal) fetchFollowing();
-      
-    } catch (error) {
-      toast.error("Failed to update follow status");
+    if (isCurrentlyFollowing) {
+      await axios.post(
+        `${API_BASE_URL}/users/unfollow/`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Unfollowed successfully");
+    } else {
+      await axios.post(
+        `${API_BASE_URL}/users/follow/`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Followed successfully");
     }
-  };
+
+    // Refresh the lists and current user's following
+    if (showFollowersModal) fetchFollowers();
+    if (showFollowingModal) fetchFollowing();
+    fetchCurrentUserFollowing(); // Refresh current user's following list
+    
+  } catch (error) {
+    toast.error("Failed to update follow status");
+  }
+};
 
   const handleNavigateToProfile = (displayNameSlug: string) => {
-    navigate(`/profile/${displayNameSlug}`);
+    navigate(`/user-profile/${displayNameSlug}`);
     setShowFollowersModal(false);
     setShowFollowingModal(false);
   };
@@ -204,95 +207,152 @@ export default function Profile() {
       }
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
-        console.error('Error sharing:', error);
         toast.error('Failed to share profile');
       }
     }
   };
 
-  // Add the fetchFollowers and fetchFollowing functions
-  const fetchFollowers = async () => {
-    if (!userProfile || !token) return;
+const fetchFollowers = async () => {
+  if (!userProfile || !token) return;
+  
+  setIsLoadingFollowers(true);
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/users/followers/`,
+      {
+        params: {
+          followee_type: userProfile.account_type,
+          followee_id: userProfile.id
+        },
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
     
-    setIsLoadingFollowers(true);
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/users/followers/`,
-        {
-          params: {
-            followee_type: userProfile.account_type,
-            followee_id: userProfile.id
-          },
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      
-      console.log("Followers response:", response.data);
-      
-      const processedData = response.data.map((item: any) => {
-        if (item.user) {
-          return {
-            ...item,
-            profile_pic_url: item.user.profile_pic_url,
-            email: item.user.email,
-            username: item.user.username,
-            bio: item.user.bio,
-            is_verified: item.user.is_verified
-          };
-        }
-        return item;
-      });
-      
-      setFollowers(processedData);
-    } catch (error) {
-      console.error("Error fetching followers:", error);
-      toast.error("Failed to load followers");
-    } finally {
-      setIsLoadingFollowers(false);
-    }
-  };
-
-  const fetchFollowing = async () => {
-    if (!userProfile || !token) return;
+    console.log("Followers API Response:", response.data);
     
-    setIsLoadingFollowing(true);
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/users/following/`,
-        {
-          params: {
-            follower_type: userProfile.account_type,
-            follower_id: userProfile.id
-          },
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+    const processedData = response.data.map((item: any) => {
+      // Extract the actual follower data (either student or organization)
+      const followerData = item.follower_student || item.follower_organization;
+      const accountType = item.follower_student ? 'student' : 'organization';
       
-      console.log("Following response:", response.data);
-      
-      const processedData = response.data.map((item: any) => {
-        if (item.user) {
-          return {
-            ...item,
-            profile_pic_url: item.user.profile_pic_url,
-            email: item.user.email,
-            username: item.user.username,
-            bio: item.user.bio,
-            is_verified: item.user.is_verified
-          };
-        }
-        return item;
-      });
-      
-      setFollowing(processedData);
-    } catch (error) {
-      console.error("Error fetching following:", error);
-      toast.error("Failed to load following");
-    } finally {
-      setIsLoadingFollowing(false);
-    }
-  };
+      return {
+        id: followerData.id,
+        name: followerData.name,
+        organization_name: followerData.organization_name,
+        faculty: followerData.faculty,
+        department: followerData.department,
+        display_name_slug: followerData.display_name_slug,
+        account_type: accountType,
+        // Map user data correctly
+        profile_pic_url: followerData.user?.profile_pic_url,
+        email: followerData.user?.email,
+        username: followerData.user?.username,
+        bio: followerData.user?.bio,
+        is_verified: followerData.user?.is_verified
+      };
+    });
+    
+    console.log("Processed Followers Data:", processedData);
+    setFollowers(processedData);
+  } catch (error) {
+    console.error("Error fetching followers:", error);
+    toast.error("Failed to load followers");
+  } finally {
+    setIsLoadingFollowers(false);
+  }
+};
 
+const fetchFollowing = async () => {
+  if (!userProfile || !token) return;
+  
+  setIsLoadingFollowing(true);
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/users/following/`,
+      {
+        params: {
+          follower_type: userProfile.account_type,
+          follower_id: userProfile.id
+        },
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    
+    console.log("Following API Response:", response.data);
+    
+    const processedData = response.data.map((item: any) => {
+      // Extract the actual followee data (either student or organization)
+      const followeeData = item.followee_student || item.followee_organization;
+      const accountType = item.followee_student ? 'student' : 'organization';
+      
+      return {
+        id: followeeData.id,
+        name: followeeData.name,
+        organization_name: followeeData.organization_name,
+        faculty: followeeData.faculty,
+        department: followeeData.department,
+        display_name_slug: followeeData.display_name_slug,
+        account_type: accountType,
+        // Map user data correctly
+        profile_pic_url: followeeData.user?.profile_pic_url,
+        email: followeeData.user?.email,
+        username: followeeData.user?.username,
+        bio: followeeData.user?.bio,
+        is_verified: followeeData.user?.is_verified
+      };
+    });
+    
+    console.log("Processed Following Data:", processedData);
+    setFollowing(processedData);
+  } catch (error) {
+    console.error("Error fetching following:", error);
+    toast.error("Failed to load following");
+  } finally {
+    setIsLoadingFollowing(false);
+  }
+};
+
+
+const fetchCurrentUserFollowing = async () => {
+  if (!user || !token) return;
+  
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/users/following/`,
+      {
+        params: {
+          follower_type: user.account_type,
+          follower_id: user.id
+        },
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    
+    const processedData = response.data.map((item: any) => {
+      const followeeData = item.followee_student || item.followee_organization;
+      const accountType = item.followee_student ? 'student' : 'organization';
+      
+      return {
+        id: followeeData.id,
+        name: followeeData.name,
+        organization_name: followeeData.organization_name,
+        display_name_slug: followeeData.display_name_slug,
+        account_type: accountType,
+      };
+    });
+    
+    setCurrentUserFollowing(processedData);
+  } catch (error) {
+    console.error("Error fetching current user's following:", error);
+  }
+};
+
+// Call this when component mounts
+useEffect(() => {
+  if (user && token) {
+    fetchCurrentUserFollowing();
+  }
+}, [user, token]);
 
   const handleNavigation = (path: string) => {
     navigate(`/${path}`);
@@ -469,8 +529,9 @@ const fetchUserData = async () => {
   }
 };
 
-// Replace the entire UsersListModal component with this correct implementation:
 
+
+// Update the UsersListModal component to properly check follow status
 const UsersListModal = ({ 
   isOpen, 
   onClose, 
@@ -494,18 +555,23 @@ const UsersListModal = ({
 
   // Helper function to get profile picture URL safely
   const getProfilePicUrl = (userItem: FollowerFollowingUser) => {
-    const url = userItem.profile_pic_url || userItem.user?.profile_pic_url;
+    const url = userItem.profile_pic_url;
     return url && url.startsWith("http") ? url : "/images/user.png";
   };
 
   // Helper function to get display name safely
   const getDisplayName = (userItem: FollowerFollowingUser) => {
-    return userItem.name || userItem.organization_name || userItem.user?.username || userItem.username || 'Unknown User';
+    return userItem.name || userItem.organization_name || userItem.username || 'Unknown User';
   };
 
-  // Helper function to get user ID safely
-  const getUserId = (userItem: FollowerFollowingUser) => {
-    return userItem.user?.id || userItem.id;
+  // Helper function to check if current user is following this user
+  const isCurrentUserFollowing = (userItem: FollowerFollowingUser) => {
+    if (!currentUserId || !currentUserFollowing.length) return false;
+    
+    return currentUserFollowing.some(followingUser => 
+      followingUser.id === userItem.id && 
+      followingUser.account_type === userItem.account_type
+    );
   };
 
   return (
@@ -537,55 +603,58 @@ const UsersListModal = ({
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {users.map((userItem) => (
-                <div
-                  key={userItem.id}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                >
-                  <div 
-                    className="flex items-center gap-3 flex-1"
-                    onClick={() => onUserClick(userItem.display_name_slug)}
+              {users.map((userItem) => {
+                const isCurrentUser = currentUserId && userItem.id.toString() === currentUserId;
+                const isFollowing = isCurrentUserFollowing(userItem);
+                
+                return (
+                  <div
+                    key={userItem.id}
+                    className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
-                      <Img
-                        src={getProfilePicUrl(userItem)}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Text as="p" className="font-semibold text-gray-900 truncate">
-                        {getDisplayName(userItem)}
-                      </Text>
-                      {userItem.account_type === "student" && userItem.faculty && (
-                        <Text as="p" className="text-sm text-gray-500 truncate">
-                          {userItem.faculty}
-                          {userItem.department && ` • ${userItem.department}`}
-                        </Text>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Follow/Unfollow button - only show if not current user */}
-                  {currentUserId && getUserId(userItem).toString() !== currentUserId && (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // For now, we'll assume the user is not following
-                        // In a real implementation, you'd track this state per user
-                        onFollowClick(userItem.id, userItem.account_type, false);
-                      }}
-                      className={`px-4 py-1 rounded-full text-sm font-semibold transition-colors ${
-                        false // Replace with actual following state
-                          ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          : "bg-[#750015] text-white hover:bg-[#a0001f]"
-                      }`}
+                    <div 
+                      className="flex items-center gap-3 flex-1"
+                      onClick={() => onUserClick(userItem.display_name_slug)}
                     >
-                      {false ? "Unfollow" : "Follow"} {/* Replace with actual following state */}
-                    </Button>
-                  )}
-                </div>
-              ))}
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                        <Img
+                          src={getProfilePicUrl(userItem)}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Text as="p" className="font-semibold text-gray-900 truncate">
+                          {getDisplayName(userItem)}
+                        </Text>
+                        {userItem.account_type === "student" && userItem.faculty && (
+                          <Text as="p" className="text-sm text-gray-500 truncate">
+                            {userItem.faculty}
+                            {userItem.department && ` • ${userItem.department}`}
+                          </Text>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Show appropriate button based on follow status */}
+                    {!isCurrentUser && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFollowClick(userItem.id, userItem.account_type, isFollowing);
+                        }}
+                        className={`px-4 py-1 rounded-full text-sm font-semibold transition-colors ${
+                          isFollowing 
+                            ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
+                            : "bg-[#750015] text-white hover:bg-[#a0001f]"
+                        }`}
+                      >
+                        {isFollowing ? "Following" : "Follow"}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -593,7 +662,6 @@ const UsersListModal = ({
     </div>
   );
 };
-
 
   useEffect(() => {
     if (token) {
@@ -662,7 +730,6 @@ const UsersListModal = ({
         setHasMore(false);
       }
     } catch (err) {
-      console.error("Failed to fetch posts:", err);
       setHasMore(false);
     } finally {
       if (startAfter) {
@@ -912,10 +979,6 @@ const UsersListModal = ({
                                     await fetchUserData();
                                     toast.success("Bio updated!");
                                   } catch (err: any) {
-                                    console.error(
-                                      "Failed to update bio",
-                                      err?.response?.data || err
-                                    );
                                     toast.error("Failed to update bio");
                                   }
                                 }
@@ -1109,27 +1172,27 @@ const UsersListModal = ({
       </div>
 
       {/* Modals - placed at the bottom */}
-    <UsersListModal
-      isOpen={showFollowersModal}
-      onClose={() => setShowFollowersModal(false)}
-      title="Followers"
-      users={followers}
-      isLoading={isLoadingFollowers}
-      onUserClick={handleNavigateToProfile}
-      onFollowClick={handleFollowInModal}
-      currentUserId={user?.id}
-    />
+          <UsersListModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        title="Followers"
+        users={followers}
+        isLoading={isLoadingFollowers}
+        onUserClick={handleNavigateToProfile}
+        onFollowClick={handleFollowInModal}
+        currentUserId={user?.id}
+      />
 
-    <UsersListModal
-      isOpen={showFollowingModal}
-      onClose={() => setShowFollowingModal(false)}
-      title="Following"
-      users={following}
-      isLoading={isLoadingFollowing}
-      onUserClick={handleNavigateToProfile}
-      onFollowClick={handleFollowInModal}
-      currentUserId={user?.id}
-    />
+      <UsersListModal
+        isOpen={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        title="Following"
+        users={following}
+        isLoading={isLoadingFollowing}
+        onUserClick={handleNavigateToProfile}
+        onFollowClick={handleFollowInModal}
+        currentUserId={user?.id}
+      />
   </div>
   );
 }

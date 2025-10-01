@@ -8,11 +8,36 @@ export const useNotificationNavigation = () => {
   const { token } = useAuth();
 
   const handleNotificationClick = (notification: any) => {
-    console.log('=== NOTIFICATION CLICK DEBUG ===');
-    console.log('Full notification object:', notification);
-    console.log('Notification data:', notification.data);
-    console.log('Notification type:', notification.data?.type);
-    console.log('Sender object:', notification.sender);
+    console.log('🔔 === NOTIFICATION CLICK HANDLER DEBUG ===');
+    console.log('📦 FULL NOTIFICATION OBJECT:', notification);
+    console.log('📊 NOTIFICATION TYPE:', notification.data?.type);
+    
+    // Deep inspection of the notification object
+    console.log('🔍 DEEP INSPECTION:');
+    console.log('   - ID:', notification.id);
+    console.log('   - Title:', notification.title);
+    console.log('   - Body:', notification.body);
+    console.log('   - Is Read:', notification.is_read);
+    console.log('   - Created At:', notification.created_at);
+    console.log('   - Read At:', notification.read_at);
+    
+    if (notification.data) {
+      console.log('   📋 DATA OBJECT:');
+      Object.keys(notification.data).forEach(key => {
+        console.log(`     - data.${key}:`, notification.data[key]);
+      });
+    } else {
+      console.log('   📋 DATA OBJECT: null or undefined');
+    }
+    
+    if (notification.sender) {
+      console.log('   👤 SENDER OBJECT:');
+      Object.keys(notification.sender).forEach(key => {
+        console.log(`     - sender.${key}:`, notification.sender[key]);
+      });
+    } else {
+      console.log('   👤 SENDER OBJECT: null or undefined');
+    }
     
     // Extract data from notification - the payload fields are in notification.data
     const data = notification.data || {};
@@ -22,7 +47,10 @@ export const useNotificationNavigation = () => {
       case 'comment':
       case 'reply':
       case 'mention':
-        console.log('Comment/Reply/Mention notification - post_id:', data.post_id, 'comment_id:', data.comment_id);
+        console.log('💬 Comment/Reply/Mention notification');
+        console.log('   - Post ID:', data.post_id);
+        console.log('   - Comment ID:', data.comment_id);
+        
         if (data.post_id) {
           // Navigate to post page with comment highlighting
           const params = new URLSearchParams();
@@ -31,67 +59,73 @@ export const useNotificationNavigation = () => {
             params.append('highlight', 'true');
           }
           const targetUrl = `/posts/${data.post_id}?${params.toString()}`;
-          console.log('Navigating to:', targetUrl);
+          console.log('   🚀 Navigating to:', targetUrl);
           navigate(targetUrl);
         } else {
-          console.warn('Post ID missing for comment/reply/mention notification');
+          console.warn('❌ Post ID missing for comment/reply/mention notification');
           toast.error('Post not available');
         }
         break;
 
       case 'like':
       case 'new_post':
-        console.log('Like/New Post notification - post_id:', data.post_id);
+        console.log('❤️ Like/New Post notification');
+        console.log('   - Post ID:', data.post_id);
+        
         if (data.post_id) {
           const targetUrl = `/posts/${data.post_id}`;
-          console.log('Navigating to:', targetUrl);
+          console.log('   🚀 Navigating to:', targetUrl);
           navigate(targetUrl);
         } else {
-          console.warn('Post ID missing for like/new_post notification');
+          console.warn('❌ Post ID missing for like/new_post notification');
           toast.error('Post not available');
         }
         break;
 
       case 'follow':
-        console.log('Follow notification - follower_display_name_slug:', data.follower_display_name_slug, 'follower_id:', data.follower_id, 'sender:', notification.sender);
+        console.log('👥 Follow notification analysis:');
+        console.log('   - Follower Display Name Slug:', data.follower_display_name_slug);
+        console.log('   - Follower ID:', data.follower_id);
+        console.log('   - Follower Name:', data.follower_name);
+        console.log('   - Sender Username:', notification.sender?.username);
         
-        // First priority: Use display name slug if available
+        // Priority 1: Use display name slug for organizations
         if (data.follower_display_name_slug) {
           const targetUrl = `/user-profile/${data.follower_display_name_slug}`;
-          console.log('Navigating to (using display name slug):', targetUrl);
+          console.log('   🏢 Organization detected');
+          console.log('   🚀 Navigating to (using display name slug):', targetUrl);
           navigate(targetUrl);
         } 
-        // Second priority: Use follower_id if display name slug is not available
+        // Priority 2: Use follower_id for students (temporary until they get display_name_slug)
         else if (data.follower_id) {
-          // TEMPORARY: Navigate using follower_id until backend provides display_name_slug
           const targetUrl = `/user-profile/${data.follower_id}`;
-          console.log('Navigating to (using follower_id as temporary fallback):', targetUrl);
+          console.log('   🎓 Student detected');
+          console.log('   🚀 Navigating to (using follower_id):', targetUrl);
           navigate(targetUrl);
         }
-        // Third priority: Use sender username if available
+        // Priority 3: Fallback to sender username if available
         else if (notification.sender?.username) {
           const targetUrl = `/user-profile/${notification.sender.username}`;
-          console.log('Navigating to (using sender username):', targetUrl);
+          console.log('   🔄 Using sender username fallback');
+          console.log('   🚀 Navigating to:', targetUrl);
           navigate(targetUrl);
         } else {
-          console.warn('No user identifier found for follow notification');
+          console.warn('❌ No user identifier found for follow notification');
           toast.error('User profile not available');
         }
         break;
 
       case 'system':
-        console.log('System notification - title:', notification.title);
-        // Handle system notifications - maybe show a modal or navigate to settings
-        toast.info(notification.title || 'System notification');
+        console.log('⚙️ System notification');
+        console.log('   - Title:', notification.title);
         break;
 
       default:
-        console.log('Unknown notification type:', data.type);
+        console.log('❓ Unknown notification type:', data.type);
         // Default behavior for unknown types
-        toast.info('Notification clicked');
         break;
     }
-    console.log('=== END DEBUG ===');
+    console.log('✅ === END NOTIFICATION HANDLER DEBUG ===');
   };
 
   return { handleNotificationClick };
