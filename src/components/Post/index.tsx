@@ -4,6 +4,10 @@ import { useViewTracking } from '../../context/viewTrackingContext';
 import { useInView } from 'react-intersection-observer';
 import { Text } from "../Text";
 import { Img } from "../Img";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../../firebase/config";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ImagePreviewer } from "../ImagePreviewer";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { MoreVertical, Edit, Trash2 } from "lucide-react";
@@ -63,6 +67,13 @@ interface PostProps {
   showFullContent?: boolean;
   postsData?: Post[];
   isPublicView?: boolean; // Add this prop
+}
+
+  // Add this interface near your other interfaces
+interface ImagePreviewState {
+  isOpen: boolean;
+  currentIndex: number;
+  images: string[];
 }
 
 const MAX_LENGTH = 250; // or use a maxHeight with CSS for a visual cutoff
@@ -131,71 +142,149 @@ export const Post: React.FC<PostProps> = ({
     return date.toLocaleDateString();
   };
 
-  const renderMedia = () => {
-    if (!post.media_urls || post.media_urls.length === 0) return null;
 
-    const mediaToShow = post.media_urls.slice(0, 4);
 
-    // Different layouts based on number of images
-    if (mediaToShow.length === 1) {
-      return (
-        <div className="mt-4">
-          <Img
-            src={mediaToShow[0]}
-            alt="Post media"
-            className="w-full max-h-96 object-cover rounded-lg"
-          />
-        </div>
-      );
-    } else if (mediaToShow.length === 2) {
-      return (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {mediaToShow.map((url, index) => (
-            <Img
-              key={index}
-              src={url}
-              alt={`Post media ${index + 1}`}
-              className="w-full h-64 object-cover rounded-lg"
-            />
-          ))}
-        </div>
-      );
-    } else if (mediaToShow.length === 3) {
-      return (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Img
-            src={mediaToShow[0]}
-            alt="Post media 1"
-            className="w-full h-64 object-cover rounded-lg row-span-2"
-          />
-          <Img
-            src={mediaToShow[1]}
-            alt="Post media 2"
-            className="w-full h-32 object-cover rounded-lg"
-          />
-          <Img
-            src={mediaToShow[2]}
-            alt="Post media 3"
-            className="w-full h-32 object-cover rounded-lg"
-          />
-        </div>
-      );
-    } else {
-      // 4 images
-      return (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {mediaToShow.map((url, index) => (
-            <Img
-              key={index}
-              src={url}
-              alt={`Post media ${index + 1}`}
-              className="w-full h-48 object-cover rounded-lg"
-            />
-          ))}
-        </div>
-      );
+// Add this state with your other useState declarations
+const [imagePreview, setImagePreview] = useState<ImagePreviewState>({
+  isOpen: false,
+  currentIndex: 0,
+  images: []
+});
+
+// Add these functions to handle image preview
+const openImagePreview = (imageIndex: number) => {
+  setImagePreview({
+    isOpen: true,
+    currentIndex: imageIndex,
+    images: post.media_urls
+  });
+};
+
+const closeImagePreview = () => {
+  setImagePreview({
+    isOpen: false,
+    currentIndex: 0,
+    images: []
+  });
+};
+
+const goToNextImage = () => {
+  setImagePreview(prev => ({
+    ...prev,
+    currentIndex: (prev.currentIndex + 1) % prev.images.length
+  }));
+};
+
+const goToPrevImage = () => {
+  setImagePreview(prev => ({
+    ...prev,
+    currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
+  }));
+};
+
+const selectImage = (index: number) => {
+  setImagePreview(prev => ({
+    ...prev,
+    currentIndex: index
+  }));
+};
+
+// Add keyboard navigation for the image preview
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!imagePreview.isOpen) return;
+    
+    switch (e.key) {
+      case 'Escape':
+        closeImagePreview();
+        break;
+      case 'ArrowRight':
+        goToNextImage();
+        break;
+      case 'ArrowLeft':
+        goToPrevImage();
+        break;
     }
   };
+
+  document.addEventListener('keydown', handleKeyDown);
+  return () => document.removeEventListener('keydown', handleKeyDown);
+}, [imagePreview.isOpen]);
+
+  
+
+
+const renderMedia = () => {
+  if (!post.media_urls || post.media_urls.length === 0) return null;
+
+  const mediaToShow = post.media_urls.slice(0, 4);
+
+  // Different layouts based on number of images
+  if (mediaToShow.length === 1) {
+    return (
+      <div className="mt-4">
+        <Img
+          src={mediaToShow[0]}
+          alt="Post media"
+          className="w-full max-h-96 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+          onClick={() => openImagePreview(0)}
+        />
+      </div>
+    );
+  } else if (mediaToShow.length === 2) {
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {mediaToShow.map((url, index) => (
+          <Img
+            key={index}
+            src={url}
+            alt={`Post media ${index + 1}`}
+            className="w-full h-64 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+            onClick={() => openImagePreview(index)}
+          />
+        ))}
+      </div>
+    );
+  } else if (mediaToShow.length === 3) {
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Img
+          src={mediaToShow[0]}
+          alt="Post media 1"
+          className="w-full h-64 object-cover rounded-lg row-span-2 cursor-pointer hover:opacity-95 transition-opacity"
+          onClick={() => openImagePreview(0)}
+        />
+        <Img
+          src={mediaToShow[1]}
+          alt="Post media 2"
+          className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+          onClick={() => openImagePreview(1)}
+        />
+        <Img
+          src={mediaToShow[2]}
+          alt="Post media 3"
+          className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+          onClick={() => openImagePreview(2)}
+        />
+      </div>
+    );
+  } else {
+    // 4 images
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {mediaToShow.map((url, index) => (
+          <Img
+            key={index}
+            src={url}
+            alt={`Post media ${index + 1}`}
+            className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+            onClick={() => openImagePreview(index)}
+          />
+        ))}
+      </div>
+    );
+  }
+};
 
 
 
@@ -217,13 +306,7 @@ const handleFollow = async () => {
     const follower_id = user.id;
     const followee_type = post.account_type || "student";
     
-    // Debug the author_pg_id and author_id to see what they contain
-    console.log("Follow debug - post author IDs:", {
-      author_pg_id: post.author_pg_id,
-      author_id: post.author_id,
-      author_pg_id_type: typeof post.author_pg_id,
-      author_id_type: typeof post.author_id
-    });
+    
 
     // Extract a single followee_id value
     let followee_id;
@@ -285,11 +368,7 @@ const handleFollow = async () => {
       toast.success("Followed successfully");
     }
   } catch (error: any) {
-    console.error("Follow error details:", {
-      error: error?.response?.data,
-      status: error?.response?.status,
-      fullError: error
-    });
+    
     
     if (error.response?.status === 400) {
       const errorData = error.response.data;
@@ -311,7 +390,7 @@ const handleFollow = async () => {
 useEffect(() => {
   const checkIfFollowing = async () => {
     if (!token || !user?.id) {
-      console.log("Cannot check follow status: missing token or user ID");
+      
       return;
     }
 
@@ -329,7 +408,7 @@ useEffect(() => {
         }
       );
 
-      console.log("Follow status check - following list:", response.data);
+     
 
       // Extract a single author ID to compare against
       let authorIdToCheck;
@@ -339,7 +418,7 @@ useEffect(() => {
       } else if (post.author_id) {
         authorIdToCheck = Array.isArray(post.author_id) ? post.author_id[0] : post.author_id;
       } else {
-        console.log("No author ID available for follow check");
+        
         setIsFollowing(false);
         return;
       }
@@ -361,11 +440,11 @@ useEffect(() => {
         return followeeUserId === authorIdToCheck;
       });
       
-      console.log("Is user following?", isUserFollowing);
+      
       setIsFollowing(!!isUserFollowing);
       
     } catch (error) {
-      console.error("Error checking follow status:", error);
+      
       setIsFollowing(false);
     }
   };
@@ -376,20 +455,6 @@ useEffect(() => {
 
 
 
-// Add this debug useEffect to understand your post data structure
-useEffect(() => {
-  console.log("Post data structure for follow:", {
-    postId: post.id,
-    author_pg_id: post.author_pg_id,
-    author_id: post.author_id,
-    author_pg_id_type: typeof post.author_pg_id,
-    author_id_type: typeof post.author_id,
-    author_pg_id_is_array: Array.isArray(post.author_pg_id),
-    author_id_is_array: Array.isArray(post.author_id),
-    account_type: post.account_type,
-    author_name: post.author_name || post.author_display_name
-  });
-}, [post]);
 
 
 
@@ -454,12 +519,7 @@ useEffect(() => {
   };
 
   const handlePostDelete = async (postToDelete: Post) => {
-    console.log("Post component - Deleting post:", postToDelete.id);
-    console.log("Post component - Token being used:", token);
-    console.log(
-      "Post component - onPostDelete callback exists:",
-      !!onPostDelete
-    );
+    
 
     if (!postToDelete.id) {
       toast.error("Cannot delete post: missing post identifier");
@@ -472,10 +532,7 @@ useEffect(() => {
     }
 
     try {
-      console.log(
-        "Post component - Making API call to delete post:",
-        postToDelete.id
-      );
+      
 
       // First, make the API call
       const response = await axios.delete(
@@ -487,14 +544,11 @@ useEffect(() => {
         }
       );
 
-      console.log(
-        "Post component - API call successful, response:",
-        response.status
-      );
+      
 
       // Only after successful API call, call parent callback to remove from list
       if (onPostDelete) {
-        console.log("Post component - Calling parent onPostDelete callback");
+       
         onPostDelete(postToDelete);
       } else {
         console.log("Post component - No onPostDelete callback provided");
@@ -502,8 +556,7 @@ useEffect(() => {
 
       toast.success("Post deleted successfully");
     } catch (error) {
-      console.error("Post component - Delete error:", error);
-      console.error("Post component - Error response:", error.response?.data);
+      
       toast.error("Failed to delete post");
       // Don't call onPostDelete here since the API call failed
     }
@@ -987,6 +1040,14 @@ useEffect(() => {
           onSubmit={handleEditSubmit}
         />
       )}
+
+       <ImagePreviewer
+      imagePreview={imagePreview}
+      onClose={closeImagePreview}
+      onNext={goToNextImage}
+      onPrev={goToPrevImage}
+      onSelectImage={selectImage}
+    />
     </>
   );
 };
