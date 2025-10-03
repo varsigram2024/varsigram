@@ -647,8 +647,6 @@ useEffect(() => {
     if (navigator.share) {
       navigator
         .share({
-          title: "Check out this post on Varsigram",
-          text: post.content,
           url: postUrl,
         })
         .catch(() => toast.error("Share cancelled or failed"));
