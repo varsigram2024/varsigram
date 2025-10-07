@@ -878,11 +878,7 @@ useEffect(() => {
             ) : (
               makeLinksClickable(displayContent)
             )}
-            {!expanded && isLong && <span>...</span>}
-          </Text>
-
-          {/* Read more/less button */}
-          {!expanded && isLong && (
+            {!expanded && isLong && <span>...{!expanded && isLong && (
             <button
               className="text-[#750015] font-semibold mt-2 hover:underline"
               onClick={(e) => {
@@ -893,6 +889,9 @@ useEffect(() => {
               Read more
             </button>
           )}
+          
+          </span>}
+
           {expanded && isLong && (
             <button
               className="text-[#750015] font-semibold mt-2 hover:underline"
@@ -901,6 +900,9 @@ useEffect(() => {
               Show less
             </button>
           )}
+          </Text>
+
+
 
           {renderMedia()}
 

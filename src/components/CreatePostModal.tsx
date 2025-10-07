@@ -123,7 +123,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
             placeholder="What's good?"
-            className="w-full p-2 border-none outline-none resize-none text-lg mb-4 min-h-[120px] placeholder-gray-400"
+            className="w-full p-2 border-none outline-none resize-none text-lg mb-4 h-full placeholder-gray-400"
             rows={4}
           />
           
