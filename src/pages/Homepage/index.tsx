@@ -740,7 +740,7 @@ useEffect(() => {
     <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative]`}>
       
 
-       <div className={`flex w-full lg:w-[100%] items-start justify-center flex-row`}>
+       <div className={`flex w-full items-start justify-center flex-row`}>
         
               <div 
               className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"

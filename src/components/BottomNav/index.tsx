@@ -157,7 +157,7 @@ export default function BottomNav() {
           ></Text>
         </div>
 
-        <div
+        {/* <div
           onClick={() => handleNavigation("resources")}
           className={`flex flex-col items-center ${
             currentPage === "resources" ? "text-[#750015]" : "text-gray-600"
@@ -222,7 +222,7 @@ export default function BottomNav() {
               currentPage === "chat" ? "text-[#750015]" : "text-gray-600"
             }`}
           ></Text>
-        </div>
+        </div> */}
 
          <div 
           onClick={() => handleNavigation('opportunities')}
@@ -235,7 +235,7 @@ export default function BottomNav() {
         </div>
 
 
-        <div
+      <div
           onClick={() => {
             const displayNameSlug = user?.display_name_slug || user?.email?.split('@')[0];
             navigate(`/user-profile/${displayNameSlug}`);
@@ -245,17 +245,12 @@ export default function BottomNav() {
           }`}
         >
           <Img 
-                      src={user?.profile_pic_url || "/images/user.png"} 
+                      src={user?.profile_pic_url || "/images/userprofile.svg"} 
                       alt="Profile" 
                       className="h-[32px] w-[32px] rounded-[50%]" 
                     />
 
-          <Text
-            as="p"
-            className={`mt-1 ${
-              currentPage === "user-profile" ? "text-[#750015]" : "text-gray-600"
-            }`}
-          ></Text>
+                   
         </div>
       </div>
     </div>

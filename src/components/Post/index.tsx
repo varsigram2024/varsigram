@@ -746,7 +746,7 @@ useEffect(() => {
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span
-                        className="font-semibold lg:text-[20px] text-[14px] text-[#750015] cursor-pointer hover:underline"
+                        className="font-semibold lg:text-[20px] text-[14px] text-[#3a3a3a] cursor-pointer hover:underline"
                         onClick={() => {
                           console.log("Clicked name", post.author_display_name_slug);
                           if (post.author_display_name_slug) {
@@ -795,7 +795,7 @@ useEffect(() => {
                         : post.author_faculty || post.author_department}
                     </Text>
                   )}
-{/*                   <Text
+            {/*     <Text
                     as="p"
                     className="text-[9px] lg:text-[16px] text-gray-500"
                   >
