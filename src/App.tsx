@@ -34,6 +34,7 @@ import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
 import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import Opportunities from "./pages/Opportunities";
+import CreateOpportunity from './pages/Opportunities/CreateOpportunity.tsx';
 import PostPage from "./pages/PostPage";
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
@@ -165,6 +166,7 @@ function AppContent() {
             <Route path="marketplace" element={<AuthRoute><Marketplace /></AuthRoute>} />
             <Route path="resources" element={<AuthRoute><Resources /></AuthRoute>} />
             <Route path="opportunities" element={<AuthRoute><Opportunities /></AuthRoute>} />
+             <Route path="opportunities/create" element={<AuthRoute><Opportunities /></AuthRoute>} />
 
             
             <Route path="posts/:id" element={<PostPage />} />
