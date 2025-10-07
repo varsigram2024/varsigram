@@ -166,7 +166,7 @@ function AppContent() {
             <Route path="marketplace" element={<AuthRoute><Marketplace /></AuthRoute>} />
             <Route path="resources" element={<AuthRoute><Resources /></AuthRoute>} />
             <Route path="opportunities" element={<AuthRoute><Opportunities /></AuthRoute>} />
-             <Route path="opportunities/create" element={<AuthRoute><Opportunities /></AuthRoute>} />
+             <Route path="opportunities/create" element={<AuthRoute><CreateOpportunity /></AuthRoute>} />
 
             
             <Route path="posts/:id" element={<PostPage />} />
