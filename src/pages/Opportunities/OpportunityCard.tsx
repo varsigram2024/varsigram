@@ -42,7 +42,7 @@ export default function OpportunityCard({ item }: { item: Opportunity }) {
       <div className="px-4 pb-4">
                     {item.image ? (
                         <Img
-                            src="./images/opportunity.png"
+                            src="/images/opportunity.png"
                             alt={item.title}
                             className="w-full h-44 object-cover rounded-xl mb-2"
                         />
