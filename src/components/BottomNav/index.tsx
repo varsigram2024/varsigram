@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useAuth } from "../../auth/AuthContext";
 import { Link, useNavigate, useLocation, NavLink } from "react-router-dom";
 import { Text } from "../Text";
 import { Img } from "../Img";
 
 export default function BottomNav() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const currentPage = location.pathname.replace("/", "");
@@ -156,26 +158,6 @@ export default function BottomNav() {
         </div>
 
         <div
-          className={`flex flex-col items-center ${
-            currentPage === "marketplace" ? "text-[#750015]" : "text-gray-600"
-          }`}
-        >
-          <Img
-            src="/images/search.svg"
-            alt="Search"
-            className="h-[24px] w-[24px] cursor-pointer"
-            onClick={() => setIsSearchOpen(true)}
-          />
-
-          <Text
-            as="p"
-            className={`mt-1 ${
-              currentPage === "chat" ? "text-[#750015]" : "text-gray-600"
-            }`}
-          ></Text>
-        </div>
-
-        <div
           onClick={() => handleNavigation("resources")}
           className={`flex flex-col items-center ${
             currentPage === "resources" ? "text-[#750015]" : "text-gray-600"
@@ -238,6 +220,57 @@ export default function BottomNav() {
             as="p"
             className={`mt-1 ${
               currentPage === "chat" ? "text-[#750015]" : "text-gray-600"
+            }`}
+          ></Text>
+        </div>
+
+        <div
+          onClick={() => handleNavigation("opportunities")}
+          className={`flex flex-col items-center ${
+            currentPage === "opportunities" ? "text-[#750015]" : "text-gray-600"
+          }`}
+        >
+          <svg
+            width="24"
+            height="25"
+            viewBox="0 0 24 25"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={
+              currentPage === "opportunities" ? "text-[#750015]" : "text-gray-600"
+            }
+          >
+            <path d="M12 2L2 7v6c0 5 4 9 10 10s10-4 10-9V7l-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <Text
+            as="p"
+            className={`mt-1 ${
+              currentPage === "opportunities" ? "text-[#750015]" : "text-gray-600"
+            }`}
+          ></Text>
+        </div>
+
+
+        <div
+          onClick={() => {
+            const displayNameSlug = user?.display_name_slug || user?.email?.split('@')[0];
+            navigate(`/user-profile/${displayNameSlug}`);
+          }}  
+          className={`flex flex-col items-center ${
+            currentPage === "user-profile" ? "text-[#750015]" : "text-gray-600"
+          }`}
+        >
+          <Img 
+                      src={user?.profile_pic_url || "/images/user.png"} 
+                      alt="Profile" 
+                      className="h-[32px] w-[32px] rounded-[50%]" 
+                    />
+
+          <Text
+            as="p"
+            className={`mt-1 ${
+              currentPage === "user-profile" ? "text-[#750015]" : "text-gray-600"
             }`}
           ></Text>
         </div>

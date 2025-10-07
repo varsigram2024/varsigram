@@ -21,6 +21,9 @@ export default function Sidebar1() {
   // Use location.pathname to determine current page
   const currentPage = location.pathname.replace('/', '');
 
+  // Check if user is a verified exclusive organization
+  const isVerifiedExclusiveOrg = user?.type === 'organization' && user?.exclusive && user?.is_verified;
+
   return (
     <Sidebar
       collapsed={collapsed}
@@ -86,7 +89,6 @@ export default function Sidebar1() {
           )}
         </div>
 
-
         <div 
           onClick={() => handleNavigation('resources')}
           className="flex self-stretch gap-5 px-5 py-4 items-center cursor-pointer hover:bg-gray-50"
@@ -106,7 +108,20 @@ export default function Sidebar1() {
           )}
         </div>
 
-
+        <div 
+          onClick={() => handleNavigation('opportunities')}
+          className="flex self-stretch gap-5 px-5 py-4 items-center cursor-pointer hover:bg-gray-50"
+        >
+          <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'opportunities' ? 'text-[#750015]' : 'text-gray-600'}>
+            <path d="M12 2L2 7v6c0 5 4 9 10 10s10-4 10-9V7l-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          {!collapsed && (
+            <Heading as="p" className={currentPage === 'opportunities' ? 'text-[#750015]' : 'text-gray-600'}>
+              Opportunities
+            </Heading>
+          )}
+        </div>
 
         <div 
           onClick={() => handleNavigation('marketplace')}
@@ -123,14 +138,6 @@ export default function Sidebar1() {
             </Heading>
           )}
         </div>
-
-        
-
-
-
-
-
-      
 
         <div    
           onClick={() => handleNavigation('settings')}  
@@ -161,7 +168,8 @@ export default function Sidebar1() {
               <Text as="p" className={currentPage === 'user-profile' ? 'text-[#750015]' : 'text-black'}>
                 {user?.username || user?.fullName || 'User'}
               </Text>
-              {user?.is_verified && (
+              {/* Only show verified icon for exclusive organization accounts that are verified */}
+              {isVerifiedExclusiveOrg && (
                 <Img 
                   src="images/vectors/verified.svg" 
                   alt="Verified" 

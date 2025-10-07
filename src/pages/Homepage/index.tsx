@@ -783,30 +783,6 @@ useEffect(() => {
               )}
             </Link>
           </div>
-         
-          <div className="lg:mt-5 flex justify-between animate-slide-up">
-            <div
-              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
-              onClick={() => setActiveTab('forYou')}
-            >
-              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
-                For you
-              </Text>
-            </div>
-            <div
-              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
-              onClick={() => setActiveTab('official')}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === 'official' ? '' : '!text-[#adacb2]'
-                }`}
-              >
-                Official
-              </Text>
-            </div>
-          </div>
 
           <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
             <div
@@ -859,6 +835,31 @@ useEffect(() => {
               />
             </div>
           </div>
+         
+          <div className="lg:mt-5 mt-8 flex justify-between animate-slide-up">
+            <div
+              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
+              onClick={() => setActiveTab('forYou')}
+            >
+              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
+                For you
+              </Text>
+            </div>
+            <div
+              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
+              onClick={() => setActiveTab('official')}
+            >
+              <Text
+                as="p"
+                className={`text-[14px] font-medium md:text-[22px] ${
+                  activeTab === 'official' ? '' : '!text-[#adacb2]'
+                }`}
+              >
+                Official
+              </Text>
+            </div>
+          </div>
+
           </div>
 
           {isCreatePostOpen && (

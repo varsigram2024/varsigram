@@ -189,7 +189,7 @@ export default function Profile() {
   const handleShareProfile = async () => {
     if (!userProfile) return;
 
-    const profileUrl = `${window.location.origin}/profile/${userProfile.display_name_slug}`;
+    const profileUrl = `${window.location.origin}/user-profile/${userProfile.display_name_slug}`;
     const shareText = `Check out ${userProfile.name || userProfile.organization_name || userProfile.username}'s profile on Varsigram!`;
 
     try {

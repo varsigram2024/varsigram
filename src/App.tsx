@@ -33,6 +33,7 @@ import { EmailVerificationBanner } from "./components/EmailVerificationBanner";
 import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
 import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
+import Opportunities from "./pages/Opportunities";
 import PostPage from "./pages/PostPage";
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
@@ -117,7 +118,7 @@ function AppContent() {
       </div>
     );
   }
-  
+
   // Import or define your signUp function here
   const signUp = async (data: any) => {
     // Implement sign up logic or import from your context/service
@@ -163,6 +164,7 @@ function AppContent() {
             <Route path="notifications" element={<AuthRoute><NotificationsPage /></AuthRoute>} />
             <Route path="marketplace" element={<AuthRoute><Marketplace /></AuthRoute>} />
             <Route path="resources" element={<AuthRoute><Resources /></AuthRoute>} />
+            <Route path="opportunities" element={<AuthRoute><Opportunities /></AuthRoute>} />
 
             
             <Route path="posts/:id" element={<PostPage />} />
