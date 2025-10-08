@@ -35,7 +35,7 @@ const MOCK: Opportunity[] = Array.from({ length: 12 }).map((_, i) => ({
   applicants: Math.floor(Math.random() * 100) + 1,
   deadline: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i * 2) + 1).padStart(2, '0')}`,
   excerpt: 'Brief description of this opportunity and how to apply.',
-  image: '/images/sample-poster.png'
+  image: '/images/opportunity.png'
 }))
 
 export default function Opportunities() {

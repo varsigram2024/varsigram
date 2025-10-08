@@ -40,17 +40,11 @@ export default function OpportunityCard({ item }: { item: Opportunity }) {
 
       {/* Image Section */}
       <div className="px-4 pb-4">
-        {item.image ? (
           <Img
             src="/images/opportunity.png"
             alt={item.title}
             className="w-full h-44 object-cover rounded-xl mb-2"
           />
-        ) : (
-          <div className="w-full h-44 bg-gray-200 rounded-xl mb-2 flex items-center justify-center">
-            <Text className="text-gray-500">No Image Available</Text>
-          </div>
-        )}
       </div>
 
       {/* Horizontal line to demarcate cards */}
