@@ -5,9 +5,7 @@ import { ViewTrackingProvider } from './context/viewTrackingContext.tsx';
 import { Welcome } from './pages/Welcome';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthRoute } from './components/AuthRoute.tsx';
-import { SignUp } from './pages/SignUp';
 import { Login } from './pages/Login';
-import ProfilepageOrganizationPage from './pages/Profilepage';
 import Homepage from './pages/Homepage';
 import { PhoneVerification } from './pages/PhoneVerification';
 import { AcademicDetails } from './pages/AcademicDetails';
@@ -35,6 +33,7 @@ import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import Opportunities from "./pages/Opportunities";
 import CreateOpportunity from './pages/Opportunities/CreateOpportunity.tsx';
+import OpportunityDetail from './pages/Opportunities/OpportunityDetail.tsx';
 import PostPage from "./pages/PostPage";
 import MainLayout from './components/MainLayout';
 import { FeedProvider } from './context/FeedContext';
@@ -167,6 +166,7 @@ function AppContent() {
             <Route path="resources" element={<AuthRoute><Resources /></AuthRoute>} />
             <Route path="opportunities" element={<AuthRoute><Opportunities /></AuthRoute>} />
              <Route path="opportunities/create" element={<AuthRoute><CreateOpportunity /></AuthRoute>} />
+             <Route path="opportunities/:id" element={<AuthRoute><OpportunityDetail /></AuthRoute>} />
 
             
             <Route path="posts/:id" element={<PostPage />} />
