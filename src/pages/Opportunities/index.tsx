@@ -58,82 +58,54 @@ export default function Opportunities() {
     <div className="flex w-full bg-white min-h-screen space-x-4">
       <div className="flex-1 p-4 lg:p-6 items-start justify-center relative border-x border-solid">
         <div className="max-w-6xl mx-auto flex-1 w-full">
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#750015] rounded-full flex items-center justify-center">
-            <Img 
-          src="/images/vectors/resources-icon.svg" 
-          alt="Opportunities" 
-          className="h-5 w-5 filter brightness-0 invert" 
-            />
-          </div>
-          <div>
-            <Heading as="h1" className="text-xl font-semibold text-gray-900">
-          Opportunities
-            </Heading>
-            <Text className="text-gray-600 text-sm">
-          Explore internships, scholarships, and more
-            </Text>
-          </div>
-        </div>
-          </div>
-
-          {/* Search */}
-          <div className="mb-4">
-        <Input
-          placeholder="Search opportunities..."
-          value={query}
-          onChange={(e: any) => setQuery(e.target.value)}
-          className="rounded-lg bg-gray-50 border-0"
-        />
-          </div>
-
-          {/* Tabs */}
-          <div className="flex items-center self-stretch justify-between gap-4 border-b border-gray-200 mb-6">
-        {['Internships', 'Scholarships', 'Others'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`pb-3 text-sm font-medium transition-all relative ${
-          activeTab === tab
-            ? 'text-[#750015] font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#750015]'
-            : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+         
+          {/* Sticky Tabs Container */}
+          <div className="sticky top-16 bg-white z-10 pt-2 pb-2">
+            {/* Tabs */}
+            <div className="flex items-center self-stretch justify-between gap-4 border-b border-gray-200 mb-6 bg-white">
+              {['Internships', 'Scholarships', 'Others'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab as any)}
+                  className={`pb-3 text-sm font-medium transition-all relative ${
+                    activeTab === tab
+                      ? 'text-[#750015] font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#750015]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Content */}
           {filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <Img 
-            src="/images/empty-state.svg" 
-            alt="No opportunities found" 
-            className="h-24 w-24 mx-auto mb-4 opacity-50"
-          />
-          <Heading as="h3" className="text-lg font-medium text-gray-600 mb-2">
-            No opportunities found
-          </Heading>
-          <Text className="text-gray-500 text-sm">
-            Try a different tab or search term
-          </Text>
-        </div>
-          ) : (
-        <div className="space-y-2 lg:px-16">
-          {filtered.map(item => (
-            <div
-          key={item.id}
-          className="cursor-pointer"
-          onClick={() => navigate(`/opportunities/${item.id}`)}
-            >
-          <OpportunityCard item={item} />
+            <div className="text-center py-12">
+              <Img 
+                src="/images/empty-state.svg" 
+                alt="No opportunities found" 
+                className="h-24 w-24 mx-auto mb-4 opacity-50"
+              />
+              <Heading as="h3" className="text-lg font-medium text-gray-600 mb-2">
+                No opportunities found
+              </Heading>
+              <Text className="text-gray-500 text-sm">
+                Try a different tab or search term
+              </Text>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="space-y-2 lg:px-16">
+              {filtered.map(item => (
+                <div
+                  key={item.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/opportunities/${item.id}`)}
+                >
+                  <OpportunityCard item={item} />
+                </div>
+              ))}
+            </div>
           )}
         </div>
         {/* Create Button at the bottom (sticky for all screens) */}
