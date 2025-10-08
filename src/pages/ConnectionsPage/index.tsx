@@ -311,38 +311,9 @@ export default function Connectionspage() {
           <div className="w-full flex-1 flex gap-5 flex-col px-4 py-4 overflow-hidden">
 
             <div className="mt-5 lg:hidden flex flex-row justify-between animate-fade-in">
-              <div 
-                onClick={() => {
-                  const displayNameSlug = user?.display_name_slug || user?.username || user?.email?.split('@')[0];
-                  navigate(`/user-profile/${displayNameSlug}`);
-                }}  
-                className="hover:opacity-80 transition-opacity cursor-pointer"
-              >
-                <Img 
-                  src={user?.profile_pic_url && user?.profile_pic_url.startsWith('http')
-                    ? user?.profile_pic_url
-                    : "images/user.png"} 
-                  alt="Profile" 
-                  className="h-[32px] w-[32px] rounded-[50%]" 
-                />
-              </div>
 
               <div>
                 <Text className="font-semibold text-xl">Connections</Text>
-              </div>
-
-              <div className="flex items-center gap-2 mb-4">
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    handleSearch(e.target.value);
-                  }}
-                  className="flex-1 px-3 py-2 border rounded-lg"
-                />
-                <Img src="images/vectors/search.svg" alt="Search" className="h-[20px] w-[20px]" />
               </div>
             </div>
 
@@ -401,7 +372,7 @@ export default function Connectionspage() {
                                 onClick={(e) => { e.stopPropagation(); org.is_following ? handleUnfollow(org) : handleFollow(org); }}
                                 className={`mt-4 px-6 py-2 rounded-full transition-colors ${org.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
                               >
-                                Connect
+                                Follow
                               </button>
                             </div>
                           ))}
@@ -439,7 +410,7 @@ export default function Connectionspage() {
                                 onClick={(e) => { e.stopPropagation(); org.is_following ? handleUnfollow(org) : handleFollow(org); }}
                                 className={`mt-4 px-6 py-2 rounded-full transition-colors ${org.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
                               >
-                                Connect
+                                Follow
                               </button>
                             </div>
                           ))}
@@ -476,7 +447,7 @@ export default function Connectionspage() {
                                 onClick={(e) => { e.stopPropagation(); student.is_following ? handleUnfollow(student) : handleFollow(student); }}
                                 className={`mt-4 px-6 py-2 rounded-full transition-colors ${student.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
                               >
-                                Connect
+                                Follow
                               </button>
                             </div>
                           ))}
@@ -523,7 +494,7 @@ export default function Connectionspage() {
                                 onClick={(e) => { e.stopPropagation(); student.is_following ? handleUnfollow(student) : handleFollow(student); }}
                                 className={`mt-4 px-6 py-2 rounded-full transition-colors ${student.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
                               >
-                                Connect
+                                Follow
                               </button>
                             </div>
                           ))}
