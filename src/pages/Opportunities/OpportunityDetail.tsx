@@ -12,7 +12,7 @@ const MOCK = Array.from({ length: 12 }).map((_, i) => ({
   organization: ['Unilag', 'Varsigram', 'KPMG'][i % 3],
   location: i % 2 === 0 ? 'Lagos, NG' : 'Remote',
   type: ['Internship', 'Scholarship', 'Others'][i % 3],
-  image: "/images/sample-poster.png",
+  image: "/images/opportunity.png",
   applicants: Math.floor(Math.random() * 100) + 1,
   deadline: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i * 2) + 1).padStart(2, '0')}`,
   description: `This is a detailed description of ${['Internship', 'Scholarship', 'Others'][i % 3]} program ${i + 1}. 

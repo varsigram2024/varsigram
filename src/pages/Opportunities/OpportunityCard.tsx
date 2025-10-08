@@ -47,15 +47,9 @@ export default function OpportunityCard({ item }: { item: Opportunity }) {
             className="w-full h-44 object-cover rounded-xl mb-2"
           />
         ) : (
-          <svg width="352" height="352" viewBox="0 0 352 352" fill="none" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink">
-            <rect x="-22" width="383" height="478" fill="url(#pattern0_2740_11331)"/>
-            <defs>
-              <pattern id="pattern0_2740_11331" patternContentUnits="objectBoundingBox" width="1" height="1">
-                <use xlinkHref="#image0_2740_11331" transform="matrix(0.00115741 0 0 0.000927379 0 -0.000784519)"/>
-              </pattern>
-              <image id="image0_2740_11331" width="864" height="1080" preserveAspectRatio="none" xlinkHref="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/..."/>
-            </defs>
-          </svg>
+          <div className="w-full h-44 bg-gray-200 rounded-xl mb-2 flex items-center justify-center">
+            <Text className="text-gray-500">No Image Available</Text>
+          </div>
         )}
       </div>
 
