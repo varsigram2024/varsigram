@@ -11,26 +11,32 @@ export const Welcome = () => {
     if (/Android/i.test(navigator.userAgent)) setIsAndroid(true);
   }, []);
 
-  const handleSignUp = () => navigate('/signup');
-  const handleLogin = () => navigate('/login');
+ const handleSignUp = () => {
+    navigate('/signup');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
 
   const CTAButtons = () => (
     <div className="flex flex-wrap justify-center gap-4 mt-6">
       <Button
         onClick={handleSignUp}
-        className="text-[#750015] border-2 hover:bg-transparent hover:text-white hover:scale-105 transition-all"
+        className="text-[#750015] border-2 hover:bg-transparent hover:text-white hover:scale-105 transition-all z-10"
       >
         Sign Up Now
       </Button>
       <Button
         onClick={handleLogin}
-        className="bg-transparent border hover:bg-white hover:text-[#750015] hover:scale-105 transition-all"
+        className="bg-transparent border hover:bg-white hover:text-[#750015] hover:scale-105 transition-all z-10"
       >
         Log In
       </Button>
       {isAndroid && (
         <a href="/base1.apk" download>
-          <Button className="bg-transparent border mt-3 hover:bg-white hover:text-[#750015]">
+          <Button className="bg-transparent border mt-3 hover:bg-white hover:text-[#750015] z-10">
             Download App
           </Button>
         </a>
@@ -57,7 +63,7 @@ export const Welcome = () => {
         </div>
         <div className="flex items-center gap-6 text-sm sm:text-lg font-semibold">
           
-          <Button onClick={handleSignUp} className=" bg-white text-[#750015] border-2 transition-all"><span className='text-[#750015]'>Get Started</span></Button>
+          <Button onClick={handleSignUp} className=" bg-white text-[#750015] z-10 border-2 transition-all"><span className='text-[#750015]'>Get Started</span></Button>
         </div>
       </header>
 
@@ -72,7 +78,7 @@ export const Welcome = () => {
           </p>
           <CTAButtons />
         </div>
-        <div className="lg:w-1/2 flex justify-center">
+        <div className="lg:w-1/2 bg-slate-400 flex justify-center">
           <img src="/images/mockups.png" alt="Varsigram app mockup" className="w-[65%] max-w-sm animate-float" />
         </div>
       </section>
@@ -107,7 +113,7 @@ export const Welcome = () => {
           />
         </svg>
           </div>
-          <div className="p-2 left text-left items-center justify-center z-10">
+          <div className="p-2 left text-left items-center justify-center">
         <h2 className="text-3xl font-bold">
           Engage vibrant and insightful conversations with a Vars
         </h2>
@@ -118,7 +124,7 @@ export const Welcome = () => {
           <span className="text-[#750015]">Get Started</span>
         </Button>
           </div>
-          <div className="flex justify-center mt-10 z-10">
+          <div className="flex justify-center mt-10">
         <img src="/images/engage_mockup.png" alt="App mockup" className="w-[80%] max-w-md animate-float" />
           </div>
         </div>
@@ -126,7 +132,7 @@ export const Welcome = () => {
 
       {/* Opportunities Section */}
       <section className="bg-white text-[#750015] py-20 px-6 relative flex flex-col lg:flex-row items-center justify-center gap-10 max-w-7xl mx-auto">
-        <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 pointer-events-none">
         <svg className='w-full h-full' width="1439" height="700" viewBox="0 0 1439 700" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M-57 737C-57 737 475.795 87.58 700.791 87.58C925.787 87.58 740.194 577.889 974.897 553.988C1209.6 530.087 1474 7 1474 7" stroke="#FF6682" stroke-width="30"/>
         </svg>
@@ -140,7 +146,7 @@ export const Welcome = () => {
           <p className="mt-2 text-sm">Coming Soon →</p>
         </div>
         <div className="lg:w-1/2">
-          <img src="/images/internship_mockup.png" alt="Internship mockup" className="w-[90%] mx-auto" />
+          <img src="/images/internship_mockup.png" alt="Internship mockup" className="w-[90%] mx-auto z-10" />
         </div>
       </section>
     </div>
