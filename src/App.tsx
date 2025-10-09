@@ -186,7 +186,7 @@ function AppContent() {
             <Route path="settings" element={<AuthRoute><Settings /></AuthRoute>} />
             <Route path="settings/edit-profile" element={<AuthRoute><EditProfile /></AuthRoute>} />
             <Route path="settings/change-password" element={<AuthRoute><ChangePassword /></AuthRoute>} />
-            <Route path="settings/email-verification" element={<AuthRoute><EmailVerification /></AuthRoute>} />
+            <Route path="settings/email-verification" element={<EmailVerification />} />
             <Route path="settings/privacy-policy" element={<AuthRoute><PrivacyPolicy /></AuthRoute>} />
           </Route>
 
