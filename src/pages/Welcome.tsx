@@ -18,7 +18,7 @@ export const Welcome = () => {
     <div className="flex flex-wrap justify-center gap-4 mt-6">
       <Button
         onClick={handleSignUp}
-        className="bg-white text-[#750015] border-2 hover:bg-transparent hover:text-white hover:scale-105 transition-all"
+        className="text-[#750015] border-2 hover:bg-transparent hover:text-white hover:scale-105 transition-all"
       >
         Sign Up Now
       </Button>
@@ -40,6 +40,15 @@ export const Welcome = () => {
 
   return (
     <div className="bg-[#750015] min-h-screen w-full font-archivo overflow-hidden text-white">
+      <div 
+        className="absolute inset-0 w-full h-full opacity-30"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='1440' height='1558' viewBox='0 0 1440 1558' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg opacity='0.09'%3E%3Cline x1='-73' y1='1321.06' x2='1654.87' y2='1321.06' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='583.225' x2='1654.87' y2='583.225' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='952.143' x2='1654.87' y2='952.143' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='214.303' x2='1654.87' y2='214.303' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='1136.6' x2='1654.87' y2='1136.6' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='398.76' x2='1654.87' y2='398.76' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='767.682' x2='1654.87' y2='767.682' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='29.842' x2='1654.87' y2='29.842' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='1228.83' x2='1654.87' y2='1228.83' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='490.994' x2='1654.87' y2='490.994' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='859.916' x2='1654.87' y2='859.916' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='122.072' x2='1654.87' y2='122.072' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='1044.38' x2='1654.87' y2='1044.38' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='306.533' x2='1654.87' y2='306.533' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='-73' y1='675.455' x2='1654.87' y2='675.455' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='718.885' y1='-187.043' x2='718.885' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='349.963' y1='-187.043' x2='349.963' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='1087.8' y1='-187.043' x2='1087.8' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='165.502' y1='-187.043' x2='165.502' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='903.342' y1='-187.043' x2='903.342' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='534.424' y1='-187.043' x2='534.424' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='1272.26' y1='-187.043' x2='1272.26' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='73.2713' y1='-187.043' x2='73.2713' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='811.111' y1='-187.043' x2='811.111' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='442.189' y1='-187.043' x2='442.189' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='1180.03' y1='-187.043' x2='1180.03' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='257.736' y1='-187.043' x2='257.736' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='995.576' y1='-187.043' x2='995.576' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='626.65' y1='-187.043' x2='626.65' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3Cline x1='1364.49' y1='-187.043' x2='1364.49' y2='1147.41' stroke='white' stroke-width='1.4411'/%3E%3C/g%3E%3Cg opacity='0.5'%3E%3Crect x='903.41' y='793.965' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.5'/%3E%3Crect x='442.258' y='793.965' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='1272.86' y='149.402' width='91.7061' height='90.396' fill='%23FFDBE2' fill-opacity='0.25'/%3E%3Crect x='533.965' y='425.773' width='91.7061' height='90.396' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3Crect x='1179.84' y='241.109' width='91.7061' height='90.396' fill='%23FFDBE2' fill-opacity='0.25'/%3E%3Crect x='442.094' y='149.402' width='91.7061' height='90.396' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3Crect x='1179.84' y='149.402' width='91.7061' height='90.396' fill='%23FFDBE2' fill-opacity='0.25'/%3E%3Crect x='442.094' y='425.773' width='91.7061' height='90.396' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3Crect x='350.551' y='793.965' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='350.551' y='885.672' width='91.7061' height='93.0162' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='165.832' y='702.258' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='1088.13' y='-35.3164' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3Crect x='995.422' y='-35.8086' width='91.7061' height='91.4801' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3Crect x='165.832' y='55.0742' width='93.0162' height='94.3262' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='72.8164' y='-36.6328' width='93.0162' height='91.7061' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='-18.8906' y='-35.3242' width='93.0162' height='91.7061' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='72.8164' y='55.0742' width='93.0162' height='94.3262' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='165.832' y='239.797' width='91.7061' height='93.0162' fill='%23FFDBE2' fill-opacity='0.2'/%3E%3Crect x='1272.86' y='702.258' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3Crect x='1364.56' y='793.965' width='91.7061' height='91.7061' fill='%23FFDBE2' fill-opacity='0.15'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
       {/* Header */}
       <header className="max-w-7xl mx-auto flex justify-between items-center py-6 px-6">
         <div className="flex items-center gap-2">
@@ -47,10 +56,8 @@ export const Welcome = () => {
           <h2 className="text-xl font-bold hidden sm:block">Varsigram</h2>
         </div>
         <div className="flex items-center gap-6 text-sm sm:text-lg font-semibold">
-          <a href="https://www.linkedin.com/company/varsigram/" target="_blank" rel="noreferrer">LinkedIn</a>
-          <a href="https://www.instagram.com/thevarsigram" target="_blank" rel="noreferrer">Instagram</a>
-          <a href="https://x.com/thevarsigram" target="_blank" rel="noreferrer">X</a>
-          <Button onClick={handleSignUp} className="bg-white text-[#750015] hover:bg-transparent hover:text-white transition-all">Get Started</Button>
+          
+          <Button onClick={handleSignUp} className=" bg-white text-[#750015] border-2 transition-all"><span className='text-[#750015]'>Get Started</span></Button>
         </div>
       </header>
 
@@ -80,20 +87,21 @@ export const Welcome = () => {
       </section>
 
       {/* Conversation Section */}
-      <section className=" text-white text-center py-20 px-6">
-       <div className='bg-[#FF6682] flex'>
-        <div>
-           <h2 className="text-3xl font-bold">
-          Engage vibrant and insightful conversations with a Vars</h2>
-        <p className="mt-4 max-w-2xl mx-auto">
+      <section className="items-center justify-center text-white text-center py-20 px-6">
+        <div className='bg-[#FF6682] flex px-4 pt-4'>
+          <div className='p-2 left text-left'>
+        <h2 className="text-3xl font-bold">
+          Engage vibrant and insightful conversations with a Vars
+        </h2>
+        <p className="mt-4 max-w-2xl">
           Gain valuable insights by joining conversations on Varsigram that talk about growth and value.
         </p>
-        <CTAButtons />
+        <Button onClick={handleSignUp} className=" bg-white text-[#750015] border-2 transition-all"><span className='text-[#750015]'>Get Started</span></Button>
+          </div>
+          <div className="flex justify-center mt-10">
+        <img src="/images/engage_mockup.png" alt="App mockup" className="w-[80%] max-w-md animate-float" />
+          </div>
         </div>
-        <div className="flex justify-center mt-10">
-          <img src="/images/engage_mockup.png" alt="App mockup" className="w-[80%] max-w-md animate-float" />
-        </div>
-       </div>
       </section>
 
       {/* Opportunities Section */}
