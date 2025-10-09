@@ -121,6 +121,7 @@ export default function Connectionspage() {
       const usersResponse = await axios.get(`${API_BASE_URL}/who-to-follow/`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      console.log('Who to follow response:', usersResponse.data);
       
       // Separate organizations and students
       const allUsers = usersResponse.data.map((item: any) => ({
@@ -365,9 +366,13 @@ export default function Connectionspage() {
                               />
                               <Text className="font-semibold text-lg">{org.organization_name}</Text>
                               <Text className="text-sm text-gray-500 mt-1">{org.bio || 'No bio available'}</Text>
-                              <Text className="text-xs text-gray-400 mt-1">
-                                {org.exclusive ? 'Exclusive organization' : 'Verified organization'}
-                              </Text>
+                               {org.is_verified && org.exclusive && (
+                                  <Img 
+                                    src="images/vectors/verified_icon.svg" 
+                                    alt="Verified" 
+                                    className="h-4 w-4" 
+                                  />
+                                )}
                               <button
                                 onClick={(e) => { e.stopPropagation(); org.is_following ? handleUnfollow(org) : handleFollow(org); }}
                                 className={`mt-4 px-6 py-2 rounded-full transition-colors ${org.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
@@ -440,9 +445,7 @@ export default function Connectionspage() {
                               />
                               <Text className="font-semibold text-lg">{student.name}</Text>
                               <Text className="text-sm text-gray-500 mt-1">{student.bio || 'No bio available'}</Text>
-                              <Text className="text-xs text-gray-400 mt-1">
-                                {student.department ? `${student.department} student` : 'Student'}
-                              </Text>
+                              
                               <button
                                 onClick={(e) => { e.stopPropagation(); student.is_following ? handleUnfollow(student) : handleFollow(student); }}
                                 className={`mt-4 px-6 py-2 rounded-full transition-colors ${student.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
