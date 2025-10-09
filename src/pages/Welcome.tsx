@@ -80,15 +80,20 @@ export const Welcome = () => {
       </section>
 
       {/* Conversation Section */}
-      <section className="bg-[#FF6682] text-white text-center py-20 px-6">
-        <h2 className="text-3xl font-bold">Engage vibrant and insightful conversations with a Vars</h2>
+      <section className=" text-white text-center py-20 px-6">
+       <div className='bg-[#FF6682] flex'>
+        <div>
+           <h2 className="text-3xl font-bold">
+          Engage vibrant and insightful conversations with a Vars</h2>
         <p className="mt-4 max-w-2xl mx-auto">
           Gain valuable insights by joining conversations on Varsigram that talk about growth and value.
         </p>
         <CTAButtons />
-        <div className="flex justify-center mt-10">
-          <img src="/images/mockups.png" alt="App mockup" className="w-[80%] max-w-md animate-float" />
         </div>
+        <div className="flex justify-center mt-10">
+          <img src="/images/engage_mockup.png" alt="App mockup" className="w-[80%] max-w-md animate-float" />
+        </div>
+       </div>
       </section>
 
       {/* Opportunities Section */}
@@ -101,7 +106,7 @@ export const Welcome = () => {
           <p className="mt-2 text-sm">Coming Soon →</p>
         </div>
         <div className="lg:w-1/2">
-          <img src="/images/internship.png" alt="Internship mockup" className="w-[90%] mx-auto" />
+          <img src="/images/internship_mockup.png" alt="Internship mockup" className="w-[90%] mx-auto" />
         </div>
       </section>
     </div>
