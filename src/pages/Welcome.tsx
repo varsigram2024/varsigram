@@ -274,7 +274,7 @@ export const Welcome = () => {
             className="w-full h-full object-cover"
             style={{ minHeight: '180px sm:230px' }}
           />
-          <h2 className="absolute inset-0 flex items-center justify-center lg:justify-start text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white drop-shadow-md pointer-events-none px-4 sm:px-8">
+          <h2 className="absolute inset-0 flex items-center justify-start lg:justify-start text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white drop-shadow-md pointer-events-none px-4 sm:px-8">
             Join 500+ on <span className="text-[#FF6682] mx-2">Varsigram</span> today!
           </h2>
         </div>
