@@ -42,10 +42,7 @@ export const Welcome = () => {
         className="flex gap-2 sm:gap-3 bg-transparent border hover:bg-white hover:text-[#750015] hover:scale-105 transition-all z-10 w-full sm:w-auto justify-center items-center"
       >
         <span className="text-sm sm:text-base">Log In</span>
-        <svg className='hover:stroke-[#750015]' width="20" height="20" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2.48438 6.125L9.00506 6.12199" stroke="#ffff" strokeWidth="0.698645" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M5.72656 2.86328L8.98841 6.12212L5.72957 9.38396" stroke="#ffff" strokeWidth="0.698645" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+       
       </Button>
       {isAndroid && (
         <a href="/base1.apk" download className="w-full sm:w-auto">
