@@ -185,11 +185,6 @@ export default function Homepage() {
   const [searchFaculty, setSearchFaculty] = useState("");
   const [searchDepartment, setSearchDepartment] = useState("");
 
-  // New state for floating input visibility
-  const [isFloatingInputVisible, setIsFloatingInputVisible] = useState(false);
-  const lastScrollTop = useRef(0);
-  const scrollThreshold = 100; // Pixels to scroll down before showing the floating bar
-
   const currentPosts = useMemo(() => {
     return activeTab === "forYou" ? feedPosts : officialPosts;
   }, [activeTab, feedPosts, officialPosts]);
@@ -794,7 +789,7 @@ export default function Homepage() {
               isHeaderVisible ? "translate-y-0" : "-translate-y-full"
             }`}
           >
-            <div className="items-center justify-between hidden lg:flex animate-fade-in">
+            <div className="hidden lg:flex items-center justify-between animate-fade-in">
               <div
                 onClick={() => {
                   if (user?.display_name_slug) {
@@ -803,7 +798,7 @@ export default function Homepage() {
                     toast.error("Profile link unavailable");
                   }
                 }}
-                className="transition-opacity cursor-pointer hover:opacity-80"
+                className="hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <Text as="p" className="text-[24px] font-medium md:text-[22px]">
                   Welcome back, {user?.fullName || "User"} 👋
@@ -822,14 +817,51 @@ export default function Homepage() {
                   className="h-[24px] w-[24px] text-gray-600 hover:text-blue-600 transition-colors"
                 />
                 {unreadCount > 0 && (
-                  <div className="absolute flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full -top-1 -right-1">
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {unreadCount > 99 ? "*" : unreadCount}
                   </div>
                 )}
               </Link>
             </div>
 
-            <div className="flex flex-row items-center justify-between mt-5 lg:hidden animate-fade-in">
+            <div className="lg:mt-5 flex justify-between animate-slide-up">
+              <div
+                className={`flex px-3 cursor-pointer ${
+                  activeTab === "forYou"
+                    ? "border-b-2 border-solid border-[#750015]"
+                    : ""
+                }`}
+                onClick={() => setActiveTab("forYou")}
+              >
+                <Text
+                  as="p"
+                  className={`text-[14px] font-medium md:text-[22px] ${
+                    activeTab === "forYou" ? "" : "!text-[#adacb2]"
+                  }`}
+                >
+                  For you
+                </Text>
+              </div>
+              <div
+                className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${
+                  activeTab === "official"
+                    ? "border-[#750015]"
+                    : "border-transparent"
+                }`}
+                onClick={() => setActiveTab("official")}
+              >
+                <Text
+                  as="p"
+                  className={`text-[14px] font-medium md:text-[22px] ${
+                    activeTab === "official" ? "" : "!text-[#adacb2]"
+                  }`}
+                >
+                  Official
+                </Text>
+              </div>
+            </div>
+
+            <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
               <div
                 onClick={() => {
                   if (user?.display_name_slug) {
@@ -838,7 +870,7 @@ export default function Homepage() {
                     toast.error("Profile link unavailable");
                   }
                 }}
-                className="transition-opacity cursor-pointer hover:opacity-80"
+                className="hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <Img
                   src={user?.profile_pic_url || "/public/images/user.png"}
@@ -848,13 +880,13 @@ export default function Homepage() {
               </div>
 
               <div>
-                <Text className="text-xl font-semibold">Varsigram</Text>
+                <Text className="font-semibold text-xl">Varsigram</Text>
               </div>
 
-              <div className="flex flex-row items-center justify-between space-x-2">
+              <div className="flex flex-row justify-between items-center space-x-2">
                 <div
                   onClick={() => handleNavigation("settings")}
-                  className="transition-opacity cursor-pointer hover:opacity-80"
+                  className="hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   <Img
                     src="images/settings-icon.svg"
@@ -870,7 +902,7 @@ export default function Homepage() {
                     className="h-[24px] w-[24px] text-gray-600 hover:text-blue-600 transition-colors"
                   />
                   {unreadCount > 0 && (
-                    <div className="absolute flex items-center justify-center w-4 h-4 text-xs text-white bg-red-500 rounded-full -top-1 -right-1">
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </div>
                   )}
@@ -883,43 +915,6 @@ export default function Homepage() {
                   onClick={() => setIsSearchOpen(true)}
                 />
               </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between lg:mt-5 animate-slide-up">
-            <div
-              className={`flex px-3 cursor-pointer ${
-                activeTab === "forYou"
-                  ? "border-b-2 border-solid border-[#750015]"
-                  : ""
-              }`}
-              onClick={() => setActiveTab("forYou")}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === "forYou" ? "" : "!text-[#adacb2]"
-                }`}
-              >
-                For you
-              </Text>
-            </div>
-            <div
-              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${
-                activeTab === "official"
-                  ? "border-[#750015]"
-                  : "border-transparent"
-              }`}
-              onClick={() => setActiveTab("official")}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === "official" ? "" : "!text-[#adacb2]"
-                }`}
-              >
-                Official
-              </Text>
             </div>
           </div>
 
@@ -941,7 +936,6 @@ export default function Homepage() {
 
           {!isCreatePostOpen && (
             <div
-              ref={createPostInputRef} // Attach ref here
               className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors animate-fade-in"
               onClick={() => setIsCreatePostOpen(true)}
             >
@@ -950,7 +944,6 @@ export default function Homepage() {
                 value={newPostContent}
                 placeholder="Create a vars..."
                 className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-                readOnly
               />
               <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
                 <button
@@ -972,14 +965,14 @@ export default function Homepage() {
 
           <div className="w-full post-section">
             {currentIsLoading && currentPosts.length === 0 && (
-              <div className="flex items-center justify-center py-20 animate-fade-in">
+              <div className="flex justify-center items-center py-20 animate-fade-in">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
               </div>
             )}
 
             {error && !currentIsLoading && !isAuthLoading && (
-              <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
-                <p className="mb-4 text-center text-red-500">{error}</p>
+              <div className="flex flex-col justify-center items-center py-20 animate-fade-in">
+                <p className="text-red-500 text-center mb-4">{error}</p>
                 <button
                   onClick={refreshPosts}
                   className="px-4 py-2 bg-[#750015] text-white rounded hover:bg-[#600012] transition-colors"
@@ -1005,7 +998,7 @@ export default function Homepage() {
               )}
 
             {!isAuthLoading && currentPosts.length > 0 && (
-              <div className="w-full space-y-6">
+              <div className="space-y-6 w-full">
                 {currentPosts.map((post, idx) => {
                   const uniqueKey = `${post.id}-${idx}`;
                   return (
@@ -1030,7 +1023,7 @@ export default function Homepage() {
 
                 <div
                   ref={loadingRef}
-                  className="flex items-center justify-center h-20 mt-4"
+                  className="h-20 flex items-center justify-center mt-4"
                 >
                   {currentIsLoading && (
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
@@ -1046,7 +1039,7 @@ export default function Homepage() {
 
         <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
           <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
-            <div className="h-full overflow-hidden">
+            <div className="overflow-hidden h-full">
               <WhoToFollowSidePanel />
             </div>
           </div>
@@ -1061,7 +1054,7 @@ export default function Homepage() {
 
       {isSearchOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black bg-opacity-40 md:items-center md:p-4"
+          className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center md:items-center justify-center p-2 md:p-4"
           onClick={() => {
             setIsSearchOpen(false);
             setSearchQuery("");
@@ -1091,7 +1084,7 @@ export default function Homepage() {
                   <Img
                     src="images/vectors/x.svg"
                     alt="Close"
-                    className="w-6 h-6"
+                    className="h-6 w-6"
                   />
                 </div>
                 <input
@@ -1117,9 +1110,9 @@ export default function Homepage() {
                 </button>
               </div>
 
-              <div className="flex flex-col gap-2 mt-3 sm:flex-row sm:gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
                 <select
-                  className="px-2 py-1 border rounded"
+                  className="border rounded px-2 py-1"
                   value={searchType}
                   onChange={(e) =>
                     setSearchType(
@@ -1133,7 +1126,7 @@ export default function Homepage() {
                 </select>
 
                 <select
-                  className="px-2 py-1 border rounded"
+                  className="border rounded px-2 py-1"
                   value={searchFaculty}
                   onChange={(e) => {
                     setSearchFaculty(e.target.value);
@@ -1148,7 +1141,7 @@ export default function Homepage() {
                   ))}
                 </select>
                 <select
-                  className="px-2 py-1 border rounded"
+                  className="border rounded px-2 py-1"
                   value={searchDepartment}
                   onChange={(e) => setSearchDepartment(e.target.value)}
                   disabled={!searchFaculty}
@@ -1160,7 +1153,7 @@ export default function Homepage() {
                     </option>
                   ))}
                 </select>
-                <div className="flex items-center text-xs text-gray-500">
+                <div className="text-xs text-gray-500 flex items-center">
                   {searchResults.users.length > 0 &&
                     `${searchResults.users.length} results`}
                 </div>
@@ -1169,14 +1162,14 @@ export default function Homepage() {
 
             <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
               {isSearching ? (
-                <div className="flex items-center justify-center py-20">
+                <div className="flex justify-center items-center py-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
                 </div>
               ) : (
                 <div className="p-4">
                   {filteredResults.length > 0 ? (
                     <div className="mb-6">
-                      <h3 className="mb-3 text-lg font-semibold">
+                      <h3 className="text-lg font-semibold mb-3">
                         {filteredResults.length}{" "}
                         {filteredResults.length === 1 ? "Result" : "Results"}
                       </h3>
@@ -1184,7 +1177,7 @@ export default function Homepage() {
                         {filteredResults.map((user) => (
                           <div
                             key={user.id}
-                            className="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer hover:bg-gray-50"
+                            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
                             onClick={() => {
                               if (user.display_name_slug) {
                                 navigate(
@@ -1212,7 +1205,7 @@ export default function Homepage() {
                                 )}
                               </div>
                             </div>
-                            <div className="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded-full">
+                            <div className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
                               {user.type}
                             </div>
                           </div>
@@ -1220,11 +1213,11 @@ export default function Homepage() {
                       </div>
                     </div>
                   ) : searchQuery || searchFaculty || searchDepartment ? (
-                    <div className="py-10 text-center text-gray-500">
+                    <div className="text-center py-10 text-gray-500">
                       No results found for your search criteria
                     </div>
                   ) : (
-                    <div className="py-10 text-center text-gray-400">
+                    <div className="text-center py-10 text-gray-400">
                       Enter search terms or select filters to begin
                     </div>
                   )}

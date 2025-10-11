@@ -16,24 +16,10 @@ import image4 from "/images/iphone-17(1).png";
 import image5 from "/images/iphone-17(2).png";
 import image6 from "/images/iphone-17(3).png";
 import image7 from "/images/study-group-african-people 1.png";
-import image0 from "/images/Vector.png";
+import image0 from "/images/varsigramlogowhite.png";
 import image8 from "/images/post.png";
 import image9 from "/images/iphone-16(1).png";
 import image10 from "/images/iphone-16(2).png";
-
-/**
- * Fully animated Welcome page (TypeScript + React + Framer Motion + Tailwind)
- * - Framer Motion animations on every element (text, buttons, images, backgrounds)
- * - Scroll-triggered reveals for each section
- *
- * Requirements:
- *  - npm i framer-motion
- *  - Tailwind configured
- *  - Add image module declarations if TypeScript complains:
- *      declare module '*.png';
- *      declare module '*.jpg';
- *      declare module '*.svg';
- */
 
 const containerVariants: Variants = {
   hidden: {},
@@ -83,7 +69,7 @@ function useRevealControls(ref: React.RefObject<HTMLElement>) {
   return controls;
 }
 
-export default function Welcome(): JSX.Element {
+export function Welcome(): JSX.Element {
   const navigate = useNavigate();
   const [isAndroid, setIsAndroid] = useState(false);
 
@@ -155,7 +141,7 @@ export default function Welcome(): JSX.Element {
               href="https://www.linkedin.com/company/varsigram/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden text-xs font-semibold text-white lg:text-base hover:text-blue-300 sm:block"
+              className="hidden text-xs font-semibold text-white lg:text-base hover:text-pink-300 sm:block"
               whileHover={{ scale: 1.06 }}
             >
               Linkedin
@@ -175,7 +161,7 @@ export default function Welcome(): JSX.Element {
               href="https://x.com/thevarsigram"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden text-xs font-semibold text-white lg:text-base hover:text-blue-400 sm:block"
+              className="hidden text-xs font-semibold text-white lg:text-base hover:text-pink-400 sm:block"
               whileHover={{ scale: 1.06 }}
             >
               X
@@ -833,37 +819,39 @@ export default function Welcome(): JSX.Element {
 
       {/* Final CTA */}
       <motion.section
-        ref={finalCtaRef} // Ensure you use the correct ref variable (finalCtaRef from the provided code)
-        variants={container}
-        initial="initial"
-        animate={isFinalCtaVisible ? "animate" : "initial"}
+        ref={finalRef as any}
         className="px-4 sm:px-6 lg:px-8 py-12 lg:py-16 bg-[#750015]"
+        initial="hidden"
+        animate={finalControls}
+        variants={containerVariants}
       >
-        <div className="mx-auto max-w-7xl">
-          <div className="relative grid items-center gap-4 lg:grid-cols-2">
-            {/* 1. IMAGE CONTAINER - Set to span both columns on large screens to make it bigger */}
-            <motion.div
-              variants={fadeIn}
-              className="relative order-2 col-span-full lg:col-span-2 h-72 sm:h-96 lg:h-[500px] overflow-hidden rounded-3xl"
+        <motion.div
+          className="grid items-center gap-8 mx-auto max-w-7xl lg:grid-cols-2"
+          variants={containerVariants}
+        >
+          <motion.div className="text-white" variants={fadeUp}>
+            <motion.h3
+              className="mb-4 text-2xl font-bold sm:text-3xl lg:text-4xl xl:text-5xl"
+              variants={fadeUp}
             >
-              <img
-                src={image7}
-                alt="Community"
-                className="object-cover w-full h-full"
-              />
-            </motion.div>
+              Join 500+ on Varsigram today!
+            </motion.h3>
+          </motion.div>
 
-            {/* 2. TEXT CONTAINER - Positioned absolutely to overlap the image */}
-            <motion.div
-              variants={fadeIn}
-              className="absolute left-0 z-10 order-1 w-full p-4 text-white -translate-y-1/2 top-1/2 sm:w-2/3 lg:w-1/2 sm:p-6 lg:p-12"
-            >
-              <h3 className="text-3xl font-bold leading-snug sm:text-4xl lg:text-5xl xl:text-6xl text-shadow-lg">
-                Join 500+ on Varsigram today!
-              </h3>
-            </motion.div>
-          </div>
-        </div>
+          <motion.div
+            className="h-48 overflow-hidden rounded-3xl sm:h-64 lg:h-80"
+            variants={fadeUp}
+          >
+            <motion.img
+              src={image7}
+              alt="Community"
+              className="object-cover w-full h-full"
+              initial={{ scale: 1.02, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.9 }}
+            />
+          </motion.div>
+        </motion.div>
       </motion.section>
 
       {/* Footer */}
