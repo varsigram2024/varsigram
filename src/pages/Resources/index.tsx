@@ -10,7 +10,7 @@ export default function Resources() {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      <Sidebar1 />
+      
       <div className="flex flex-row-reverse w-full lg:w-[calc(100%-270px)] min-h-screen">
         <div className="flex flex-col items-center justify-center w-full h-full min-h-[80vh]">
           <img
@@ -25,7 +25,7 @@ export default function Resources() {
           <Button onClick={() => navigate("/home")}>Back to Home</Button>
         </div>
       </div>
-      <BottomNav />
+      {/* <BottomNav /> */}
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { CloseSVG } from "../../components/Input/close";
 import "../../styles/style.css"
 import { useAuth } from "../../auth/AuthContext";
 import axios from "axios";
-import { ClickableUser } from "../../components/ClickableUser";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;

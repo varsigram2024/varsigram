@@ -6,7 +6,6 @@ import { Logo } from "../components/Logo";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/AuthContext";
-import API from "../services/API";
 import { toast } from "react-toastify";
 
 export const Login = () => {
@@ -44,16 +43,22 @@ export const Login = () => {
     console.log("Submitting login with:", formData);
     try {
       await login(formData.email, formData.password);
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      
-    } finally {
+    }  finally {
       setIsLoading(false);
     }
+    try {
+  await login(formData.email, formData.password);
+  // ✅ Trigger popup ONLY after login
+  sessionStorage.setItem("justLoggedIn", "true");
+  navigate("/home"); // or wherever you redirect after login
+} catch (error) {
+  console.error("Login failed:", error);
+}
+
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col sm:flex-row font-archivo">
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-archivo">
       {/* Mobile Header */}
       <div className="sm:hidden p-6 flex items-center">
       <a href="/welcome" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -62,7 +67,7 @@ export const Login = () => {
       </div>
 
       {/* Desktop Left Section */}
-      <div className="hidden sm:flex w-[740px] p-8 flex-col">
+      <div className="hidden sm:flex w-auto p-8 flex-col">
         <a href="/welcome"><Logo /></a>
         <div className="flex-1 flex flex-col items-center justify-center">
           <img
@@ -124,14 +129,23 @@ export const Login = () => {
                 }
               />
             </div>
-
-            <div
-              className="text-center mt-4 animate-slide-up"
-              style={{ animationDelay: "250ms" }}>
-              <Link to="/forgot-password" className="text-sm text-[#750015] hover:underline">
-                Forgot Password?
-              </Link>
-            </div>
+<div className="flex justify-between">             
+  <div
+    className="mt-4 animate-slide-up"
+    style={{ animationDelay: "250ms" }}>
+    <Link to="https://chat.whatsapp.com/EGY8l7P0ZqT6DIrXp8YgAx?mode=ems_copy_c" className="text-sm text-[#750015] hover:underline">
+      Complain
+    </Link>
+  </div>
+    
+  <div
+    className="mt-4 animate-slide-up"
+    style={{ animationDelay: "250ms" }}>
+    <Link to="/forgot-password" className="text-sm text-[#750015] hover:underline">
+      Forgot Password?
+    </Link>
+  </div>
+</div>
 
             <div
               className="animate-slide-up"

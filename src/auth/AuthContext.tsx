@@ -210,7 +210,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.warn('signInWithGoogle: Not implemented');
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, onLoginSuccess?: () => void) => {
     try {
       setIsLoading(true);
   
@@ -275,18 +275,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast('Please verify your email to continue.');
         navigate('/settings/email-verification');
       } else {
-        toast.success('Login successful! Welcome back');
         navigate('/home');
+      }
+
+      // Trigger the callback after successful login
+      if (onLoginSuccess) {
+        onLoginSuccess();
       }
     } catch (error: any) {
       console.error("Login failed:", error.response?.data || error);
-      if (error.response?.data?.non_field_errors) {
-        console.error("Backend says:", error.response.data.non_field_errors[0]);
-      }
       clearToken();
       setToken(null);
       setUser(null);
   
+      if (error.response?.data?.non_field_errors) {
+        console.error("Backend says:", error.response.data.non_field_errors[0]);
+      }
       if (error.response?.data?.detail) {
         toast.error(error.response.data.detail);
       } else if (error.response?.status === 401) {

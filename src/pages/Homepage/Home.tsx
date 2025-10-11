@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../auth/AuthContext';
-import { Post } from '../../components/Post.tsx';
+import { Post } from '../../components/Post/index.tsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 

@@ -3,33 +3,39 @@ import { useAuth } from '../../auth/AuthContext';
 import { Text } from '../../components/Text/index.tsx';
 import { Img } from '../../components/Img/index.tsx';
 import { Heading } from '../../components/Heading/index.tsx';
+import { useNotificationNavigation } from '../../hooks/useNotificationNavigation.ts';
 import Sidebar1 from '../../components/Sidebar1/index.tsx';
 import BottomNav from '../../components/BottomNav/index.tsx';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-// Adjusted interface to match backend model and common naming conventions
+
+
 interface Notification {
-  id: number; // Assuming integer ID from Django's AutoField
+  id: number;
   title: string;
-  body: string; // Changed from 'message' to 'body' to match Django model
-  data: Record<string, any> | null; // For custom JSON data
+  body: string;
+  data: {
+    type: string;
+    post_id?: string;
+    comment_id?: string;
+    follower_display_name_slug?: string; // Add this field
+    liker_id?: string;
+    commenter_id?: string;
+  } | null;
   is_read: boolean;
   created_at: string;
-  read_at: string | null; // When it was marked read
-  // Optional related objects (ensure your serializer includes these if needed)
+  read_at: string | null;
   sender?: {
-    id: number; // Assuming integer ID
+    id: number;
     username: string;
     profile_pic_url: string | null;
+    follower_display_name_slug?: string; // Add this field
   };
   post?: {
-    id: number; // Assuming integer ID
+    id: string;
     content: string;
   };
-  type: string; // Ensure your backend sends a 'type' field in the `data` payload or as a separate field
-                // Example: data: { "type": "like" }
-                // If it's a direct field on Notification model, add it.
 }
 
 export default function NotificationsPage() {
@@ -37,6 +43,47 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0); // This will be managed by separate fetches/updates
+
+  
+   const { handleNotificationClick } = useNotificationNavigation();
+
+  const getActionText = (type: string) => {
+  switch (type) {
+    case 'like':
+    case 'new_post':
+      return 'View post';
+    case 'comment':
+    case 'reply':
+    case 'mention':
+      return 'View comments';
+    case 'follow':
+      return 'View profile';
+    default:
+      return 'View';
+  }
+};
+
+
+  const handleNotificationItemClick = async (notification: Notification) => {
+  console.log('=== NOTIFICATION ITEM CLICK DEBUG ===');
+  console.log('Notification clicked:', notification);
+  console.log('Notification ID:', notification.id);
+  console.log('Is read:', notification.is_read);
+  console.log('Notification data:', notification.data);
+  
+  // Mark as read if not already read
+  if (!notification.is_read) {
+    console.log('Marking notification as read...');
+    await markAsRead(notification.id);
+  } else {
+    console.log('Notification already read, skipping mark as read');
+  }
+  
+  // Handle navigation
+  console.log('Calling handleNotificationClick...');
+  handleNotificationClick(notification);
+};
+
 
   // Combine fetching notifications and unread count
   useEffect(() => {
@@ -130,25 +177,26 @@ export default function NotificationsPage() {
     }
   };
 
-  // Helper to get icon based on notification 'type'
-  // Ensure your backend's 'data' JSONField contains a 'type' key
-  // or that 'type' is a direct field on your Notification model.
-  const getNotificationIcon = (type: string | undefined) => { // 'type' can be undefined if not present
-    switch (type) {
-      case 'like':
-        return '/images/vectors/like_filled.svg';
-      case 'comment':
-        return '/images/vectors/vars.svg';
-      case 'follow':
-        return '/images/vectors/follow.svg';
-      case 'mention':
-        return '/images/vectors/at.svg';
-      // case 'system': // Added system type icon
-        // return '/images/vectors/settings.svg';
-      default:
-        return '/images/vectors/bell.svg'; // Default bell icon
-    }
-  };
+  // Update getNotificationIcon to use data.type
+const getNotificationIcon = (type: string | undefined) => {
+  switch (type) {
+    case 'like':
+      return '/images/vectors/like_filled.svg';
+    case 'comment':
+    case 'reply':
+    case 'mention':
+      return '/images/vectors/vars.svg';
+    case 'follow':
+      return '/images/vectors/follow.svg';
+    case 'new_post':
+      return '/images/vectors/bell.svg';
+    case 'system':
+      return '/images/vectors/settings.svg';
+    default:
+      return '/images/vectors/bell.svg';
+  }
+};
+
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -179,16 +227,13 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative">
-      {/* Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar1 />
-      </div>
+     
 
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center w-full max-w-[1200px]">
         {/* Header */}
         <div className="flex items-center justify-between w-full p-4 bg-white shadow-sm">
-          <Heading size="lg" className="text-gray-900">
+          <Heading size="h3_semibold" className="text-gray-900">
             Notifications
           </Heading>
           {unreadCount > 0 && (
@@ -222,35 +267,40 @@ export default function NotificationsPage() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors group ${
                     !notification.is_read ? 'bg-blue-50' : ''
                   }`}
-                  onClick={() => markAsRead(notification.id)}
+                  onClick={() => handleNotificationItemClick(notification)}
                 >
                   <div className="flex items-start space-x-3">
                     {/* Notification Icon (derived from notification.type) */}
                     <div className="flex-shrink-0">
                       <Img
-                        src={getNotificationIcon(notification.data?.type)} // Access type from 'data' field
+                        src={getNotificationIcon(notification.data?.type)}
                         alt={notification.data?.type || 'notification'}
                         className="w-6 h-6"
                       />
+
                     </div>
 
                     {/* Notification Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center justify-between">
                         {notification.sender && (
-                          // Ensure profile_pic_url is an absolute URL or correctly prefixed
                           <Img
                             src={notification.sender.profile_pic_url || '/images/user-image.png'}
                             alt={notification.sender.username}
-                            className="w-6 h-6 rounded-full object-cover" // Added object-cover
+                            className="w-6 h-6 rounded-full object-cover" 
                           />
                         )}
                         <Text className="text-sm font-medium text-gray-900 flex-1">
                           {notification.title}
                         </Text>
+                       <span className="text-xs text-gray-400 transition-colors">
+                          {getActionText(notification.data?.type || '')} →
+                        </span>
+
+
                         {!notification.is_read && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
                         )}
@@ -281,7 +331,7 @@ export default function NotificationsPage() {
 
       {/* Bottom Navigation for Mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
-        <BottomNav />
+        {/* <BottomNav /> */}
       </div>
     </div>
   );

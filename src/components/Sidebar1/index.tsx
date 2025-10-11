@@ -26,7 +26,7 @@ export default function Sidebar1() {
       collapsed={collapsed}
       width="250px"
       collapsedWidth="90px"
-      className={`${currentPage} hidden lg:flex h-auto flex-col overflow-auto border-solid border-[#adacb2] bg-white pt-1 !sticky top-0`}
+      className={`${currentPage} !sticky top-0 hidden lg:flex flex-col border-solid border-[#adacb2] bg-white pt-1 `}
     >
       <div className="flex h-full flex-col px-0 items-center">
         <div className="mt-[5px] flex self-stretch gap-5 px-1 py-[18px] items-center">
@@ -125,6 +125,10 @@ export default function Sidebar1() {
         </div>
 
         
+
+
+
+
 
       
 
