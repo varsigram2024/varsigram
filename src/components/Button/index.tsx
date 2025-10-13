@@ -9,8 +9,8 @@ const shapes = {
 
 const variants = {
   fill: {
-    pink_100: "bg-[#eacade]",
-    pink_900: "bg-[#750015] text-[#ffffff]",
+    pink_100: "bg-[#eacade] text-[#750015]",
+    pink_900: "bg-[#750015] text-white",
   },
   outline: {
     gray_400_01: "border-[#bebebe] border border-solid text-[#3a3a3a]",
@@ -53,6 +53,7 @@ const Button = <T extends VariantType = "outline">({
 
   return (
     <button
+      // REMOVED the hardcoded text-[#750015] from here
       className={`flex flex-row items-center justify-center text-center cursor-pointer whitespace-nowrap font-archivo ${shapeClass} ${sizeClass} ${variantClass} ${className}`.trim()}
       {...restProps}
     >
