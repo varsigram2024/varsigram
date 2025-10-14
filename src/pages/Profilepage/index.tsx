@@ -1054,7 +1054,7 @@ const UsersListModal = ({
 
                 <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
                   <div className="text-[20px] font-semibold">
-                    My Posts
+                      Posts
                     <div className="h-[3px] w-20 bg-[#750015]"></div>
                   </div>
                 </div>
