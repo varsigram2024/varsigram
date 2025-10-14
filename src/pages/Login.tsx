@@ -37,25 +37,30 @@ export const Login = () => {
     navigate('/signup');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    console.log("Submitting login with:", formData);
-    try {
-      await login(formData.email, formData.password);
-    }  finally {
-      setIsLoading(false);
-    }
-    try {
-  await login(formData.email, formData.password);
-  // ✅ Trigger popup ONLY after login
-  sessionStorage.setItem("justLoggedIn", "true");
-  navigate("/home"); // or wherever you redirect after login
-} catch (error) {
-  console.error("Login failed:", error);
-}
+// In Login.tsx, update the handleLogin function:
 
-  };
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  console.log("Submitting login with:", formData);
+  try {
+    await login(formData.email, formData.password);
+    
+    // ✅ Check for redirect path after login
+    const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+    if (redirectPath) {
+      sessionStorage.removeItem('redirectAfterLogin');
+      navigate(redirectPath, { replace: true });
+    } else {
+      sessionStorage.setItem("justLoggedIn", "true");
+      navigate("/home");
+    }
+  } catch (error) {
+    console.error("Login failed:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-archivo">

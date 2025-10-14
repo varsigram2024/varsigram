@@ -410,6 +410,7 @@ export default function PostPage() {
   const [replyText, setReplyText] = useState("");
   const [scrollToComment, setScrollToComment] = useState<string | null>(null);
   const [highlightComment, setHighlightComment] = useState<string | null>(null);
+  
 
   // Add pagination state for comments
   const [commentsNextCursor, setCommentsNextCursor] = useState<string | null>(null);
@@ -544,57 +545,71 @@ export default function PostPage() {
     await fetchComments(commentsNextCursor);
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+
+  // Add redirect function for authentication
+const requireAuth = (action: string) => {
+  if (!token) {
+    // Store current location for redirect after login
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
+    toast.error(`Please log in to ${action}`);
+    navigate('/login');
+    return false;
+  }
+  return true;
+};
+
+
+
+const handleAddComment = async (e: React.FormEvent) => {
+   e.preventDefault();
+  
+  if (!requireAuth('comment')) return;
+  
+  const textToPost = replyingTo ? replyText : newComment;
+  if (!textToPost.trim()) return;
+  
+  setIsPosting(true);
+  try {
+    await axios.post(
+      `${API_BASE_URL}/posts/${id}/comments/create/`,
+      { 
+        text: textToPost,
+        parent_comment_id: replyingTo || undefined
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     
-    if (!token) {
-      toast.error("Please sign up to comment");
-      navigate('/welcome');
-      return;
+    if (replyingTo) {
+      setReplyText("");
+      setReplyingTo(null);
+    } else {
+      setNewComment("");
     }
     
-    const textToPost = replyingTo ? replyText : newComment;
-    if (!textToPost.trim()) return;
+    // Refresh comments to show the new comment/reply
+    fetchComments();
+    toast.success(replyingTo ? "Reply posted!" : "Comment posted!");
+  } catch (error: any) {
+    console.error('Failed to add comment:', error);
     
-    setIsPosting(true);
-    try {
-      await axios.post(
-        `${API_BASE_URL}/posts/${id}/comments/create/`,
-        { 
-          text: textToPost,
-          parent_comment_id: replyingTo || undefined
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (replyingTo) {
-        setReplyText("");
-        setReplyingTo(null);
-      } else {
-        setNewComment("");
-      }
-      
-      // Refresh comments to show the new comment/reply
-      fetchComments();
-      toast.success(replyingTo ? "Reply posted!" : "Comment posted!");
-    } catch (error) {
-      console.error('Failed to add comment:', error);
+    // Handle 403 Forbidden error specifically
+    if (error.response?.status === 403) {
+      toast.error("To comment, kindly go to Settings > Email Verification to verify");
+    } else {
       toast.error("Failed to add comment");
-    } finally {
-      setIsPosting(false);
     }
-  };
+  } finally {
+    setIsPosting(false);
+  }
+};
 
   const handleStartReply = (commentId: string, authorName: string) => {
-    if (!token) {
-      toast.error("Please sign up to reply");
-      navigate('/welcome');
-      return;
-    }
-    
-    setReplyingTo(commentId);
-    setReplyText(`@${authorName} `);
-  };
+  if (!requireAuth('reply')) return;
+  
+  setReplyingTo(commentId);
+  setReplyText(`@${authorName} `);
+};
+
 
     const handleBack = () => {
     if (window.history.length > 2) {
@@ -736,14 +751,15 @@ export default function PostPage() {
 
       {/* Post */}
       <div className="p-4">
-        <PostComponent
-          post={post}
-          currentUserId={user?.id}
-          currentUserEmail={user?.email}
-          showFullContent={true}
-          isPublicView={!token}
-        />
-      </div>
+          <PostComponent
+            post={post}
+            currentUserId={user?.id}
+            currentUserEmail={user?.email}
+            showFullContent={true}
+            isPublicView={!token} // Add this prop
+            onRequireAuth={() => requireAuth('like posts')} // Add this prop
+          />
+        </div>
 
       {/* Comments */}
       <div className="bg-white p-4">

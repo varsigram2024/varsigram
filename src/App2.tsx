@@ -141,51 +141,48 @@ function AppContent() {
       }}
       />
      
-        <Routes>
-          {/* Authentication Routes */}
-          <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
-          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-          {/* Multi-step Signup Routes */}
-          <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
-          <Route path="/academic-details" element={<PublicRoute><AcademicDetails /></PublicRoute>} />
-          <Route path="/about-yourself" element={<PublicRoute><AboutYourself /></PublicRoute>} />
-          <Route path="/academic-level" element={<PublicRoute><AcademicLevel /></PublicRoute>} />
 
-          {/* Main App Routes (Protected + Verified) */}
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Navigate to="/home" replace />} />
-            <Route path="home" element={<AuthRoute><Homepage /></AuthRoute>} />
-            <Route path="chat" element={<AuthRoute><Chatpage /></AuthRoute>} />
-            <Route path="connections" element={<AuthRoute><Connectionspage /></AuthRoute>} />
-            <Route path="notifications" element={<AuthRoute><NotificationsPage /></AuthRoute>} />
-            <Route path="marketplace" element={<AuthRoute><Marketplace /></AuthRoute>} />
-            <Route path="resources" element={<AuthRoute><Resources /></AuthRoute>} />
-            <Route path="opportunities" element={<AuthRoute><Opportunities /></AuthRoute>} />
-             <Route path="opportunities/create" element={<AuthRoute><CreateOpportunity /></AuthRoute>} />
-             <Route path="opportunities/:id" element={<AuthRoute><OpportunityDetail /></AuthRoute>} />
+                {/* Public Routes */}
+                <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
+                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
+                <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+                <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+                <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
+                <Route path="/academic-details" element={<PublicRoute><AcademicDetails /></PublicRoute>} />
+                <Route path="/about-yourself" element={<PublicRoute><AboutYourself /></PublicRoute>} />
+                <Route path="/academic-level" element={<PublicRoute><AcademicLevel /></PublicRoute>} />
 
-            
-            <Route path="posts/:id" element={<PostPage />} />
-            
-            {/* Profile Routes */}
-            <Route path="profile/:username" element={<AuthRoute><Profile /></AuthRoute>} />
-            <Route path="user-profile/:display_name_slug" element={<ProfilePage />} />
-            
-            {/* Settings Routes */}
-            <Route path="settings" element={<AuthRoute><Settings /></AuthRoute>} />
-            <Route path="settings/edit-profile" element={<AuthRoute><EditProfile /></AuthRoute>} />
-            <Route path="settings/change-password" element={<AuthRoute><ChangePassword /></AuthRoute>} />
-            <Route path="settings/email-verification" element={<EmailVerification />} />
-            <Route path="settings/privacy-policy" element={<AuthRoute><PrivacyPolicy /></AuthRoute>} />
-          </Route>
+                {/* Public pages that require auth for engagement */}
+                <Route path="/posts/:id" element={<PostPage />} />
+                <Route path="/user-profile/:display_name_slug" element={<ProfilePage />} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/welcome" replace />} />
-        </Routes>
+                {/* Protected Layout */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Navigate to="/home" replace />} />
+                  <Route path="home" element={<Homepage />} />
+                  <Route path="chat" element={<Chatpage />} />
+                  <Route path="connections" element={<Connectionspage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
+                  <Route path="marketplace" element={<Marketplace />} />
+                  <Route path="resources" element={<Resources />} />
+                  <Route path="opportunities" element={<Opportunities />} />
+                  <Route path="opportunities/create" element={<CreateOpportunity />} />
+                  <Route path="opportunities/:id" element={<OpportunityDetail />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="settings/edit-profile" element={<EditProfile />} />
+                  <Route path="settings/change-password" element={<ChangePassword />} />
+                  <Route path="settings/email-verification" element={<EmailVerification />} />
+                  <Route path="settings/privacy-policy" element={<PrivacyPolicy />} />
+                </Route>
 
       {/* Notification Prompt */}
       {showNotificationPrompt && (

@@ -66,7 +66,7 @@ export const Welcome = () => {
     <div className="flex flex-wrap justify-center lg:justify-start gap-8 sm:gap-6 lg:gap-10 mt-6 w-full">
       <Button
         onClick={handleSignUp}
-        className=" bg-white text-[#9d011d] border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
+        className=" bg-white text-[#91021c] border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
       >
         Sign up now
       </Button>
@@ -89,7 +89,7 @@ export const Welcome = () => {
   };
 
   return (
-    <div className="bg-[#750015] min-h-screen w-full font-archivo overflow-hidden text-white">
+    <div className="bg-[#750015] min-h-screen space-y-16 w-full font-archivo overflow-hidden text-white">
      {/* Background Animation */}
       <div 
         className="absolute inset-0 w-full h-full opacity-100 animate-pulse-slow"
@@ -262,15 +262,15 @@ export const Welcome = () => {
             </div>
           </div>
 
-          <div className="flex justify-center items-center mt-6 lg:mt-10 z-10 w-1/2 lg:w-1/2 animate-fade-in-up delay-300">
-              <div className='relative w-full bg-black h-full flex justify-center items-center'>
+          <div className="flex justify-center items-center mt-6 lg:mt-10 z-10 w-[75%] lg:w-1/2 animate-fade-in-up delay-300">
+              <div className='relative w-full h-full flex justify-center items-center'>
                 <img 
                   src={engageMockup} 
                   alt="App mockup" 
-                  className="w-1/2 sm:w-2/5 lg:w-1/2" 
+                  className="w-[85%] sm:w-4/5 lg:w-1/2" 
                 />
                 
-                <div className="w-1/2 absolute bottom-10 xl:bottom-56 left-[-0.5rem] lg:left-10 scale-75 lg:scale-100 pointer-events-none">
+                <div className="w-4/5 lg:w-1/2 absolute bottom-36 xl:bottom-56 left-[-0.5rem] lg:left-10 scale-75 lg:scale-100 pointer-events-none">
                   <img
                     src={popup1}
                     alt="Popup 1"
@@ -302,9 +302,9 @@ export const Welcome = () => {
           </svg>
         </div>
         <div className="lg:w-1/2 z-10 text-center lg:text-left animate-fade-in-up">
-          <h3 className="text-2xl sm:text-3xl font-bold">Your Opportunities, All in One Place</h3>
-          <p className="mt-4 text-[#750015]/80 text-sm sm:text-base">
-            Find and apply for the latest internships, scholarships, and jobs on Varsigram. Simple, fast, and personalized.
+          <h3 className="text-2xl sm:text-3xl font-bold"><span className='text-[#3a3a3a]'>Your Opportunities,</span> All in One Place</h3>
+          <p className="mt-4 text-[#3a3a3a] text-sm sm:text-base">
+            Find and apply for the best internships, scholarships, and jobs all without leaving Varsigram. Simple, fast, and personalized. No long messages. No stress. Just opportunities.
           </p>
           <p className="mt-2 text-sm animate-pulse">Coming Soon →</p>
         </div>
@@ -312,7 +312,7 @@ export const Welcome = () => {
           <img 
             src={opportunityMockup} 
             alt="Internship mockup" 
-            className="w-full max-w-md mx-auto z-10 transform transition-all duration-500 hover:scale-105" 
+            className="w-full max-w-md mx-auto z-10 transform transition-all duration-500" 
           />
         </div>
       </section>
@@ -332,7 +332,7 @@ export const Welcome = () => {
           <img 
             src={firstVars} 
             alt="First Vars mockup" 
-            className="w-full max-w-md mx-auto z-10 transform transition-all duration-500 hover:scale-105" 
+            className="w-full max-w-md mx-auto z-10 transform transition-all duration-500" 
           />
         </div>
 
@@ -340,7 +340,7 @@ export const Welcome = () => {
           <h1 className="text-[#3a3a3a] text-2xl sm:text-3xl lg:text-4xl xl:text-[3.3rem] font-semibold leading-tight sm:leading-snug lg:leading-[64px] mb-6 lg:mb-10">
             Ready to make your <span className='text-[#750015] animate-pulse'>FIRST</span> Vars?
           </h1>
-          <div className="flex justify-center lg:justify-start">
+          <div className="hidden lg:flex justify-center lg:justify-start">
             <Button
               onClick={handleSignUp}
               className="bg-[#750015] hover:bg-white hover:scale-105 active:scale-95 transition-all duration-300 transform hover:-translate-y-1 z-10 text-sm sm:text-base"
@@ -348,31 +348,33 @@ export const Welcome = () => {
               <span className='text-white hover:text-[#750015] transition-colors duration-300'>Sign up now</span>
             </Button>
           </div>
+          {isAndroid && (
+        <a href="/base1.apk" download className="w-full sm:w-auto">
+          <Button className="bg-transparent border mt-3 hover:bg-white hover:text-[#750015] z-10 w-full transition-all duration-300 hover:scale-105 active:scale-95 transform hover:-translate-y-1">
+            <span className="transition-colors duration-300">Download App</span>
+          </Button>
+        </a>
+      )}
         </div>
       </section>
 
       {/* Footer Section */}
-      <section 
-        ref={(el) => addToRefs(el, 6)}
-        className="w-full flex items-center justify-center py-12 sm:py-16 px-4 sm:px-6 lg:px-20 transition-all duration-1000"
-      >
-        <div
-          className="max-w-7xl w-full flex items-center rounded-2xl p-0 bg-cover bg-center overflow-hidden relative transform transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl"
-          style={{
-            minHeight: '180px sm:230px',
-          }}
-        >
-          <img
-            src={footer}
-            alt="Join Varsigram Footer"
-            className="w-full h-full object-cover"
-            style={{ minHeight: '180px sm:230px' }}
-          />
-          <h2 className="absolute inset-0 flex items-center justify-start lg:justify-start text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white drop-shadow-md pointer-events-none px-4 sm:px-8 animate-fade-in-up">
-            Join 500+ on <span className="text-[#FF6682] mx-2 animate-pulse">Varsigram</span> today!
-          </h2>
-        </div>
-      </section>
+<section 
+  ref={(el) => addToRefs(el, 6)}
+  className="w-full flex items-center justify-center py-12 sm:py-16 px-4 sm:px-6 lg:px-20 transition-all duration-1000 bg-cover bg-center relative"
+  style={{
+    backgroundImage: `url(${footer})`,
+  }}
+>
+  {/* Overlay for opacity */}
+  <div className="absolute inset-0 bg-white bg-opacity-40"></div>
+  
+  <div className="max-w-7xl w-full flex items-center justify-center lg:justify-start transform transition-all duration-500 hover:scale-[1.02] relative z-10">
+    <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white drop-shadow-md pointer-events-none px-4 sm:px-8 animate-fade-in-up">
+      Join 500+ on <span className="text-[#FF6682] mx-2 animate-pulse">Varsigram</span> today!
+    </h2>
+  </div>
+</section>
 
       <style>{`
   /* Base animations */

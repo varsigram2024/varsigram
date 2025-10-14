@@ -68,6 +68,7 @@ interface PostProps {
   showFullContent?: boolean;
   postsData?: Post[];
   isPublicView?: boolean;
+  onRequireAuth?: () => void;
   isLoading?: boolean;
 }
 
@@ -94,6 +95,7 @@ export const Post: React.FC<PostProps> = ({
   postsData = [],
   isPublicView = false,
   isLoading = false,
+  onRequireAuth,
 }) => {
     if (isLoading) {
     return <PostSkeleton />;
@@ -466,7 +468,13 @@ useEffect(() => {
 
 
   const handleLike = async () => {
+    
     if (isLiking) return;
+
+      if (isPublicView && onRequireAuth) {
+    onRequireAuth();
+    return;
+  }
 
     if (!token) {
       toast.error("Please sign up to like posts");
@@ -695,6 +703,10 @@ useEffect(() => {
   const shouldShowReadMore = post.content.length > 200;
 
   const handleCommentClick = (e: React.MouseEvent) => {
+      if (isPublicView && onRequireAuth) {
+    onRequireAuth();
+    return;
+  }
   e.stopPropagation();
   const postPagePath = `/posts/${post.id}`;
   

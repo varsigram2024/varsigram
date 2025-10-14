@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { storage } from "../../firebase/config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-hot-toast";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
@@ -15,7 +16,7 @@ import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.ts
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post/index.tsx";
 import { uploadProfilePicture } from "../../utils/fileUpload.ts";
-import { Pencil, Save, Share, Users, X } from "lucide-react"; // Added missing imports
+import { Pencil, Save, Share, Users, X } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -119,6 +120,7 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { display_name_slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation(); // Added hook
   const [followers, setFollowers] = useState<FollowerFollowingUser[]>([]);
   const [following, setFollowing] = useState<FollowerFollowingUser[]>([]);
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -130,54 +132,60 @@ export default function Profile() {
   const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
   const [currentUserFollowing, setCurrentUserFollowing] = useState<FollowerFollowingUser[]>([]);
-  
-  // Add missing functions
+
+
+  // Update modal handlers to use requireAuth
   const handleOpenFollowers = () => {
+    if (!requireAuth('view followers')) return;
     setShowFollowersModal(true);
     fetchFollowers();
   };
 
   const handleOpenFollowing = () => {
+    if (!requireAuth('view following')) return;
     setShowFollowingModal(true);
     fetchFollowing();
   };
 
- const handleFollowInModal = async (targetUserId: number, targetUserType: "student" | "organization", isCurrentlyFollowing: boolean) => {
-  if (!user || !token) return;
-
-  try {
-    const payload = {
-      follower_type: user.account_type,
-      follower_id: user.id,
-      followee_type: targetUserType,
-      followee_id: targetUserId
-    };
-
-    if (isCurrentlyFollowing) {
-      await axios.post(
-        `${API_BASE_URL}/users/unfollow/`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Unfollowed successfully");
-    } else {
-      await axios.post(
-        `${API_BASE_URL}/users/follow/`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Followed successfully");
-    }
-
-    // Refresh the lists and current user's following
-    if (showFollowersModal) fetchFollowers();
-    if (showFollowingModal) fetchFollowing();
-    fetchCurrentUserFollowing(); // Refresh current user's following list
+  const handleFollowInModal = async (targetUserId: number, targetUserType: "student" | "organization", isCurrentlyFollowing: boolean) => {
+    if (!requireAuth('follow users')) return;
     
-  } catch (error) {
-    toast.error("Failed to update follow status");
-  }
-};
+    if (!user || !token) return;
+
+    try {
+      const payload = {
+        follower_type: user.account_type,
+        follower_id: user.id,
+        followee_type: targetUserType,
+        followee_id: targetUserId
+      };
+
+      if (isCurrentlyFollowing) {
+        await axios.post(
+          `${API_BASE_URL}/users/unfollow/`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Unfollowed successfully");
+      } else {
+        await axios.post(
+          `${API_BASE_URL}/users/follow/`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Followed successfully");
+      }
+
+      // Refresh the lists and current user's following
+      if (showFollowersModal) fetchFollowers();
+      if (showFollowingModal) fetchFollowing();
+      fetchCurrentUserFollowing();
+      
+    } catch (error) {
+      toast.error("Failed to update follow status");
+    }
+  };
+
 
   const handleNavigateToProfile = (displayNameSlug: string) => {
     navigate(`/user-profile/${displayNameSlug}`);
@@ -409,7 +417,23 @@ useEffect(() => {
     fetchUserProfile();
   }, [display_name_slug, token, user?.email]);
 
+
+ const requireAuth = (action: string) => {
+    if (!token) {
+      sessionStorage.setItem('redirectAfterLogin', location.pathname);
+      toast.error(`Please log in to ${action}`);
+      navigate('/login');
+      return false;
+    }
+    return true;
+  };
+
+
+
+  
   const handleFollow = async () => {
+    if (!requireAuth('follow users')) return;
+    
     if (!userProfile || !user || !token) return;
     const follower_type = user.account_type;
     const follower_id = user.id;
@@ -789,23 +813,23 @@ const UsersListModal = ({
     token,
   ]);
 
-  return (
-    <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
-      <div className="flex w-full items-start justify-center bg-white">
+return (
+  <div className="flex flex-col items-center justify-start w-full bg-gray-100 animate-fade-in">
+    <div className="flex w-full items-start justify-center bg-white">
+      <div className="flex w-full lg:w-[100%] items-start justify-center h-auto flex-row animate-slide-up">
         
-
-        <div className="flex w-full lg:w-[100%] items-start justify-center h-auto flex-row animate-slide-up">
-          <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
-              </div>
-            ) : !userProfile ? (
-              <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
-                <Text>User not found</Text>
-              </div>
-            ) : (
-              <>
+        {/* Main Content */}
+        <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[35px] overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
+            </div>
+          ) : !userProfile ? (
+            <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
+              <Text>User not found</Text>
+            </div>
+          ) : (
+            <>
                 {/* Cover photo section */}
                 <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full animate-fade-in">
                   <div className="flex w-full flex-col self-stretch gap-2.5">
@@ -1052,253 +1076,158 @@ const UsersListModal = ({
                   <div className="h-px bg-[#d9d9d9]" />
                 </div>
 
-                <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
-                  <div className="text-[20px] font-semibold">
-                      Posts
-                    <div className="h-[3px] w-20 bg-[#750015]"></div>
-                  </div>
+              {/* Posts Heading */}
+              <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
+                <div className="text-[20px] font-semibold">
+                  Posts
+                  <div className="h-[3px] w-20 bg-[#750015]"></div>
                 </div>
-
-                {/* Posts Section */}
-{!token && (
-  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-    <p className="text-blue-800 text-sm">
-      💡 <strong>Want to engage with this user?</strong>
-      <button
-        onClick={() => navigate("/welcome")}
-        className="text-blue-600 underline ml-1"
-      >
-        Sign up to follow, message, or comment
-      </button>
-    </p>
-  </div>
-)}
-{token && (userProfile.display_name_slug || userProfile.email) && (
-  <div className="w-full">
-    {isLoadingPosts && posts.length === 0 ? (
-      // Show skeleton loaders for initial load
-      <div className="space-y-6 w-full animate-fade-in">
-        {[...Array(3)].map((_, idx) => (
-          <PostSkeleton key={`skeleton-${idx}`} />
-        ))}
-      </div>
-    ) : posts.length === 0 && !isLoadingPosts ? (
-      <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-        <Text
-          as="p"
-          className="text-[14px] font-normal text-[#adacb2]"
-        >
-          No posts yet.
-        </Text>
-      </div>
-    ) : (
-      <>
-        <div className="space-y-6 w-full">
-          {posts.map((post, idx) => {
-            // Add unique composite key like Homepage
-            const uniqueKey = `${post.id}-${idx}`;
-            return (
-              <div
-                key={uniqueKey}
-                className="animate-slide-up mb-10"
-                style={{ animationDelay: `${idx * 60}ms` }}
-              >
-                <Post
-                  post={post}
-                  onPostUpdate={(updatedPost) => {
-                    setPosts((prev) =>
-                      prev.map((p) =>
-                        p.id === updatedPost.id
-                          ? (updatedPost as ProfilePost)
-                          : p
-                      )
-                    );
-                  }}
-                  onPostDelete={(post) => {
-                    setPosts((prev) =>
-                      prev.filter((p) => p.id !== post.id)
-                    );
-                  }}
-                  onPostEdit={(post) => {
-                    // This is now handled internally by the Post component
-                  }}
-                  currentUserId={user?.id}
-                  currentUserEmail={user?.email}
-                  onClick={() => {
-                    // Handle post click navigation if needed
-                    navigate(`/posts/${post.id}`);
-                  }}
-                  postsData={posts}
-                />
               </div>
-            );
-          })}
 
-          {/* Loading more skeleton */}
-          {isLoadingMore && (
-            <div className="space-y-6">
-              {[...Array(2)].map((_, idx) => (
-                <PostSkeleton key={`more-skeleton-${idx}`} />
-              ))}
-            </div>
-          )}
-
-          {/* Loading trigger for infinite scroll */}
-          <div
-            ref={loadingRef}
-            className="h-20 flex items-center justify-center mt-4"
-          >
-            {isLoadingMore && (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
-            )}
-            {!hasMore && posts.length > 0 && (
-              <div className="text-gray-500">
-                No more posts to load
-              </div>
-            )}
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-)}
-
-
-
-                {/* Posts Section */}
-                {!token && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p className="text-blue-800 text-sm">
-                      💡 <strong>Want to engage with this user?</strong>
-                      <button
-                        onClick={() => navigate("/welcome")}
-                        className="text-blue-600 underline ml-1"
-                      >
-                        Sign up to follow, message, or comment
-                      </button>
-                    </p>
-                  </div>
-                )}
-                {token &&
-                  (userProfile.display_name_slug || userProfile.email) && (
-                    <div className="w-full">
-                      {isLoadingPosts && posts.length === 0 ? (
-                        <div className="flex justify-center items-center py-20 animate-fade-in">
-                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
-                        </div>
-                      ) : posts.length === 0 && !isLoadingPosts ? (
-                        <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-                          <Text
-                            as="p"
-                            className="text-[14px] font-normal text-[#adacb2]"
-                          >
-                            No posts yet.
-                          </Text>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="space-y-6 w-full">
-                            {posts.map((post, idx) => {
-                              // Add unique composite key like Homepage
-                              const uniqueKey = `${post.id}-${idx}`;
-                              return (
-                                <div
-                                  key={uniqueKey}
-                                  className="animate-slide-up mb-10"
-                                  style={{ animationDelay: `${idx * 60}ms` }}
-                                >
-                                  <Post
-                                    post={post}
-                                    onPostUpdate={(updatedPost) => {
-                                      setPosts((prev) =>
-                                        prev.map((p) =>
-                                          p.id === updatedPost.id
-                                            ? updatedPost
-                                            : p
-                                        )
-                                      );
-                                    }}
-                                    onPostDelete={(post) => {
-                                      setPosts((prev) =>
-                                        prev.filter((p) => p.id !== post.id)
-                                      );
-                                    }}
-                                    onPostEdit={(post) => {
-                                      // This is now handled internally by the Post component
-                                    }}
-                                    currentUserId={user?.id}
-                                    currentUserEmail={user?.email}
-                                    onClick={() => {
-                                      // Handle post click navigation if needed
-                                      navigate(`/posts/${post.id}`);
-                                    }}
-                                    postsData={posts}
-                                  />
-                                </div>
-                              );
-                            })}
-
-                            {/* Loading trigger for infinite scroll */}
-                            <div
-                              ref={loadingRef}
-                              className="h-20 flex items-center justify-center mt-4"
-                            >
-                              {isLoadingMore && (
-                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
-                              )}
-                              {!hasMore && posts.length > 0 && (
-                                <div className="text-gray-500">
-                                  No more posts to load
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      )}
+              {/* Posts Section */}
+              {!token ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-blue-800 text-sm">
+                    💡 <strong>Want to see posts and engage with this user?</strong>
+                    <button 
+                      onClick={() => {
+                        sessionStorage.setItem('redirectAfterLogin', location.pathname);
+                        navigate('/login');
+                      }}
+                      className="text-blue-600 underline ml-1"
+                    >
+                      Log in to view posts and follow
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full">
+                  {isLoadingPosts && posts.length === 0 ? (
+                    <div className="space-y-6 w-full animate-fade-in">
+                      {[...Array(3)].map((_, idx) => (
+                        <PostSkeleton key={`skeleton-${idx}`} />
+                      ))}
                     </div>
-                  )}
-              </>
-            )}
-          </div>
+                  ) : posts.length === 0 && !isLoadingPosts ? (
+                    <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                      <Text
+                        as="p"
+                        className="text-[14px] font-normal text-[#adacb2]"
+                      >
+                        No posts yet.
+                      </Text>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-6 w-full">
+                        {posts.map((post, idx) => {
+                          const uniqueKey = `${post.id}-${idx}`;
+                          return (
+                            <div
+                              key={uniqueKey}
+                              className="animate-slide-up mb-10"
+                              style={{ animationDelay: `${idx * 60}ms` }}
+                            >
+                              <Post
+                                post={post}
+                                onPostUpdate={(updatedPost) => {
+                                  setPosts((prev) =>
+                                    prev.map((p) =>
+                                      p.id === updatedPost.id
+                                        ? (updatedPost as ProfilePost)
+                                        : p
+                                    )
+                                  );
+                                }}
+                                onPostDelete={(post) => {
+                                  setPosts((prev) =>
+                                    prev.filter((p) => p.id !== post.id)
+                                  );
+                                }}
+                                onPostEdit={(post) => {
+                                  // This is now handled internally by the Post component
+                                }}
+                                currentUserId={user?.id}
+                                currentUserEmail={user?.email}
+                                onClick={() => {
+                                  navigate(`/posts/${post.id}`);
+                                }}
+                                postsData={posts}
+                              />
+                            </div>
+                          );
+                        })}
 
-          {/* Profile Side Panel */}
-          <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
-            <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
-              <ProfileOrganizationSection />
-            </div>
-            <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
-              <div className="overflow-hidden h-full">
-                <WhoToFollowSidePanel />
-              </div>
+                        {/* Loading more skeleton */}
+                        {isLoadingMore && (
+                          <div className="space-y-6">
+                            {[...Array(2)].map((_, idx) => (
+                              <PostSkeleton key={`more-skeleton-${idx}`} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Loading trigger for infinite scroll */}
+                        <div
+                          ref={loadingRef}
+                          className="h-20 flex items-center justify-center mt-4"
+                        >
+                          {isLoadingMore && (
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
+                          )}
+                          {!hasMore && posts.length > 0 && (
+                            <div className="text-gray-500">
+                              No more posts to load
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Profile Side Panel */}
+        <div className="hidden lg:flex flex-col max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
+          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
+            <ProfileOrganizationSection />
+          </div>
+          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
+            <div className="overflow-hidden h-full">
+              <WhoToFollowSidePanel />
             </div>
           </div>
         </div>
-
-        {/* <BottomNav /> */}
+        
       </div>
+    </div>
 
-      {/* Modals - placed at the bottom */}
-          <UsersListModal
-        isOpen={showFollowersModal}
-        onClose={() => setShowFollowersModal(false)}
-        title="Followers"
-        users={followers}
-        isLoading={isLoadingFollowers}
-        onUserClick={handleNavigateToProfile}
-        onFollowClick={handleFollowInModal}
-        currentUserId={user?.id}
-      />
+    {/* Modals */}
+    <UsersListModal
+      isOpen={showFollowersModal}
+      onClose={() => setShowFollowersModal(false)}
+      title="Followers"
+      users={followers}
+      isLoading={isLoadingFollowers}
+      onUserClick={handleNavigateToProfile}
+      onFollowClick={handleFollowInModal}
+      currentUserId={user?.id}
+    />
 
-      <UsersListModal
-        isOpen={showFollowingModal}
-        onClose={() => setShowFollowingModal(false)}
-        title="Following"
-        users={following}
-        isLoading={isLoadingFollowing}
-        onUserClick={handleNavigateToProfile}
-        onFollowClick={handleFollowInModal}
-        currentUserId={user?.id}
-      />
+    <UsersListModal
+      isOpen={showFollowingModal}
+      onClose={() => setShowFollowingModal(false)}
+      title="Following"
+      users={following}
+      isLoading={isLoadingFollowing}
+      onUserClick={handleNavigateToProfile}
+      onFollowClick={handleFollowInModal}
+      currentUserId={user?.id}
+    />
   </div>
-  );
+);
+
 }
