@@ -6,13 +6,12 @@ import { toast } from "react-hot-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
-import { Input } from "../../components/Input/index.tsx";
 import { Heading } from "../../components/Heading/index.tsx";
 import ProfileOrganizationSection from "./ProfilepageOrganizationSection.tsx";
+import { PostSkeleton } from "../../components/PostSkeleton";
 import BottomNav from "../../components/BottomNav/index.tsx";
 import { useAuth } from "../../auth/AuthContext";
 import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.tsx";
-import { ClickableUser } from "../../components/ClickableUser";
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post/index.tsx";
 import { uploadProfilePicture } from "../../utils/fileUpload.ts";
@@ -25,12 +24,12 @@ interface ProfilepageOrganizationProps {
   onComplete: (page: string) => void;
 }
 
-interface Post {
+interface ProfilePost {
   id: string;
   slug: string;
   author_id: string;
   author_username: string;
-  author_name: string;
+  author_name: string; // Make sure this is always string, not string | undefined
   author_display_name: string;
   author_display_name_slug: string;
   author_profile_pic_url: string;
@@ -45,7 +44,7 @@ interface Post {
   last_engagement_at: string;
   comments?: Comment[];
   is_shared?: boolean;
-  original_post?: Post;
+  original_post?: ProfilePost;
 }
 
 interface Comment {
@@ -108,7 +107,7 @@ interface FollowerFollowingUser {
 // Update component to accept props
 export default function Profile() {
   const [searchBarValue, setSearchBarValue] = useState("");
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<ProfilePost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -712,14 +711,14 @@ const UsersListModal = ({
           // Append posts for pagination
           setPosts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
-            const uniquePosts = results.filter(
-              (post) => !existingIds.has(post.id)
+            const uniquePosts: ProfilePost[] = results.filter(
+              (post: ProfilePost) => !existingIds.has(post.id)
             );
             return [...prev, ...uniquePosts];
           });
         } else {
           // Replace posts for initial load
-          setPosts(results);
+          setPosts(results as ProfilePost[]);
         }
         setNextCursor(next_cursor);
         setHasMore(!!next_cursor);
@@ -1059,6 +1058,112 @@ const UsersListModal = ({
                     <div className="h-[3px] w-20 bg-[#750015]"></div>
                   </div>
                 </div>
+
+                {/* Posts Section */}
+{!token && (
+  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+    <p className="text-blue-800 text-sm">
+      💡 <strong>Want to engage with this user?</strong>
+      <button
+        onClick={() => navigate("/welcome")}
+        className="text-blue-600 underline ml-1"
+      >
+        Sign up to follow, message, or comment
+      </button>
+    </p>
+  </div>
+)}
+{token && (userProfile.display_name_slug || userProfile.email) && (
+  <div className="w-full">
+    {isLoadingPosts && posts.length === 0 ? (
+      // Show skeleton loaders for initial load
+      <div className="space-y-6 w-full animate-fade-in">
+        {[...Array(3)].map((_, idx) => (
+          <PostSkeleton key={`skeleton-${idx}`} />
+        ))}
+      </div>
+    ) : posts.length === 0 && !isLoadingPosts ? (
+      <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+        <Text
+          as="p"
+          className="text-[14px] font-normal text-[#adacb2]"
+        >
+          No posts yet.
+        </Text>
+      </div>
+    ) : (
+      <>
+        <div className="space-y-6 w-full">
+          {posts.map((post, idx) => {
+            // Add unique composite key like Homepage
+            const uniqueKey = `${post.id}-${idx}`;
+            return (
+              <div
+                key={uniqueKey}
+                className="animate-slide-up mb-10"
+                style={{ animationDelay: `${idx * 60}ms` }}
+              >
+                <Post
+                  post={post}
+                  onPostUpdate={(updatedPost) => {
+                    setPosts((prev) =>
+                      prev.map((p) =>
+                        p.id === updatedPost.id
+                          ? (updatedPost as ProfilePost)
+                          : p
+                      )
+                    );
+                  }}
+                  onPostDelete={(post) => {
+                    setPosts((prev) =>
+                      prev.filter((p) => p.id !== post.id)
+                    );
+                  }}
+                  onPostEdit={(post) => {
+                    // This is now handled internally by the Post component
+                  }}
+                  currentUserId={user?.id}
+                  currentUserEmail={user?.email}
+                  onClick={() => {
+                    // Handle post click navigation if needed
+                    navigate(`/posts/${post.id}`);
+                  }}
+                  postsData={posts}
+                />
+              </div>
+            );
+          })}
+
+          {/* Loading more skeleton */}
+          {isLoadingMore && (
+            <div className="space-y-6">
+              {[...Array(2)].map((_, idx) => (
+                <PostSkeleton key={`more-skeleton-${idx}`} />
+              ))}
+            </div>
+          )}
+
+          {/* Loading trigger for infinite scroll */}
+          <div
+            ref={loadingRef}
+            className="h-20 flex items-center justify-center mt-4"
+          >
+            {isLoadingMore && (
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
+            )}
+            {!hasMore && posts.length > 0 && (
+              <div className="text-gray-500">
+                No more posts to load
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+)}
+
+
 
                 {/* Posts Section */}
                 {!token && (

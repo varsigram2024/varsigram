@@ -51,7 +51,7 @@ const defaultData: SignUpData = {
 
 const SignUpContext = createContext<SignUpContextType | undefined>(undefined);
 
-export const SignUpProvider = ({ children, signUp }: { children: React.ReactNode; signUp: (data: SignUpData) => Promise<void> }) => {
+export const SignUpProvider = ({ children }: { children: React.ReactNode }) => {
   const [signUpData, setSignUpData] = useState<SignUpData>(defaultData);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);

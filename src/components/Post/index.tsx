@@ -4,6 +4,7 @@ import { useViewTracking } from '../../context/viewTrackingContext';
 import { useInView } from 'react-intersection-observer';
 import { Text } from "../Text";
 import { Img } from "../Img";
+import { PostSkeleton } from "../PostSkeleton";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebase/config";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -16,7 +17,7 @@ import CommentSection from "../CommentSection";
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from "../EditPostModal";
 import { Link } from "react-router-dom";
-import { createPortal } from "react-dom";
+
 
 interface Post {
   id: string;
@@ -57,7 +58,7 @@ interface Post {
 }
 
 interface PostProps {
-  post: Post;
+     post: Post;
   onPostUpdate?: (updatedPost: Post) => void;
   onPostDelete?: (post: Post) => void;
   onPostEdit?: (post: Post) => void;
@@ -66,7 +67,8 @@ interface PostProps {
   onClick?: () => void;
   showFullContent?: boolean;
   postsData?: Post[];
-  isPublicView?: boolean; // Add this prop
+  isPublicView?: boolean;
+  isLoading?: boolean;
 }
 
   // Add this interface near your other interfaces
@@ -81,7 +83,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
 export const Post: React.FC<PostProps> = ({
-  post,
+    post,
   onPostUpdate,
   onPostDelete,
   onPostEdit,
@@ -91,7 +93,11 @@ export const Post: React.FC<PostProps> = ({
   showFullContent = false,
   postsData = [],
   isPublicView = false,
+  isLoading = false,
 }) => {
+    if (isLoading) {
+    return <PostSkeleton />;
+  }
   const { addToBatch } = useViewTracking();
   const [viewRef, inView] = useInView({
     threshold: 0.5, // 50% of the post is visible
@@ -723,6 +729,8 @@ useEffect(() => {
 
   return (
     <>
+
+    
     
       <div ref={viewRef}
       className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -851,56 +859,58 @@ useEffect(() => {
           </div>
           <div className="h-[0.6px] w-92 bg-gray-300"></div>
           <Text
-            as="p"
-            className={`w-full text-[10px] sm:text-[10px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
-              !expanded && isLong ? "max-h-32 overflow-hidden" : ""
-            }`}
-            style={{ lineHeight: "1.6" }}
-          >
-            {isRevarsed && (
-              <div className="text-xs text-gray-500 mb-2">
-                <span>
-                  <b>{post.author_name || post.author_display_name}</b> revarsed
-                </span>
-              </div>
-            )}
-            {isRevarsed ? (
-              <div className="border p-2 rounded bg-gray-50 whitespace-pre-line">
-                <Text className="text-[12px] sm:text-[14px] lg:text-[16px]">
-                  {makeLinksClickable(post.original_post?.content || "")}
-                </Text>
-                <div className="text-xs text-gray-400 mt-1">
-                  by{" "}
-                  {post.original_post?.author_name ||
-                    post.original_post?.author_display_name}
-                </div>
-              </div>
-            ) : (
-              makeLinksClickable(displayContent)
-            )}
-            {!expanded && isLong && <span>...{!expanded && isLong && (
-            <button
-              className="text-[#750015] font-semibold mt-2 hover:underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                setExpanded(true);
+              as="p"
+              className={`w-full text-[10px] sm:text-[10px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words overflow-hidden ${
+                !expanded && isLong ? "max-h-32 overflow-hidden" : ""
+              }`}
+              style={{ 
+                lineHeight: "1.6",
+                wordBreak: "break-word", // This ensures long words break
+                overflowWrap: "break-word", // Alternative for better browser support
               }}
             >
-              Read more
-            </button>
-          )}
-          
-          </span>}
-
-          {expanded && isLong && (
-            <button
-              className="text-[#750015] font-semibold mt-2 hover:underline"
-              onClick={() => setExpanded(false)}
-            >
-              Show less
-            </button>
-          )}
-          </Text>
+              {isRevarsed && (
+                <div className="text-xs text-gray-500 mb-2">
+                  <span>
+                    <b>{post.author_name || post.author_display_name}</b> revarsed
+                  </span>
+                </div>
+              )}
+              {isRevarsed ? (
+                <div className="border p-2 rounded bg-gray-50 whitespace-pre-line break-words">
+                  <Text className="text-[12px] sm:text-[14px] lg:text-[16px] break-words">
+                    {makeLinksClickable(post.original_post?.content || "")}
+                  </Text>
+                  <div className="text-xs text-gray-400 mt-1">
+                    by{" "}
+                    {post.original_post?.author_name ||
+                      post.original_post?.author_display_name}
+                  </div>
+                </div>
+              ) : (
+                makeLinksClickable(displayContent)
+              )}
+              {!expanded && isLong && (
+                <button
+                  className="text-[#750015] font-semibold mt-2 hover:underline block"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpanded(true);
+                  }}
+                >
+                  Read more
+                </button>
+              )}
+              
+              {expanded && isLong && (
+                <button
+                  className="text-[#750015] font-semibold mt-2 hover:underline"
+                  onClick={() => setExpanded(false)}
+                >
+                  Show less
+                </button>
+              )}
+            </Text>
 
 
 

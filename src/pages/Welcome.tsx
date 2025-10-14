@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/Button';
+import "../../src/styles/animations.css"
 import mockups from '../../public/images/mockups/mockups.svg';
 import featureMockup1 from '../../public/images/mockups/featureMockup1.svg';
 import featureMockup2 from '../../public/images/mockups/featureMockup2.svg';
@@ -62,10 +63,10 @@ export const Welcome = () => {
   const handleLogin = () => navigate('/login');
 
   const CTAButtons = () => (
-    <div className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-6 lg:gap-10 mt-6 w-full">
+    <div className="flex flex-wrap justify-center lg:justify-start gap-8 sm:gap-6 lg:gap-10 mt-6 w-full">
       <Button
         onClick={handleSignUp}
-        className=" bg-white text-[#750015ec] border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
+        className=" bg-white text-[#9d011d] border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
       >
         Sign up now
       </Button>
@@ -211,7 +212,7 @@ export const Welcome = () => {
               <img
                 src={featureMockup3}
                 alt="Feature mockup 3"
-                className="w-[30%] md:w-[50%] lg:w-[65%] lg:h-auto max-w-xs lg:max-w-[420px] h-auto rounded-2xl shadow-lg z-10 transform transition-all duration-500 hover:-translate-y-2 left-1/2 -translate-x-1/2"
+                className="w-[50%] md:w-[50%] lg:w-[65%] lg:h-auto max-w-xs lg:max-w-[420px] h-auto rounded-2xl shadow-lg z-10 transform transition-all duration-500 hover:-translate-y-2 left-1/2 -translate-x-1/2"
                 style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translateX(-50%)' }}
               />
               </div>
@@ -228,25 +229,26 @@ export const Welcome = () => {
         ref={(el) => addToRefs(el, 3)}
         className="items-center justify-center text-white text-center py-16 sm:py-20 px-4 sm:px-6 transition-all duration-1000"
       >
-        <div className="bg-[#FF6682] pink-bg flex flex-col lg:flex-row justify-between lg:px-12 gap-6 lg:gap-8 pt-4 rounded-3xl lg:rounded-[45px] relative overflow-hidden transform transition-all duration-500 hover:shadow-2xl">
-          <div className="absolute w-full h-full inset-0 pointer-events-none animate-pulse-slow">
+        <div className="bg-[#FF6682] pink-bg flex flex-col lg:flex-row items-center justify-center lg:px-12 gap-6 lg:gap-8 pt-4 rounded-3xl lg:rounded-[45px] relative overflow-hidden transform transition-all duration-500 hover:shadow-2xl">
+          <div className="absolute inset-0 w-full h-full pointer-events-none animate-pulse-slow">
             <svg
-              className="w-full h-full object-cover"
+              className=""
               viewBox="0 0 1269 474"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="none"
+              preserveAspectRatio="xMidYMid slice"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             >
               <path
-                opacity="0.4"
-                d="M-30.5 93C-30.5 93 158.234 508.141 453.575 508.146C748.917 508.151 983.676 -353.894 1222.22 27.2691C1460.77 408.432 270.564 272.128 476.294 27.2691C682.023 -217.59 1025.24 534 1025.24 534"
-                stroke="white"
-                strokeWidth="30"
+          opacity="0.4"
+          d="M-30.5 93C-30.5 93 158.234 508.141 453.575 508.146C748.917 508.151 983.676 -353.894 1222.22 27.2691C1460.77 408.432 270.564 272.128 476.294 27.2691C682.023 -217.59 1025.24 534 1025.24 534"
+          stroke="white"
+          strokeWidth="30"
               />
             </svg>
           </div>
           
-          <div className="p-4 sm:p-6 lg:p-12 flex-col text-center lg:text-left items-center lg:items-start justify-center space-y-4 lg:space-y-6 max-w-2xl z-10 animate-fade-in-up">
+          <div className="flex p-4 sm:p-6 lg:p-12 flex-col text-center lg:text-left items-center lg:items-start justify-center space-y-4 lg:space-y-6 max-w-2xl z-10 animate-fade-in-up">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold">
               Engage vibrant and insightful conversations with a <span className='text-[#750015] animate-pulse'>Vars</span>
             </h2>
@@ -260,26 +262,26 @@ export const Welcome = () => {
             </div>
           </div>
 
-          <div className="flex justify-center items-center mt-6 lg:mt-10 z-10 w-full lg:w-1/2 animate-fade-in-up delay-300">
-              <div className='relative w-full flex justify-center items-center'>
+          <div className="flex justify-center items-center mt-6 lg:mt-10 z-10 w-1/2 lg:w-1/2 animate-fade-in-up delay-300">
+              <div className='relative w-full bg-black h-full flex justify-center items-center'>
                 <img 
                   src={engageMockup} 
                   alt="App mockup" 
-                  className="w-1/2 sm:w-2/5 lg:w-1/2 max-w-xs" 
+                  className="w-1/2 sm:w-2/5 lg:w-1/2" 
                 />
                 
-                <div className="absolute bottom-10 lg:bottom-20 left-2 lg:left-10 scale-75 lg:scale-100 pointer-events-none">
+                <div className="w-1/2 absolute bottom-10 xl:bottom-56 left-[-0.5rem] lg:left-10 scale-75 lg:scale-100 pointer-events-none">
                   <img
                     src={popup1}
                     alt="Popup 1"
-                    className="popup-image popup-image--one"
+                    className="popup-image popup-image--one w-full"
                     aria-hidden="true"
                     loading="lazy"
                   />
                   <img
                     src={popup2}
                     alt="Popup 2"
-                    className="popup-image popup-image--two"
+                    className="popup-image popup-image--two w-full"
                     aria-hidden="true"
                     loading="lazy"
                   />
@@ -402,75 +404,24 @@ export const Welcome = () => {
 
 /* First popup: main entrance early in the cycle */
 .popup-image--one {
-  animation: popup-one 6s infinite ease-in-out;
+  bottom: 35px;
+  animation: popup-one 12s infinite ease-in-out;
+  animation-delay: 1.2s; /* staggers the two animations */
   animation-fill-mode: both; /* keeps computed styles during/after animation */
   z-index: 30;
 }
 
 /* Second popup: offset in x/y and delayed so they alternate */
 .popup-image--two {
-  left: 36px;   /* small horizontal offset so they don't perfectly overlap */
-  bottom: 8px;  /* small vertical offset */
+  left: 0;   /* small horizontal offset so they don't perfectly overlap */
+  bottom: 0;  /* small vertical offset */
   animation: popup-two 6s infinite ease-in-out;
   animation-delay: 1.2s; /* staggers the two animations */
-  animation-fill-mode: both;
+  animation-fill-mode: forwards;
   z-index: 20;
 }
 
-/* Keyframes tuned for visibility and smooth motion */
-@keyframes popup-one {
-  0% {
-    opacity: 0;
-    transform: translateY(24px) scale(0.86) rotate(-2deg);
-  }
-  18% {
-    opacity: 0;
-    transform: translateY(18px) scale(0.9) rotate(-1deg);
-  }
-  22% {
-    opacity: 1;
-    transform: translateY(0) scale(1) rotate(0deg);
-  }
-  40% {
-    opacity: 1;
-    transform: translateY(-8px) scale(1.02) rotate(0.5deg);
-  }
-  55% {
-    opacity: 0;
-    transform: translateY(-28px) scale(0.86) rotate(1deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-32px) scale(0.8) rotate(1deg);
-  }
-}
 
-@keyframes popup-two {
-  0% {
-    opacity: 0;
-    transform: translateY(30px) scale(0.78) rotate(2deg);
-  }
-  30% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.9) rotate(1deg);
-  }
-  36% {
-    opacity: 1;
-    transform: translateY(0) scale(1) rotate(0deg);
-  }
-  56% {
-    opacity: 1;
-    transform: translateY(-10px) scale(1.02) rotate(-0.5deg);
-  }
-  72% {
-    opacity: 0;
-    transform: translateY(-28px) scale(0.85) rotate(-1deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-34px) scale(0.8) rotate(-1deg);
-  }
-}
 `}</style>
     </div>
   );
