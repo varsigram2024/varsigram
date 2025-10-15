@@ -439,15 +439,17 @@ export const Welcome = () => {
             </button>
           ) : (
             <>
-              <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
-                <img src='/images/socials/twitter.svg' className="hover:scale-110 transition-transform" />
+              <div className='flex items-center gap-3'>
+                <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
+                <img src='/images/socials/twitter.svg' className="hover:scale-110 transition-transform w-1/4 lg:w-full" />
               </a>
               <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
-                <img src='/images/socials/linkedin.svg' className="hover:scale-110 transition-transform" />
+                <img src='/images/socials/linkedin.svg' className="hover:scale-110 transition-transform w-1/4 lg:w-full" />
               </a>
               <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
-                <img src='/images/socials/instagram.svg' className="hover:scale-110 transition-transform" />
+                <img src='/images/socials/instagram.svg' className="hover:scale-110 transition-transform w-1/4 lg:w-full" />
               </a>
+              </div>
             </>
           )}
         </div>

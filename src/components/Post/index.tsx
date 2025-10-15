@@ -972,6 +972,22 @@ useEffect(() => {
               <span>{likeCount}</span>
             </div> */}
 
+
+            {/* Point count */}
+            <div className="flex items-center gap-2">
+              <svg width="15" height="12" viewBox="0 0 15 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+
+
+              <span>{"+1"}</span>
+            </div>
+
+
+
             {/* View count */}
             <div className="flex items-center gap-2">
               <svg width="24" height="24" viewBox="0 0 32 20" fill="none" xmlns="http://www.w3.org/2000/svg">
