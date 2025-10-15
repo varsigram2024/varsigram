@@ -418,6 +418,7 @@ export const Welcome = () => {
       </div>
 
       {/* Input Field with Icons */}
+      <div className="w-full flex flex-col items-center justify-center gap-4 max-w-2xl animate-fade-in-up delay-200">
       <form onSubmit={handleSubmit} className="relative w-full max-w-lg">
         <input
           type="email"
@@ -429,35 +430,55 @@ export const Welcome = () => {
 
         {/* Icons Section */}
         <div className="absolute top-1/2 right-4 -translate-y-1/2 flex items-center gap-3 text-[#750015]">
-          {inputValue.trim() ? (
-            <button
-              type="submit"
-              className="hover:scale-110 transition-transform"
-              aria-label="Send"
-            >
-              <FaPaperPlane size={20} />
-            </button>
-          ) : (
-            <>
-              <div className='flex items-center gap-3'>
+            {inputValue.trim() ? (
+              <button
+                type="submit"
+                className="hover:scale-110 transition-transform"
+                aria-label="Send"
+              >
+                <FaPaperPlane className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
                 <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
-                <img src='/images/socials/twitter.svg' className="hover:scale-110 transition-transform w-1/4 lg:w-full" />
-              </a>
-              <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
-                <img src='/images/socials/linkedin.svg' className="hover:scale-110 transition-transform w-1/4 lg:w-full" />
-              </a>
-              <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
-                <img src='/images/socials/instagram.svg' className="hover:scale-110 transition-transform w-1/4 lg:w-full" />
-              </a>
+                  <img
+                    src="/images/socials/twitter.svg"
+                    className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                    alt="Twitter"
+                  />
+                </a>
+                <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src="/images/socials/linkedin.svg"
+                    className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                    alt="LinkedIn"
+                  />
+                </a>
+                <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src="/images/socials/instagram.svg"
+                    className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                    alt="Instagram"
+                  />
+                </a>
               </div>
-            </>
-          )}
-        </div>
+            )}
+          </div>
+
       </form>
+
+                <p className='flex text-[#3a3a3a] items-center justify-center text-center'>
+          <span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 7C3 6.46957 3.21071 5.96086 3.58579 5.58579C3.96086 5.21071 4.46957 5 5 5H19C19.5304 5 20.0391 5.21071 20.4142 5.58579C20.7893 5.96086 21 6.46957 21 7V17C21 17.5304 20.7893 18.0391 20.4142 18.4142C20.0391 18.7893 19.5304 19 19 19H5C4.46957 19 3.96086 18.7893 3.58579 18.4142C3.21071 18.0391 3 17.5304 3 17V7Z" stroke="#3A3A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 7L12 13L21 7" stroke="#3A3A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+          </span>varsigraminfo@gmail.com</p>
+      </div>
 
       {/* Contact and Copyright */}
       <div className="text-center text-sm text-gray-600 space-y-1">
-        <p>varsigraminfo@gmail.com</p>
+
         <p>© 2024 Varsigram. All rights reserved.</p>
       </div>
     </section>
