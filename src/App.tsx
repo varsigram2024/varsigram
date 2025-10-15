@@ -36,6 +36,7 @@ import PostPage from './pages/PostPage';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import ProfilePage from './pages/Profilepage';
+import LinksModal from './modals/LinksModal/index.tsx';
 import EditProfile from "./pages/Settings/EditProfile";
 import ChangePassword from "./pages/Settings/ChangePassword";
 import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
@@ -160,6 +161,7 @@ function AppContent() {
           <Route path="posts/:id" element={<PostPage />} />
           <Route path="profile/:username" element={<Profile />} />
           <Route path="user-profile/:display_name_slug" element={<ProfilePage />} />
+
           <Route path="settings" element={<Settings />} />
           <Route path="settings/edit-profile" element={<EditProfile />} />
           <Route path="settings/change-password" element={<ChangePassword />} />

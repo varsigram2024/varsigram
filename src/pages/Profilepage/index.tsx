@@ -13,6 +13,7 @@ import { PostSkeleton } from "../../components/PostSkeleton";
 import BottomNav from "../../components/BottomNav/index.tsx";
 import { useAuth } from "../../auth/AuthContext";
 import WhoToFollowSidePanel from "../../components/whoToFollowSidePanel/index.tsx";
+import LinksModal from "../../modals/LinksModal/index.tsx";
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post/index.tsx";
 import { uploadProfilePicture } from "../../utils/fileUpload.ts";
@@ -119,12 +120,15 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { display_name_slug } = useParams();
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [isLoadingPoints, setIsLoadingPoints] = useState(false);
   const navigate = useNavigate();
   const location = useLocation(); // Added hook
   const [followers, setFollowers] = useState<FollowerFollowingUser[]>([]);
   const [following, setFollowing] = useState<FollowerFollowingUser[]>([]);
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
+  const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
   
   // Add missing state variables
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -218,6 +222,49 @@ export default function Profile() {
       }
     }
   };
+
+
+  const fetchUserPoints = async () => {
+  if (!token || !userProfile) return;
+  
+  setIsLoadingPoints(true);
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/mypoints/`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    console.log("📊 User points response:", response.data);
+    setTotalPoints(response.data.total_points_received || 0);
+  } catch (error: any) {
+    console.error("❌ Error fetching user points:", {
+      error: error.response?.data,
+      status: error.response?.status
+    });
+    
+    // If it's a 404, the user might not have any points yet
+    if (error.response?.status === 404) {
+      setTotalPoints(0);
+    } else {
+      toast.error("Failed to load points");
+    }
+  } finally {
+    setIsLoadingPoints(false);
+  }
+};
+
+
+// Add this useEffect to fetch points when userProfile changes
+useEffect(() => {
+  if (userProfile && token) {
+    fetchUserPoints();
+  }
+}, [userProfile, token]);
+
 
 const fetchFollowers = async () => {
   if (!userProfile || !token) return;
@@ -835,7 +882,7 @@ return (
                   <div className="flex w-full flex-col self-stretch gap-2.5">
                     {/* Cover photo */}
                     <div
-                      className="flex h-[170px] bg-[#750015] sm:h-[140px] xs:h-[120px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5 xs:p-3"
+                      className="flex h-[170px] bg-[#750015]/85 sm:h-[140px] xs:h-[120px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5 xs:p-3"
                       style={{
                         backgroundImage: `url(${
                           userProfile?.profile_pic_url &&
@@ -846,26 +893,13 @@ return (
                         backgroundSize: "cover",
                       }}
                     >
-                      <div className="flex flex-col items-center justify-center">
-                        <svg width="33" height="32" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <g clip-path="url(#clip0_2952_12171)">
-                          <path d="M28.5 7.9987H24.2333L21.8333 5.33203H13.8333V7.9987H20.6333L23.1667 10.6654H28.5V26.6654H7.16667V14.6654H4.5V26.6654C4.5 28.132 5.7 29.332 7.16667 29.332H28.5C29.9667 29.332 31.1667 28.132 31.1667 26.6654V10.6654C31.1667 9.1987 29.9667 7.9987 28.5 7.9987ZM11.1667 18.6654C11.1667 24.5987 18.3533 27.5854 22.5533 23.3854C26.7533 19.1854 23.7667 11.9987 17.8333 11.9987C14.1533 11.9987 11.1667 14.9854 11.1667 18.6654ZM17.8333 14.6654C18.8846 14.6956 19.8846 15.1267 20.6283 15.8704C21.372 16.6141 21.8031 17.614 21.8333 18.6654C21.8031 19.7167 21.372 20.7166 20.6283 21.4603C19.8846 22.204 18.8846 22.6352 17.8333 22.6654C16.782 22.6352 15.7821 22.204 15.0384 21.4603C14.2947 20.7166 13.8635 19.7167 13.8333 18.6654C13.8635 17.614 14.2947 16.6141 15.0384 15.8704C15.7821 15.1267 16.782 14.6956 17.8333 14.6654ZM7.16667 7.9987H11.1667V5.33203H7.16667V1.33203H4.5V5.33203H0.5V7.9987H4.5V11.9987H7.16667" fill="white"/>
-                          </g>
-                          <defs>
-                          <clipPath id="clip0_2952_12171">
-                          <rect width="32" height="32" fill="white" transform="translate(0.5)"/>
-                          </clipPath>
-                          </defs>
-                          </svg>
-                          <h1 className="text-white">Add a Cover Photo</h1>
-                      </div>
-                      
+                      {/* Optional: Add responsive text here if needed */}
                     </div>
 
 
 
                     {/* Profile picture and points section */}
-                    <div className="flex items-start justify-between px-4 sm:px-3 xs:px-2">
+                    <div className="flex items-start justify-between">
                       {/* Profile picture */}
                       <div className="overflow-hidden relative ml-4 mt-[-46px] sm:mt-[-40px] xs:mt-[-35px] w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] xs:w-[80px] xs:h-[80px] rounded-[50%] border-[5px] sm:border-[4px] xs:border-[3px] border-[#ffdbe2] bg-white">
                         {user?.email === userProfile?.email ? (
@@ -924,24 +958,29 @@ return (
                       </div>
 
                       {/* Points badge */}
-                      <div className="flex items-center gap-2 justify-center px-4 sm:px-3 xs:px-2 py-2 sm:py-1.5 xs:py-1 border rounded-2xl sm:rounded-xl xs:rounded-lg">
-                        <svg 
-                          width="15" 
-                          height="12" 
-                          viewBox="0 0 15 12" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="sm:w-3 sm:h-3 xs:w-2.5 xs:h-2.5"
-                        >
-                          <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path fillRule="evenodd" clipRule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <h1 className='text-[#3a3a3a]/70 flex items-center gap-2 font-semibold text-[14px] sm:text-[12px] xs:text-[10px] leading-5 sm:leading-4'>
-                          0 Points
-                        </h1>
-                      </div>
+                        <div className="flex items-center gap-2 justify-center px-4 sm:px-3 xs:px-2 py-2 sm:py-1.5 xs:py-1 border rounded-2xl sm:rounded-xl xs:rounded-lg bg-white shadow-sm">
+                          <svg 
+                            width="15" 
+                            height="12" 
+                            viewBox="0 0 15 12" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="sm:w-3 sm:h-3 xs:w-2.5 xs:h-2.5"
+                          >
+                            <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path fillRule="evenodd" clipRule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          
+                          {isLoadingPoints ? (
+                            <div className="animate-pulse bg-gray-200 h-4 w-16 rounded"></div>
+                          ) : (
+                            <h1 className='text-[#3a3a3a]/70 flex items-center gap-2 font-semibold text-[14px] sm:text-[12px] xs:text-[10px] leading-5 sm:leading-4'>
+                              {totalPoints} Points
+                            </h1>
+                          )}
+                        </div>
                     </div>
 
 
@@ -1047,7 +1086,7 @@ return (
                           <>
                             <Text
                               as="p"
-                              className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal text-gray-600 break-words flex-1"
+                              className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal text-gray-600 break-words"
                             >
                               {userProfile.bio || "No bio available"}
                             </Text>
@@ -1109,9 +1148,13 @@ return (
                         </div>
 
                         <div className="flex">
-                          <Text as="p" className="text-[14px] sm:text-[12px] xs:text-[10px] font-normal text-gray-500">
-                            Joined on 
-                          </Text>
+                          <button
+                              onClick={() => setIsLinksModalOpen(true)}
+                              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#750015] text-white hover:bg-[#a0001f] transition-colors text-[14px] sm:text-[12px] xs:text-[11px] font-medium"
+                            >
+                              
+                              Add Links
+                            </button>
                         </div>
                       </div>
                     </div>
@@ -1247,6 +1290,19 @@ return (
         
       </div>
     </div>
+
+
+        {isLinksModalOpen && (
+      <LinksModal
+        isOpen={isLinksModalOpen}
+        onClose={() => setIsLinksModalOpen(false)}
+        userProfile={userProfile}
+        token={token}
+        fetchUserData={fetchUserData}
+        accountType={userProfile.account_type}
+      />
+    )}
+
 
     {/* Modals */}
     <UsersListModal

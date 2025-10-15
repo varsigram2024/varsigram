@@ -1,5 +1,5 @@
 // ... existing code ...
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useViewTracking } from '../../context/viewTrackingContext';
 import { useInView } from 'react-intersection-observer';
 import { Text } from "../Text";
@@ -116,6 +116,13 @@ export const Post: React.FC<PostProps> = ({
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(post.has_liked);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [isRewarding, setIsRewarding] = useState(false);
+  const [isWindowActive, setIsWindowActive] = useState(false);
+  const clickCountRef = useRef(0); // Using ref instead of state
+  const windowTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSentRef = useRef(false);
+
   const [showOptions, setShowOptions] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -461,6 +468,143 @@ useEffect(() => {
 }, [token, user, post.author_pg_id, post.author_id]);
 
 
+
+const handlePoint = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+
+  if (!token) {
+    toast.error("Please log in to reward points.");
+    navigate("/welcome");
+    return;
+  }
+
+  // Prevent clicking after window closed
+  if (!isWindowActive && clickCountRef.current > 0) {
+    toast.error("Reward window has closed. Points cannot be changed.");
+    return;
+  }
+
+  // Start the 10-second window on first click
+  if (!isWindowActive) {
+    setIsWindowActive(true);
+    hasSentRef.current = false; // Reset sent flag when window starts
+    console.log("⏰ 10-second reward window started");
+    
+    // Set timer to close window and send points after 10 seconds
+    windowTimerRef.current = setTimeout(() => {
+      console.log("⏰ Reward window closed - sending final points");
+      sendFinalPoints();
+    }, 10000);
+  }
+
+  // Accumulate points (max 5)
+  if (clickCountRef.current < 5) {
+    clickCountRef.current += 1;
+    setRewardPoints(clickCountRef.current);
+    
+    console.log(`🟢 Click ${clickCountRef.current}/5 - ${clickCountRef.current} point(s) accumulated`);
+    
+    if (clickCountRef.current === 5) {
+      toast.success("Maximum 5 points reached!");
+      console.log("🎯 Max points reached - sending immediately");
+      sendFinalPoints();
+    }
+  } else {
+    toast.error("Maximum 5 points reached!");
+  }
+};
+
+const sendFinalPoints = async () => {
+  // Prevent multiple calls
+  if (hasSentRef.current) {
+    console.log("🛑 Already sent points, skipping duplicate call");
+    return;
+  }
+
+  // Clear the timer first to prevent multiple submissions
+  if (windowTimerRef.current) {
+    clearTimeout(windowTimerRef.current);
+    windowTimerRef.current = null;
+  }
+
+  const finalPoints = clickCountRef.current;
+  
+  if (finalPoints === 0) {
+    console.log("❌ No points to send - user clicked 0 times");
+    setIsWindowActive(false);
+    return;
+  }
+
+  try {
+    hasSentRef.current = true; // Mark as sent
+    setIsRewarding(true);
+    
+    console.log("📤 Sending final points to backend:", {
+      post_id: post.id,
+      points: finalPoints,
+      total_clicks: finalPoints
+    });
+
+    const response = await axios.post(
+      `${API_BASE_URL}/reward-points/`,
+      {
+        post_id: post.id,
+        points: finalPoints,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Final reward submitted successfully:", {
+      points_awarded: finalPoints,
+      response: response.data
+    });
+
+    toast.success(`+${finalPoints} points awarded!`);
+    
+  } catch (error: any) {
+    console.error("❌ Error submitting final reward:", {
+      error: error.response?.data,
+      attempted_points: finalPoints,
+      status: error.response?.status
+    });
+
+    if (error.response?.status === 400) {
+      const data = error.response.data;
+      if (data.points) toast.error(data.points[0]);
+      else if (data.post_id) toast.error(data.post_id[0]);
+      else toast.error("Invalid reward request.");
+    } else if (error.response?.status === 401) {
+      toast.error("You must be logged in to submit points.");
+    } else if (error.response?.status === 500) {
+      toast.error("Server error. Please try again later.");
+    } else {
+      toast.error("Failed to submit reward.");
+    }
+    
+    // Revert the points display on error
+    setRewardPoints(0);
+    clickCountRef.current = 0;
+  } finally {
+    // Reset for next interaction
+    setIsWindowActive(false);
+    setIsRewarding(false);
+    // Don't reset hasSentRef here - we want it to persist until the next window starts
+  }
+};
+
+// Cleanup timer on component unmount
+useEffect(() => {
+  return () => {
+    if (windowTimerRef.current) {
+      clearTimeout(windowTimerRef.current);
+    }
+  };
+}, []);
 
 
 
@@ -973,18 +1117,59 @@ useEffect(() => {
             </div> */}
 
 
-            {/* Point count */}
-            <div className="flex items-center gap-2">
-              <svg width="15" height="12" viewBox="0 0 15 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
 
+                    {/* Point count - Make it clickable for giving points */}
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <svg
+                      onClick={handlePoint}
+                      width="15"
+                      height="12"
+                      viewBox="0 0 15 12"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={`transition-transform active:scale-90 ${
+                        (isRewarding || (isWindowActive && clickCountRef.current >= 5)) 
+                          ? "opacity-50 cursor-not-allowed" 
+                          : "opacity-100 cursor-pointer hover:opacity-80"
+                      }`}
+                    >
+                      <path
+                        d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267"
+                        stroke="#750015"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031"
+                        stroke="#750015"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312"
+                        stroke="#750015"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z"
+                        stroke="#750015"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
 
-              <span>{"+1"}</span>
-            </div>
+                    <span className={`text-sm font-medium ${
+                      rewardPoints > 0 ? 'text-[#750015]' : 'text-gray-500'
+                    }`}>
+                      +{rewardPoints}
+                      {isWindowActive && (
+                        <span className="text-xs text-orange-500 ml-1">(Click to add)</span>
+                      )}
+                    </span>
+                  </div>
 
 
 

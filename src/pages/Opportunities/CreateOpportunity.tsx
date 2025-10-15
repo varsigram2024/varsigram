@@ -27,59 +27,17 @@ const CreateOpportunity: React.FC = () => {
 
   return (
     <div className="flex w-full bg-white min-h-screen">
-      {/* Sidebar */}
-      <div className="hidden lg:block w-64 bg-white border-r border-gray-200 p-6">
-        <div className="space-y-6">
-          <div>
-            <Heading as="h3" className="text-lg font-semibold mb-4">Create New</Heading>
-            <nav className="space-y-2">
-              <a href="#" className="block py-2 px-3 rounded-lg bg-[#f8f0f0] text-[#750015] font-medium">
-                Basic Information
-              </a>
-              <a href="#" className="block py-2 px-3 rounded-lg text-gray-600 hover:bg-gray-50">
-                Details & Requirements
-              </a>
-              <a href="#" className="block py-2 px-3 rounded-lg text-gray-600 hover:bg-gray-50">
-                Application Process
-              </a>
-              <a href="#" className="block py-2 px-3 rounded-lg text-gray-600 hover:bg-gray-50">
-                Review & Publish
-              </a>
-            </nav>
-          </div>
-        </div>
-      </div>
+
 
       {/* Main Content */}
-      <div className="flex-1 p-6 lg:p-8">
+      <div className="flex-1 p-6 items-center justify-center lg:p-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex items-center justify-center bg-[#750015] rounded-full p-3">
-              <Img 
-                src="/images/vectors/resources-icon.svg" 
-                alt="Create Opportunity" 
-                className="h-6 w-6 filter brightness-0 invert" 
-              />
-            </div>
-            <div>
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="flex items-center justify-center">
               <Heading as="h1" className="text-2xl lg:text-3xl font-bold text-gray-900">
                 Create Opportunity
               </Heading>
-              <Text className="text-gray-600">
-                Share research opportunities, scholarships, or internships with the community
-              </Text>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="bg-gray-50 rounded-2xl p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <Text className="text-sm font-medium text-gray-700">Basic Information</Text>
-              <Text className="text-sm text-gray-500">Step 1 of 4</Text>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-[#750015] h-2 rounded-full w-1/4"></div>
             </div>
           </div>
 

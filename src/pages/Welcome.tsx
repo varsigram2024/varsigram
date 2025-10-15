@@ -74,7 +74,7 @@ export const Welcome = () => {
     <div className="flex flex-wrap justify-center lg:justify-start gap-8 sm:gap-6 lg:gap-10 mt-6 w-full">
       <Button
         onClick={handleSignUp}
-        className=" bg-white text-[#91021c]/95 border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
+        className=" bg-white text-[#91021c] border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
       >
         Sign up now
       </Button>
