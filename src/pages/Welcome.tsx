@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/Button';
-import "../../src/styles/animations.css"
+import { Input } from '../components/Input';
+import { FaLinkedinIn, FaInstagram, FaPaperPlane } from "react-icons/fa";
 import mockups from '../../public/images/mockups/mockups.svg';
 import featureMockup1 from '../../public/images/mockups/featureMockup1.svg';
 import featureMockup2 from '../../public/images/mockups/featureMockup2.svg';
@@ -17,7 +18,14 @@ export const Welcome = () => {
   const navigate = useNavigate();
   const [isAndroid, setIsAndroid] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]); const [inputValue, setInputValue] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+    console.log("Submitted email:", inputValue);
+    setInputValue("");
+  };
 
   useEffect(() => {
     if (/Android/i.test(navigator.userAgent)) setIsAndroid(true);
@@ -359,22 +367,99 @@ export const Welcome = () => {
       </section>
 
       {/* Footer Section */}
+        <section 
+          ref={(el) => addToRefs(el, 6)}
+          className="w-full h-[100vh] flex items-center justify-start py-12 sm:py-16 px-4 sm:px-6 lg:px-12 transition-all duration-1000 bg-cover bg-center relative"
+          style={{
+            backgroundImage: `url(${footer})`,
+          }}
+        >
+          {/* Overlay for opacity */}
+          <div className="absolute inset-0 bg-[#750005] bg-opacity-40"></div>
+          
+          <div className="max-w-7xl w-2xl flex flex-col items-start justify-start text-left transform transition-all duration-500 hover:scale-[1.02] relative z-10">
+            <h2 className="text-left text-2xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white drop-shadow-md pointer-events-none animate-fade-in-up">
+              Join 500+ on Varsigram today!
+            </h2>
+
+            <p className='text-left'>Learn. Connect. Grow. Inspire</p>
+
+
+            <div className='mt-6 flex justify-start lg:justify-start'>
+            <CTAButtons />
+          </div>
+          </div>
+        </section>
+
 <section 
-  ref={(el) => addToRefs(el, 6)}
-  className="w-full flex items-center justify-center py-12 sm:py-16 px-4 sm:px-6 lg:px-20 transition-all duration-1000 bg-cover bg-center relative"
-  style={{
-    backgroundImage: `url(${footer})`,
-  }}
->
-  {/* Overlay for opacity */}
-  <div className="absolute inset-0 bg-white bg-opacity-40"></div>
-  
-  <div className="max-w-7xl w-full flex items-center justify-center lg:justify-start transform transition-all duration-500 hover:scale-[1.02] relative z-10">
-    <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-white drop-shadow-md pointer-events-none px-4 sm:px-8 animate-fade-in-up">
-      Join 500+ on <span className="text-[#FF6682] mx-2 animate-pulse">Varsigram</span> today!
-    </h2>
-  </div>
-</section>
+      className="bg-[#fff] text-[#3a3a3a] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col items-center justify-center max-w-7xl gap-8 lg:gap-10 space-y-10 mx-auto"
+    >
+      {/* Logo and Heading */}
+      <div className="z-10 text-center flex flex-col items-center justify-center gap-4 animate-fade-in-up">
+        <div className="flex items-center gap-2">
+          <svg width="85" height="60" viewBox="0 0 64 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M31.8142 40.3235C28.8059 38.1083 28.163 33.8738 30.3782 30.8655L48.3636 6.44121C50.9834 2.88345 55.9913 2.12312 59.5491 4.74295L64.0013 8.02142L41.2723 38.8876C39.0571 41.8959 34.8225 42.5388 31.8142 40.3235Z" fill="#750015"/>
+            <path d="M18.157 32.0453C15.2635 29.9147 14.6452 25.8419 16.7758 22.9485L27.0562 8.98768C29.676 5.42992 34.684 4.66958 38.2417 7.28941L42.2778 10.2615L27.2538 30.6642C25.1232 33.5576 21.0504 34.176 18.157 32.0453Z" fill="#750015"/>
+            <path d="M6.94957 20.7166C5.79993 19.0374 5.58672 16.8876 6.38412 15.0152L7.20593 13.0856C9.18517 8.43821 14.9826 6.85431 19.0499 9.8497L22.7724 12.5911L16.6651 20.8839C14.2323 24.1873 9.2671 24.1017 6.94957 20.7166Z" fill="#750015"/>
+          </svg>
+          <h1 className="text-[#750005] text-3xl font-semibold">Varsigram</h1>
+        </div>
+
+        <h1 className='text-center leading-8 text-2xl sm:text-3xl lg:text-4xl max-w-2xl font-semibold'>
+          Grow with every content you read, Inspire with <span className='text-[#750005]'>Vars</span> you create
+        </h1>
+      </div>
+
+      {/* CTA Button */}
+      <div>
+        <button className="bg-[#750005] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a0001f] transition-all">
+          Make a Vars now
+        </button>
+      </div>
+
+      {/* Input Field with Icons */}
+      <form onSubmit={handleSubmit} className="relative w-full max-w-lg">
+        <input
+          type="email"
+          placeholder="Reach us via other social media"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          className="w-full border border-[#750015] rounded-full py-3 pl-6 pr-24 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#750015] transition-all"
+        />
+
+        {/* Icons Section */}
+        <div className="absolute top-1/2 right-4 -translate-y-1/2 flex items-center gap-3 text-[#750015]">
+          {inputValue.trim() ? (
+            <button
+              type="submit"
+              className="hover:scale-110 transition-transform"
+              aria-label="Send"
+            >
+              <FaPaperPlane size={20} />
+            </button>
+          ) : (
+            <>
+              <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
+                <img src='/images/socials/twitter.svg' className="hover:scale-110 transition-transform" />
+              </a>
+              <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
+                <img src='/images/socials/linkedin.svg' className="hover:scale-110 transition-transform" />
+              </a>
+              <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
+                <img src='/images/socials/instagram.svg' className="hover:scale-110 transition-transform" />
+              </a>
+            </>
+          )}
+        </div>
+      </form>
+
+      {/* Contact and Copyright */}
+      <div className="text-center text-sm text-gray-600 space-y-1">
+        <p>varsigraminfo@gmail.com</p>
+        <p>© 2024 Varsigram. All rights reserved.</p>
+      </div>
+    </section>
+
 
       <style>{`
   /* Base animations */
