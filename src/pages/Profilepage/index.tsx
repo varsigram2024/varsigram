@@ -833,8 +833,9 @@ return (
                 {/* Cover photo section */}
                 <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full animate-fade-in">
                   <div className="flex w-full flex-col self-stretch gap-2.5">
+                    {/* Cover photo */}
                     <div
-                      className="flex h-[170px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5"
+                      className="flex h-[170px] bg-[#750015] sm:h-[140px] xs:h-[120px] flex-col items-center justify-center gap-2 rounded-tl-[20px] rounded-tr-[20px] p-10 sm:p-5 xs:p-3"
                       style={{
                         backgroundImage: `url(${
                           userProfile?.profile_pic_url &&
@@ -845,56 +846,70 @@ return (
                         backgroundSize: "cover",
                       }}
                     >
-                      {/* <Text as="h4" className="text-[28px] font-semibold text-white md:text-[26px] sm:text-[24px]">
-                        {userProfile.organization_name || 'User Profile'}
-                      </Text> */}
+                      <div className="flex flex-col items-center justify-center">
+                        <svg width="33" height="32" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <g clip-path="url(#clip0_2952_12171)">
+                          <path d="M28.5 7.9987H24.2333L21.8333 5.33203H13.8333V7.9987H20.6333L23.1667 10.6654H28.5V26.6654H7.16667V14.6654H4.5V26.6654C4.5 28.132 5.7 29.332 7.16667 29.332H28.5C29.9667 29.332 31.1667 28.132 31.1667 26.6654V10.6654C31.1667 9.1987 29.9667 7.9987 28.5 7.9987ZM11.1667 18.6654C11.1667 24.5987 18.3533 27.5854 22.5533 23.3854C26.7533 19.1854 23.7667 11.9987 17.8333 11.9987C14.1533 11.9987 11.1667 14.9854 11.1667 18.6654ZM17.8333 14.6654C18.8846 14.6956 19.8846 15.1267 20.6283 15.8704C21.372 16.6141 21.8031 17.614 21.8333 18.6654C21.8031 19.7167 21.372 20.7166 20.6283 21.4603C19.8846 22.204 18.8846 22.6352 17.8333 22.6654C16.782 22.6352 15.7821 22.204 15.0384 21.4603C14.2947 20.7166 13.8635 19.7167 13.8333 18.6654C13.8635 17.614 14.2947 16.6141 15.0384 15.8704C15.7821 15.1267 16.782 14.6956 17.8333 14.6654ZM7.16667 7.9987H11.1667V5.33203H7.16667V1.33203H4.5V5.33203H0.5V7.9987H4.5V11.9987H7.16667" fill="white"/>
+                          </g>
+                          <defs>
+                          <clipPath id="clip0_2952_12171">
+                          <rect width="32" height="32" fill="white" transform="translate(0.5)"/>
+                          </clipPath>
+                          </defs>
+                          </svg>
+                          <h1 className="text-white">Add a Cover Photo</h1>
+                      </div>
+                      
                     </div>
-                    <div className="overflow-hidden relative ml-4 mt-[-46px] w-[120px] h-[120px] rounded-[50%] border-[5px] border-[#ffdbe2] bg-white">
-                      {user?.email === userProfile?.email ? (
-                        <>
-                          <div
-                            onClick={handleProfilePicClick}
-                            className="relative w-full h-full rounded-full overflow-hidden cursor-pointer group"
-                          >
-                            {isUploading ? (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-                              </div>
-                            ) : (
-                              <>
-                                <Img
-                                  src={
-                                    userProfile?.profile_pic_url &&
-                                    userProfile.profile_pic_url.startsWith(
-                                      "http"
-                                    )
-                                      ? userProfile.profile_pic_url
-                                      : "/images/user.png"
-                                  }
-                                  alt="Profile Picture"
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-                                  <Text
-                                    as="p"
-                                    className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                  >
-                                    Change Photo
-                                  </Text>
+
+
+
+                    {/* Profile picture and points section */}
+                    <div className="flex items-start justify-between px-4 sm:px-3 xs:px-2">
+                      {/* Profile picture */}
+                      <div className="overflow-hidden relative ml-4 mt-[-46px] sm:mt-[-40px] xs:mt-[-35px] w-[120px] h-[120px] sm:w-[100px] sm:h-[100px] xs:w-[80px] xs:h-[80px] rounded-[50%] border-[5px] sm:border-[4px] xs:border-[3px] border-[#ffdbe2] bg-white">
+                        {user?.email === userProfile?.email ? (
+                          <>
+                            <div
+                              onClick={handleProfilePicClick}
+                              className="relative w-full h-full rounded-full overflow-hidden cursor-pointer group"
+                            >
+                              {isUploading ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                                  <div className="animate-spin rounded-full h-8 w-8 sm:h-6 sm:w-6 border-t-2 border-b-2 border-white"></div>
                                 </div>
-                              </>
-                            )}
-                          </div>
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept="image/*"
-                            className="hidden"
-                          />
-                        </>
-                      ) : (
-                        <>
+                              ) : (
+                                <>
+                                  <Img
+                                    src={
+                                      userProfile?.profile_pic_url &&
+                                      userProfile.profile_pic_url.startsWith("http")
+                                        ? userProfile.profile_pic_url
+                                        : "/images/user.png"
+                                    }
+                                    alt="Profile Picture"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                    <Text
+                                      as="p"
+                                      className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs sm:text-[10px] xs:text-[8px] text-center px-1"
+                                    >
+                                      Change Photo
+                                    </Text>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleFileChange}
+                              accept="image/*"
+                              className="hidden"
+                            />
+                          </>
+                        ) : (
                           <Img
                             src={
                               userProfile?.profile_pic_url &&
@@ -905,50 +920,72 @@ return (
                             alt="Profile Picture"
                             className="w-full h-full object-cover"
                           />
-                        </>
-                      )}
+                        )}
+                      </div>
+
+                      {/* Points badge */}
+                      <div className="flex items-center gap-2 justify-center px-4 sm:px-3 xs:px-2 py-2 sm:py-1.5 xs:py-1 border rounded-2xl sm:rounded-xl xs:rounded-lg">
+                        <svg 
+                          width="15" 
+                          height="12" 
+                          viewBox="0 0 15 12" 
+                          fill="none" 
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="sm:w-3 sm:h-3 xs:w-2.5 xs:h-2.5"
+                        >
+                          <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path fillRule="evenodd" clipRule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <h1 className='text-[#3a3a3a]/70 flex items-center gap-2 font-semibold text-[14px] sm:text-[12px] xs:text-[10px] leading-5 sm:leading-4'>
+                          0 Points
+                        </h1>
+                      </div>
                     </div>
 
+
+
                     {/* User info and follow button */}
-                    <div className="mx-3.5 ml-4 flex flex-col items-start gap-4">
+                    <div className="mx-3.5 ml-4 sm:mx-3 sm:ml-3 xs:mx-2 xs:ml-2 flex flex-col items-start gap-4 sm:gap-3 xs:gap-2">
                       <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-[7px]">
-                            <Heading
-                              size="h3_semibold"
-                              as="h1"
-                              className="text-[28px] font-semibold md:text-[26px] sm:text-[24px]"
-                            >
-                              {userProfile.name ||
-                                userProfile.organization_name ||
-                                userProfile.username}
-                            </Heading>
-                            {userProfile.account_type === "organization" &&
-                              userProfile.is_verified &&
-                              userProfile.exclusive && (
-                                <Img
-                                  src="/images/vectors/verified.svg"
-                                  alt="Verified"
-                                  className="h-[16px] w-[16px]"
-                                />
-                              )}
-                          </div>
-                          
-                          <button
-                            onClick={handleShareProfile}
-                            className="flex items-center gap-2 p-2 rounded-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            title="Share Profile"
+                        <div className="flex items-center gap-[7px] sm:gap-1.5 xs:gap-1">
+                          <Heading
+                            size="h3_semibold"
+                            as="h1"
+                            className="text-[28px] font-semibold md:text-[26px] sm:text-[22px] xs:text-[18px]"
                           >
-                            <Share size={18} />
-                          </button>
+                            {userProfile.name ||
+                              userProfile.organization_name ||
+                              userProfile.username}
+                          </Heading>
+                          {userProfile.account_type === "organization" &&
+                            userProfile.is_verified &&
+                            userProfile.exclusive && (
+                              <Img
+                                src="/images/vectors/verified.svg"
+                                alt="Verified"
+                                className="h-[16px] w-[16px] sm:h-[14px] sm:w-[14px] xs:h-[12px] xs:w-[12px]"
+                              />
+                            )}
                         </div>
+                        
+                        <button
+                          onClick={handleShareProfile}
+                          className="flex items-center gap-2 p-2 sm:p-1.5 xs:p-1 rounded-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          title="Share Profile"
+                        >
+                          <Share size={18} className="sm:w-4 sm:h-4 xs:w-3.5 xs:h-3.5" />
+                        </button>
+                      </div>
 
                       {/* Additional info for students */}
                       {userProfile.account_type === "student" && (
-                        <div className="flex flex-row gap-2">
+                        <div className="flex flex-row gap-2 sm:gap-1.5 xs:gap-1 flex-wrap">
                           {userProfile.university && (
                             <Text
                               as="p"
-                              className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600"
+                              className="text-[14px] sm:text-[12px] xs:text-[10px] font-normal p-1.5 px-2 sm:p-1 sm:px-1.5 xs:p-0.5 xs:px-1 rounded-[4px] bg-[#FFDBE2] text-gray-600"
                             >
                               {userProfile.university}
                             </Text>
@@ -956,7 +993,7 @@ return (
                           {userProfile.faculty && (
                             <Text
                               as="p"
-                              className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600"
+                              className="text-[14px] sm:text-[12px] xs:text-[10px] font-normal p-1.5 px-2 sm:p-1 sm:px-1.5 xs:p-0.5 xs:px-1 rounded-[4px] bg-[#FFDBE2] text-gray-600"
                             >
                               {userProfile.faculty}
                             </Text>
@@ -964,7 +1001,7 @@ return (
                           {userProfile.department && (
                             <Text
                               as="p"
-                              className="text-[14px] font-normal p-1.5 px-2 rounded-[4px] bg-[#FFDBE2] text-gray-600"
+                              className="text-[14px] sm:text-[12px] xs:text-[10px] font-normal p-1.5 px-2 sm:p-1 sm:px-1.5 xs:p-0.5 xs:px-1 rounded-[4px] bg-[#FFDBE2] text-gray-600"
                             >
                               {userProfile.department}
                             </Text>
@@ -972,48 +1009,45 @@ return (
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2">
+                      {/* Bio section */}
+                      <div className="flex items-center gap-2 w-full">
                         {isEditingBio ? (
-                          <>
-                            <input
-                              type="text"
-                              value={bioInput}
-                              onChange={(e) => setBioInput(e.target.value)}
-                              className="border rounded px-2 py-1 text-[16px] font-normal text-gray-600"
-                              maxLength={160}
-                              autoFocus
-                              onBlur={async () => {
-                                setIsEditingBio(false);
-                                if (bioInput !== userProfile.bio) {
-                                  try {
-                                    const payload = { user: { bio: bioInput } };
-
-                                    await axios.patch(
-                                      userProfile.account_type ===
-                                        "organization"
-                                        ? `${API_BASE_URL}/organization/update/`
-                                        : `${API_BASE_URL}/student/update/`,
-                                      payload,
-                                      {
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                      }
-                                    );
-                                    await fetchUserData();
-                                    toast.success("Bio updated!");
-                                  } catch (err: any) {
-                                    toast.error("Failed to update bio");
-                                  }
+                          <input
+                            type="text"
+                            value={bioInput}
+                            onChange={(e) => setBioInput(e.target.value)}
+                            className="border rounded px-2 py-1 text-[16px] sm:text-[14px] xs:text-[12px] font-normal text-gray-600 w-full max-w-md"
+                            maxLength={160}
+                            autoFocus
+                            onBlur={async () => {
+                              setIsEditingBio(false);
+                              if (bioInput !== userProfile.bio) {
+                                try {
+                                  const payload = { user: { bio: bioInput } };
+                                  await axios.patch(
+                                    userProfile.account_type === "organization"
+                                      ? `${API_BASE_URL}/organization/update/`
+                                      : `${API_BASE_URL}/student/update/`,
+                                    payload,
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                    }
+                                  );
+                                  await fetchUserData();
+                                  toast.success("Bio updated!");
+                                } catch (err: any) {
+                                  toast.error("Failed to update bio");
                                 }
-                              }}
-                            />
-                          </>
+                              }
+                            }}
+                          />
                         ) : (
                           <>
                             <Text
                               as="p"
-                              className="text-[16px] font-normal text-gray-600"
+                              className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal text-gray-600 break-words flex-1"
                             >
                               {userProfile.bio || "No bio available"}
                             </Text>
@@ -1023,21 +1057,21 @@ return (
                                   setBioInput(userProfile.bio || "");
                                   setIsEditingBio(true);
                                 }}
-                                className="ml-1 p-1 hover:bg-gray-200 rounded"
+                                className="ml-1 p-1 sm:p-0.5 hover:bg-gray-200 rounded flex-shrink-0"
                                 title="Edit bio"
                               >
-                                <Pencil size={10} color="#750015" />
+                                <Pencil size={10} color="#750015" className="sm:w-2 sm:h-2" />
                               </button>
                             )}
                           </>
                         )}
                       </div>
 
-                      {/* Follow button - only show if not viewing own profile */}
+                      {/* Follow button */}
                       {token && user?.email !== userProfile.email && (
                         <Button
                           onClick={handleFollow}
-                          className={`px-6 py-2 rounded-full font-semibold transition-colors ${
+                          className={`px-6 py-2 sm:px-4 sm:py-1.5 xs:px-3 xs:py-1 rounded-full font-semibold transition-colors text-[14px] sm:text-[12px] xs:text-[11px] ${
                             isFollowing
                               ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
                               : "bg-[#750015] text-white hover:bg-[#a0001f]"
@@ -1047,12 +1081,14 @@ return (
                         </Button>
                       )}
 
-                       <div className="flex flex-wrap gap-6">
+                      {/* Follow stats and join date */}
+                      <div className="flex w-full items-center justify-between flex-wrap gap-3 sm:gap-2 xs:gap-1">
+                        <div className="flex flex-wrap gap-6 sm:gap-4 xs:gap-3">
                           <button
                             onClick={handleOpenFollowers}
                             className="flex items-center gap-1 hover:opacity-80 transition-opacity"
                           >
-                            <Text as="p" className="text-[16px] font-normal">
+                            <Text as="p" className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal">
                               <span className="font-semibold">
                                 {userProfile.followers_count}
                               </span>{" "}
@@ -1063,7 +1099,7 @@ return (
                             onClick={handleOpenFollowing}
                             className="flex items-center gap-1 hover:opacity-80 transition-opacity"
                           >
-                            <Text as="p" className="text-[16px] font-normal">
+                            <Text as="p" className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal">
                               <span className="font-semibold">
                                 {userProfile.following_count}
                               </span>{" "}
@@ -1071,6 +1107,13 @@ return (
                             </Text>
                           </button>
                         </div>
+
+                        <div className="flex">
+                          <Text as="p" className="text-[14px] sm:text-[12px] xs:text-[10px] font-normal text-gray-500">
+                            Joined on 
+                          </Text>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="h-px bg-[#d9d9d9]" />
