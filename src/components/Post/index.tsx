@@ -1269,7 +1269,7 @@ useEffect(() => {
             {/* Share button */}
             <div className="relative">
               <Img
-                src="/images/vectors/sharearrow.svg"
+                src="/images/vectors/share.svg"
                 alt="Share"
                 className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
                 onClick={handleShareClick}

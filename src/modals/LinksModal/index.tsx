@@ -9,7 +9,9 @@ interface SocialLinksData {
   twitter_url: string | null;
   instagram_url: string | null;
   website_url: string | null;
+  whatsapp_url: string | null; // ✅ new
 }
+
 
 interface LinksModalProps {
   isOpen: boolean;
@@ -28,24 +30,26 @@ const LinksModal: React.FC<LinksModalProps> = ({
   fetchUserData,
   accountType
 }) => {
-  const [userLinks, setUserLinks] = useState<SocialLinksData>({
+    const [userLinks, setUserLinks] = useState<SocialLinksData>({
     linkedin_url: null,
     twitter_url: null,
     instagram_url: null,
-    website_url: null
-  });
+    website_url: null,
+    whatsapp_url: null, // 🆕
+    });
   const [isLoading, setIsLoading] = useState(false);
 
   // Initialize form with existing links when modal opens
   useEffect(() => {
     if (isOpen) {
       // Map the user profile data to our form state
-      setUserLinks({
-        linkedin_url: userProfile?.user?.linkedin_url || userProfile?.linkedin_url || null,
-        twitter_url: userProfile?.user?.twitter_url || userProfile?.twitter_url || null,
-        instagram_url: userProfile?.user?.instagram_url || userProfile?.instagram_url || null,
-        website_url: userProfile?.user?.website_url || userProfile?.website_url || null
-      });
+            setUserLinks({
+            linkedin_url: userProfile?.user?.linkedin_url || null,
+            twitter_url: userProfile?.user?.twitter_url || null,
+            instagram_url: userProfile?.user?.instagram_url || null,
+            website_url: userProfile?.user?.website_url || null,
+            whatsapp_url: userProfile?.user?.whatsapp_url || null, // 🆕
+            });
     }
   }, [isOpen, userProfile]);
 
@@ -59,28 +63,32 @@ const handleSaveLinks = async () => {
   setIsLoading(true);
   try {
     // Prepare data for API - convert empty strings to null
-    const payload: SocialLinksData = {
-      linkedin_url: userLinks.linkedin_url?.trim() || null,
-      twitter_url: userLinks.twitter_url?.trim() || null,
-      instagram_url: userLinks.instagram_url?.trim() || null,
-      website_url: userLinks.website_url?.trim() || null
-    };
+    // Build payload dynamically — only include non-empty fields
+const payload: Record<string, string> = {};
+
+Object.entries(userLinks).forEach(([key, value]) => {
+  if (value && value.trim() !== "") {
+    // Convert website_url → portfolio_url (backend expects this key)
+    if (key === "website_url") {
+      payload["portfolio_url"] = value.trim();
+    } else {
+      payload[key] = value.trim();
+    }
+  }
+});
+
+
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
     
     // FIX: Use the correct endpoint - remove /v1/ or add it based on your API
-    await axios.patch(
-      `${API_BASE_URL}/profile/social-links/`, // Try with /v1/
-      // OR
-      // `${API_BASE_URL}/profile/social-links/`, // Try without /v1/
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    await axios.patch(`${API_BASE_URL}/profile/social-links/`, payload, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  },
+});
+
     
     await fetchUserData();
     onClose();
@@ -130,6 +138,8 @@ const handleSaveLinks = async () => {
 
   const getPlaceholder = (platform: keyof SocialLinksData): string => {
     switch (platform) {
+         case 'whatsapp_url':
+      return 'https://wa.me/234XXXXXXXXXX';
       case 'linkedin_url':
         return 'https://linkedin.com/in/yourprofile';
       case 'twitter_url':
@@ -143,15 +153,16 @@ const handleSaveLinks = async () => {
     }
   };
 
-  const getPlatformName = (platform: keyof SocialLinksData): string => {
-    switch (platform) {
-      case 'linkedin_url': return 'LinkedIn';
-      case 'twitter_url': return 'Twitter';
-      case 'instagram_url': return 'Instagram';
-      case 'website_url': return 'Portfolio Website';
-      default: return platform;
-    }
-  };
+        const getPlatformName = (platform: keyof SocialLinksData): string => {
+        switch (platform) {
+            case 'linkedin_url': return 'LinkedIn';
+            case 'twitter_url': return 'Twitter';
+            case 'instagram_url': return 'Instagram';
+            case 'website_url': return 'Portfolio Website';
+            case 'whatsapp_url': return 'WhatsApp'; // 🆕
+            default: return platform;
+        }
+        };
 
   const getPlatformIcon = (platform: keyof SocialLinksData) => {
     const icons = {
@@ -165,6 +176,11 @@ const handleSaveLinks = async () => {
           <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
         </svg>
       ),
+      whatsapp_url: (
+      <svg className="w-6 h-6" viewBox="0 0 32 32" fill="currentColor">
+        <path d="M16.001 3C9.384 3 4 8.383 4 15c0 2.552.77 4.937 2.102 6.916L4 29l7.301-2.063A11.949 11.949 0 0 0 16 27c6.617 0 12-5.383 12-12S22.618 3 16.001 3zM16 25a9.012 9.012 0 0 1-4.605-1.27l-.33-.196-4.334 1.226 1.234-4.223-.211-.338A9.014 9.014 0 0 1 7 15c0-4.963 4.037-9 9-9s9 4.037 9 9-4.037 9-9 9zm4.992-6.623c-.273-.136-1.615-.797-1.865-.885-.25-.091-.432-.136-.613.136-.182.273-.704.885-.863 1.067-.159.182-.318.205-.591.068-.273-.136-1.154-.426-2.197-1.36-.812-.724-1.36-1.616-1.519-1.89-.159-.273-.017-.42.12-.556.124-.123.273-.319.41-.478.137-.159.182-.273.273-.455.091-.182.046-.341-.023-.478-.068-.136-.613-1.477-.84-2.023-.223-.537-.45-.464-.613-.472l-.523-.009c-.182 0-.478.068-.728.341-.25.273-.955.933-.955 2.272s.978 2.637 1.114 2.818c.136.182 1.924 2.941 4.66 4.127.652.282 1.162.45 1.559.576.655.208 1.25.179 1.719.109.524-.078 1.615-.659 1.843-1.296.227-.637.227-1.183.159-1.296-.068-.114-.25-.182-.523-.318z"/>
+      </svg>
+    ),
       instagram_url: (
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069-3.204 0-3.584-.012-4.849-.069-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
@@ -204,7 +220,7 @@ const handleSaveLinks = async () => {
               Add your social media profiles and contact information. These will be displayed on your profile.
             </p>
             
-            {(['linkedin_url', 'twitter_url', 'instagram_url', 'website_url'] as const).map((platform) => (
+            {(['linkedin_url', 'twitter_url', 'instagram_url', 'website_url', 'whatsapp_url'] as const).map((platform) => (
               <div key={platform} className="flex flex-col gap-3">
                 <label className="flex items-center gap-3 text-lg font-semibold text-gray-800">
                   <div className="text-[#750015]">

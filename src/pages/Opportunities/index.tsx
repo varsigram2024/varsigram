@@ -56,7 +56,7 @@ export default function Opportunities() {
 
   return (
     <div className="flex w-full bg-white min-h-screen space-x-4">
-      <div className="flex-1 p-4 lg:p-6 items-start justify-center relative border-x border-solid">
+      <div className="hidden flex-1 p-4 lg:p-6 items-start justify-center relative border-x border-solid">
         <div className="max-w-6xl mx-auto flex-1 w-full">
          
           {/* Sticky Tabs Container */}
@@ -119,6 +119,50 @@ export default function Opportunities() {
           </button>
         </div>
       </div>
+
+      `   ` <div className="flex flex-col max-w-full gap-8">
+                <div className="mt-[38px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch"> 
+                <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[15px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
+                    <div className="flex items-center gap-2.5 mb-8">
+                    <div 
+                        className="hover:opacity-80 transition-opacity cursor-pointer"
+                    >
+                        <Text as="p" className="text-[24px] font-medium md:text-[22px]">
+                        <b>Opportunity</b>
+                        </Text>
+                    </div>
+                    </div>
+                    
+                
+              
+
+                    <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
+
+                        <div className="flex items-start justify-between gap-5">
+                        <Text as="p" className="self-end text-[16px] font-extrabold">Messages</Text>
+                        <div className="mr-[34px] border-b border-solid border-[#750015]">
+                          
+                        </div>
+                        </div>
+
+                    </div>
+
+
+                    <div className="ml-[22px] flex flex-col items-center justify-center p-4 gap-2 md:ml-0 h-[400px]">
+
+                        <div className="flex flex-col items-center h-full justify-center gap-5">
+                        <Text as="p" className="text-left self-start text-[24px] font-extrabold"> Coming Soon!</Text>
+                        <Text as="p" className="text-left self-start text-[14px] font-medium">Stay tuned! This feature is on its way to make campus connections even easier.</Text>
+                        
+                        </div>
+
+                    </div>
+
+                    
+                </div>
+                </div>
+
+            </div>
 
       <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
         <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">

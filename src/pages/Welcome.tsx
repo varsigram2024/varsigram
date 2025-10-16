@@ -327,7 +327,7 @@ useEffect(() => {
       {/* Opportunities Section */}
       <section 
         ref={(el) => addToRefs(el, 4)}
-        className="bg-white text-[#750015] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-10 max-w-7xl mx-auto transition-all duration-1000"
+        className="bg-white text-[#750015] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-10 w-[100vw] mx-auto transition-all duration-1000"
       >
         <div className="absolute inset-0 pointer-events-none animate-pulse-slow">
           <svg className='w-full h-full' width="1439" height="700" viewBox="0 0 1439 700" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -353,7 +353,7 @@ useEffect(() => {
       {/* Ready Section */}
       <section 
         ref={(el) => addToRefs(el, 5)}
-        className="bg-[#FFDBE2] text-[#750015] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col-reverse lg:flex-row items-center justify-center gap-8 lg:gap-10 max-w-7xl mx-auto transition-all duration-1000"
+        className="bg-[#FFDBE2] text-[#750015] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col-reverse lg:flex-row items-center justify-center gap-8 lg:gap-10 w-[100vw] mx-auto transition-all duration-1000"
       >
         <div className="absolute inset-0 pointer-events-none animate-pulse-slow">
           <svg className='w-full h-full' width="1439" height="700" viewBox="0 0 1439 700" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -417,7 +417,7 @@ useEffect(() => {
         </section>
 
           <section 
-                className="bg-[#fff] text-[#3a3a3a] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col items-center justify-center max-w-7xl gap-8 lg:gap-10 space-y-10 mx-auto"
+                className="bg-[#fff] text-[#3a3a3a] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col items-center justify-center max-w-[100vw] gap-8 lg:gap-10 space-y-10 mx-auto"
               >
                 {/* Logo and Heading */}
                 <div className="z-10 text-center flex flex-col items-center justify-center gap-4 animate-fade-in-up">

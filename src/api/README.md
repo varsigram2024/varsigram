@@ -1131,8 +1131,9 @@ JSON
 {
     "linkedin_url": "https://linkedin.com/in/varsigram_dev",
     "instagram_url": "https://instagram.com/varsigram_official",
+    "whatsapp_url": null,
     "twitter_url": null,
-    "website_url": null
+    "portfolio_url": null
 }
 Error Response Example (HTTP 400 Bad Request)
 If an invalid URL format is submitted:
