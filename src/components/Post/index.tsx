@@ -1231,20 +1231,12 @@ useEffect(() => {
                     <span className={`text-sm font-medium ${
                       hasRewarded ? 'text-green-600' : (rewardPoints > 0 ? 'text-[#750015]' : 'text-gray-500')
                     }`}>
-                      +{hasRewarded ? '✓' : rewardPoints}
-                      {hasRewarded && (
-                        <span className="text-xs text-green-600 ml-1">
-                          (Rewarded)
-                        </span>
-                      )}
                       {isWindowActive && !hasRewarded && (
                         <span className="text-xs text-orange-500 ml-1">
-                          ({clickCountRef.current}/5 clicks)
+                          ({clickCountRef.current}/5 points)
                         </span>
                       )}
-                      {isRewarding && !hasRewarded && (
-                        <span className="text-xs text-blue-500 ml-1">Sending...</span>
-                      )}
+                      
                     </span>
                   </div>
 
