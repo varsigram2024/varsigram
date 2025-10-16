@@ -10,6 +10,40 @@ import { ArrowLeft, MoreVertical, Edit, Trash2, MessageSquare } from "lucide-rea
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Add timestamp formatting function at the top of the file
+const formatTimestamp = (timestamp: string): string => {
+  const now = new Date();
+  const commentDate = new Date(timestamp);
+  const diffInSeconds = Math.floor((now.getTime() - commentDate.getTime()) / 1000);
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+  const diffInWeeks = Math.floor(diffInDays / 7);
+
+  if (diffInSeconds < 60) {
+    return "Just now";
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes}m`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h`;
+  } else if (diffInDays === 1) {
+    return "1d";
+  } else if (diffInDays < 7) {
+    return `${diffInDays}d`;
+  } else if (diffInWeeks === 1) {
+    return "1w";
+  } else if (diffInWeeks < 4) {
+    return `${diffInWeeks}w`;
+  } else {
+    // For older dates, show actual date
+    return commentDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: commentDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  }
+};
+
 interface Comment {
   id: string;
   text: string;
@@ -173,7 +207,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               {authorName}
             </Text>
             <span className="text-xs text-gray-400">
-              {new Date(comment.timestamp).toLocaleString()}
+              {formatTimestamp(comment.timestamp)}
             </span>
           </div>
           <div className="space-y-2">
@@ -207,157 +241,157 @@ const CommentItem: React.FC<CommentItemProps> = ({
   }
 
   return (
-    <div id={`comment-${comment.id}`} className="comment-container mb-4">
-      <div className="flex gap-3 items-start">
-        <Img
-          src={profilePicUrl}
-          alt="Profile"
-          className="h-8 w-8 rounded-full object-cover"
-        />
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Text
-                as="span"
-                className="font-semibold text-[#750015] cursor-pointer hover:underline"
-                onClick={() => {
-                  if (displayNameSlug) {
-                    navigate(`/user-profile/${displayNameSlug}`);
-                  }
-                }}
+  <div id={`comment-${comment.id}`} className={`comment-container ${depth === 0 ? 'pb-6 border-b-4 border-gray-100' : 'pb-4'} ${depth > 0 ? 'ml-3' : ''}`}>
+    <div className="flex gap-3 items-start">
+      <Img
+        src={profilePicUrl}
+        alt="Profile"
+        className="h-8 w-8 rounded-full object-cover"
+      />
+      <div className="flex-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Text
+              as="span"
+              className="font-semibold text-[#750015] cursor-pointer hover:underline"
+              onClick={() => {
+                if (displayNameSlug) {
+                  navigate(`/user-profile/${displayNameSlug}`);
+                }
+              }}
+            >
+              {authorName}
+            </Text>
+            <span className="text-xs text-gray-400">
+              {formatTimestamp(comment.timestamp)}
+            </span>
+          </div>
+          {isAuthor && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowOptions(!showOptions)}
+                className="p-1 hover:bg-gray-100 rounded-full comment-options"
+                disabled={isDeleting}
               >
-                {authorName}
-              </Text>
-              <span className="text-xs text-gray-400">
-                {new Date(comment.timestamp).toLocaleString()}
-              </span>
+                <MoreVertical size={16} />
+              </button>
+              
+              {showOptions && (
+                <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg py-1 z-10 border">
+                  <button 
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
+                  >
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button 
+                    onClick={handleDelete}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-gray-100 text-sm"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              )}
             </div>
-            {isAuthor && (
-              <div className="relative">
-                <button 
-                  onClick={() => setShowOptions(!showOptions)}
-                  className="p-1 hover:bg-gray-100 rounded-full comment-options"
-                  disabled={isDeleting}
-                >
-                  <MoreVertical size={16} />
-                </button>
-                
-                {showOptions && (
-                  <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg py-1 z-10 border">
-                    <button 
-                      onClick={handleEdit}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
-                    >
-                      <Edit size={14} /> Edit
-                    </button>
-                    <button 
-                      onClick={handleDelete}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-gray-100 text-sm"
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+          )}
+        </div>
+        
+        <Text className="block mt-1">{comment.text}</Text>
+        
+        {/* Action buttons */}
+        <div className="flex gap-4 mt-3">
+          <button 
+            onClick={() => onStartReply(comment.id, authorName)}
+            className="text-sm text-[#750015] flex items-center gap-1 hover:text-[#5a0010] transition-colors"
+          >
+            <MessageSquare size={14} /> Reply
+          </button>
+
+          {/* View replies button */}
+          {replies.length > 0 && (
+            <button 
+              onClick={toggleReplies}
+              className="text-sm text-[#750015] flex items-center gap-1 hover:text-[#5a0010] transition-colors"
+            >
+              {showReplies ? 'Hide' : 'View'} {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Replies section */}
+    {showReplies && depth < maxDepth && (
+      <div className={`mt-4 border-l-2 border-gray-200 pl-4`}>
+        {replies.length > 0 ? (
+          replies.map((reply) => (
+            <CommentItem 
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onCommentUpdate={onCommentUpdate}
+              onCommentDelete={onCommentDelete}
+              navigate={navigate}
+              onStartReply={onStartReply}
+              postId={postId}
+              depth={depth + 1}
+            />
+          ))
+        ) : (
+          <Text className="text-gray-500 text-sm mt-2">No replies yet</Text>
+        )}
+      </div>
+    )}
+
+    {/* Delete Confirmation Modal */}
+    {showDeleteConfirm && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-fade-in">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+              <Trash2 size={32} className="text-red-600" />
+            </div>
           </div>
           
-          <Text className="block">{comment.text}</Text>
+          <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+            Delete Comment
+          </h3>
           
-          {/* Action buttons */}
-          <div className="flex gap-4 mt-2">
-            <button 
-              onClick={() => onStartReply(comment.id, authorName)}
-              className="text-sm text-[#750015] flex items-center gap-1"
+          <p className="text-gray-600 text-center mb-6">
+            Are you sure you want to delete this comment? This action cannot be undone.
+          </p>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={cancelDelete}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
-              <MessageSquare size={14} /> Reply
+              Cancel
             </button>
-
-            {/* View replies button */}
-            {replies.length > 0 && (
-              <button 
-                onClick={toggleReplies}
-                className="text-sm text-[#750015] flex items-center gap-1"
-              >
-                {showReplies ? 'Hide' : 'View'} {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
-              </button>
-            )}
+            <button
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={16} />
+                  Delete
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
-
-      {/* Replies section */}
-      {showReplies && depth < maxDepth && (
-        <div className={` mt-2 border-l-2 border-gray-200`}>
-          {replies.length > 0 ? (
-            replies.map((reply) => (
-              <CommentItem 
-                key={reply.id}
-                comment={reply}
-                currentUserId={currentUserId}
-                onCommentUpdate={onCommentUpdate}
-                onCommentDelete={onCommentDelete}
-                navigate={navigate}
-                onStartReply={onStartReply}
-                postId={postId}
-                depth={depth + 1}
-              />
-            ))
-          ) : (
-            <Text className="text-gray-500 text-sm">No replies yet</Text>
-          )}
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-fade-in">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <Trash2 size={32} className="text-red-600" />
-              </div>
-            </div>
-            
-            <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
-              Delete Comment
-            </h3>
-            
-            <p className="text-gray-600 text-center mb-6">
-              Are you sure you want to delete this comment? This action cannot be undone.
-            </p>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={cancelDelete}
-                disabled={isDeleting}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={16} />
-                    Delete
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    )}
+  </div>
+);
 };
 
 // Main PostPage component
@@ -376,6 +410,7 @@ export default function PostPage() {
   const [replyText, setReplyText] = useState("");
   const [scrollToComment, setScrollToComment] = useState<string | null>(null);
   const [highlightComment, setHighlightComment] = useState<string | null>(null);
+  
 
   // Add pagination state for comments
   const [commentsNextCursor, setCommentsNextCursor] = useState<string | null>(null);
@@ -510,57 +545,71 @@ export default function PostPage() {
     await fetchComments(commentsNextCursor);
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+
+  // Add redirect function for authentication
+const requireAuth = (action: string) => {
+  if (!token) {
+    // Store current location for redirect after login
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
+    toast.error(`Please log in to ${action}`);
+    navigate('/login');
+    return false;
+  }
+  return true;
+};
+
+
+
+const handleAddComment = async (e: React.FormEvent) => {
+   e.preventDefault();
+  
+  if (!requireAuth('comment')) return;
+  
+  const textToPost = replyingTo ? replyText : newComment;
+  if (!textToPost.trim()) return;
+  
+  setIsPosting(true);
+  try {
+    await axios.post(
+      `${API_BASE_URL}/posts/${id}/comments/create/`,
+      { 
+        text: textToPost,
+        parent_comment_id: replyingTo || undefined
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     
-    if (!token) {
-      toast.error("Please sign up to comment");
-      navigate('/welcome');
-      return;
+    if (replyingTo) {
+      setReplyText("");
+      setReplyingTo(null);
+    } else {
+      setNewComment("");
     }
     
-    const textToPost = replyingTo ? replyText : newComment;
-    if (!textToPost.trim()) return;
+    // Refresh comments to show the new comment/reply
+    fetchComments();
+    toast.success(replyingTo ? "Reply posted!" : "Comment posted!");
+  } catch (error: any) {
+    console.error('Failed to add comment:', error);
     
-    setIsPosting(true);
-    try {
-      await axios.post(
-        `${API_BASE_URL}/posts/${id}/comments/create/`,
-        { 
-          text: textToPost,
-          parent_comment_id: replyingTo || undefined
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (replyingTo) {
-        setReplyText("");
-        setReplyingTo(null);
-      } else {
-        setNewComment("");
-      }
-      
-      // Refresh comments to show the new comment/reply
-      fetchComments();
-      toast.success(replyingTo ? "Reply posted!" : "Comment posted!");
-    } catch (error) {
-      console.error('Failed to add comment:', error);
+    // Handle 403 Forbidden error specifically
+    if (error.response?.status === 403) {
+      toast.error("To comment, kindly go to Settings > Email Verification to verify");
+    } else {
       toast.error("Failed to add comment");
-    } finally {
-      setIsPosting(false);
     }
-  };
+  } finally {
+    setIsPosting(false);
+  }
+};
 
   const handleStartReply = (commentId: string, authorName: string) => {
-    if (!token) {
-      toast.error("Please sign up to reply");
-      navigate('/welcome');
-      return;
-    }
-    
-    setReplyingTo(commentId);
-    setReplyText(`@${authorName} `);
-  };
+  if (!requireAuth('reply')) return;
+  
+  setReplyingTo(commentId);
+  setReplyText(`@${authorName} `);
+};
+
 
     const handleBack = () => {
     if (window.history.length > 2) {
@@ -702,14 +751,15 @@ export default function PostPage() {
 
       {/* Post */}
       <div className="p-4">
-        <PostComponent
-          post={post}
-          currentUserId={user?.id}
-          currentUserEmail={user?.email}
-          showFullContent={true}
-          isPublicView={!token}
-        />
-      </div>
+          <PostComponent
+            post={post}
+            currentUserId={user?.id}
+            currentUserEmail={user?.email}
+            showFullContent={true}
+            isPublicView={!token} // Add this prop
+            onRequireAuth={() => requireAuth('like posts')} // Add this prop
+          />
+        </div>
 
       {/* Comments */}
       <div className="bg-white p-4">

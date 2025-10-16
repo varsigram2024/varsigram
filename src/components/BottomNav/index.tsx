@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useAuth } from "../../auth/AuthContext";
 import { Link, useNavigate, useLocation, NavLink } from "react-router-dom";
 import { Text } from "../Text";
 import { Img } from "../Img";
 
 export default function BottomNav() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const currentPage = location.pathname.replace("/", "");
@@ -155,27 +157,7 @@ export default function BottomNav() {
           ></Text>
         </div>
 
-        <div
-          className={`flex flex-col items-center ${
-            currentPage === "marketplace" ? "text-[#750015]" : "text-gray-600"
-          }`}
-        >
-          <Img
-            src="/images/search.svg"
-            alt="Search"
-            className="h-[24px] w-[24px] cursor-pointer"
-            onClick={() => setIsSearchOpen(true)}
-          />
-
-          <Text
-            as="p"
-            className={`mt-1 ${
-              currentPage === "chat" ? "text-[#750015]" : "text-gray-600"
-            }`}
-          ></Text>
-        </div>
-
-        <div
+        {/* <div
           onClick={() => handleNavigation("resources")}
           className={`flex flex-col items-center ${
             currentPage === "resources" ? "text-[#750015]" : "text-gray-600"
@@ -240,6 +222,35 @@ export default function BottomNav() {
               currentPage === "chat" ? "text-[#750015]" : "text-gray-600"
             }`}
           ></Text>
+        </div> */}
+
+         <div 
+          onClick={() => handleNavigation('opportunities')}
+          className="flex self-stretch gap-5 px-5 py-4 items-center cursor-pointer hover:bg-gray-50"
+        >
+          <svg width="24" height="24" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'opportunities' ? 'text-[#750015]' : 'text-gray-600'}>
+            <path d="M5.09 14.25C4.70052 13.3697 4.49955 12.4176 4.5 11.455C4.5 7.752 7.41 4.75 11 4.75C14.59 4.75 17.5 7.753 17.5 11.456C17.5003 12.4183 17.2993 13.37 16.91 14.25" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M11 1.25V2.25M21 11.25H20M2 11.25H1M18.07 4.178L17.363 4.885M4.637 4.886L3.93 4.179M13.517 18.556C14.527 18.229 14.933 17.304 15.047 16.374C15.081 16.096 14.852 15.865 14.572 15.865H7.477C7.40862 15.8639 7.3408 15.8774 7.278 15.9044C7.21521 15.9315 7.15888 15.9716 7.11275 16.0221C7.06662 16.0726 7.03173 16.1323 7.0104 16.1973C6.98906 16.2622 6.98177 16.331 6.989 16.399C7.101 17.327 7.383 18.006 8.453 18.556M13.517 18.556H8.453M13.517 18.556C13.396 20.501 12.834 21.271 11.007 21.249C9.053 21.285 8.603 20.333 8.453 18.556" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+
+      <div
+          onClick={() => {
+            const displayNameSlug = user?.display_name_slug || user?.email?.split('@')[0];
+            navigate(`/user-profile/${displayNameSlug}`);
+          }}  
+          className={`flex flex-col items-center ${
+            currentPage === "user-profile" ? "text-[#750015]" : "text-gray-600"
+          }`}
+        >
+          <Img 
+                      src={user?.profile_pic_url || "/images/userprofile.svg"} 
+                      alt="Profile" 
+                      className="h-[32px] w-[32px] rounded-[50%]" 
+                    />
+
+                   
         </div>
       </div>
     </div>

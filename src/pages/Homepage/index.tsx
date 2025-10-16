@@ -5,7 +5,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { Post } from '../../components/Post/index.tsx';
 import axios from 'axios';
 import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-dom";
-
+import { PostSkeleton } from '../../components/PostSkeleton/index.tsx';
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import Sidebar1 from "../../components/Sidebar1/index.tsx";
@@ -736,20 +736,16 @@ useEffect(() => {
 
   const { unreadCount } = useNotification();
 
-  return (
-    <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative]`}>
-      
-
-       <div className={`flex w-full lg:w-[100%] items-start justify-center flex-row`}>
+ return (
+  <div className={`flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative`}>
+    <div className={`flex w-full items-start justify-center flex-row`}>
+      <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
         
-              <div 
-              className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col md:gap-[35px] sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0"
-                >
-
-          <div className={`sticky top-0 bg-[#f6f6f6] pt-5 pb-3 z-10 transition-transform duration-300 ${
-              isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-            }`}>
-            <div className="hidden lg:flex items-center justify-between animate-fade-in">
+        {/* Header Section */}
+        <div className={`sticky top-0 bg-[#f6f6f6] pt-5 pb-3 z-10 transition-transform duration-300 ${
+          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}>
+          <div className="hidden lg:flex items-center justify-between animate-fade-in">
             <div
               onClick={() => {
                 if (user?.display_name_slug) {
@@ -783,31 +779,8 @@ useEffect(() => {
               )}
             </Link>
           </div>
-         
-          <div className="lg:mt-5 flex justify-between animate-slide-up">
-            <div
-              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
-              onClick={() => setActiveTab('forYou')}
-            >
-              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
-                For you
-              </Text>
-            </div>
-            <div
-              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
-              onClick={() => setActiveTab('official')}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === 'official' ? '' : '!text-[#adacb2]'
-                }`}
-              >
-                Official
-              </Text>
-            </div>
-          </div>
 
+          {/* Mobile Header */}
           <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
             <div
               onClick={() => {
@@ -859,281 +832,316 @@ useEffect(() => {
               />
             </div>
           </div>
-          </div>
-
-          {isCreatePostOpen && (
-            <div className="animate-slide-up">
-              <CreatePostModal
-                newPostContent={newPostContent}
-                setNewPostContent={setNewPostContent}
-                selectedFiles={selectedFiles}
-                setSelectedFiles={setSelectedFiles}
-                isUploading={isUploading}
-                onClose={handleCancelPost}
-                onSubmit={handleCreatePost}
-                handleFileChange={handleFileChange}
-                handleRemoveFile={handleRemoveFile}
-              />
-            </div>
-          )}
-
-          {!isCreatePostOpen && (
+         
+          {/* Tabs */}
+          <div className="lg:mt-5 mt-8 flex justify-between animate-slide-up">
             <div
-              className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors animate-fade-in"
-              onClick={() => setIsCreatePostOpen(true)}
+              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
+              onClick={() => setActiveTab('forYou')}
             >
-              <input
-                type="text"
-                value={newPostContent}
-                placeholder="Create a vars..."
-                className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
-              />
-              <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsCreatePostOpen(true);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
-                </button>
-              </div>
+              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
+                For you
+              </Text>
+            </div>
+            <div
+              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
+              onClick={() => setActiveTab('official')}
+            >
+              <Text
+                as="p"
+                className={`text-[14px] font-medium md:text-[22px] ${
+                  activeTab === 'official' ? '' : '!text-[#adacb2]'
+                }`}
+              >
+                Official
+              </Text>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Post Section */}
+        {isCreatePostOpen && (
+          <div className="animate-slide-up">
+            <CreatePostModal
+              newPostContent={newPostContent}
+              setNewPostContent={setNewPostContent}
+              selectedFiles={selectedFiles}
+              setSelectedFiles={setSelectedFiles}
+              isUploading={isUploading}
+              onClose={handleCancelPost}
+              onSubmit={handleCreatePost}
+              handleFileChange={handleFileChange}
+              handleRemoveFile={handleRemoveFile}
+            />
+          </div>
+        )}
+
+        {!isCreatePostOpen && (
+          <div
+            className="lg:mt-0 flex justify-center rounded-[28px] bg-[#ffffff] p-3 cursor-pointer hover:bg-gray-50 transition-colors animate-fade-in"
+            onClick={() => setIsCreatePostOpen(true)}
+          >
+            <input
+              type="text"
+              value={newPostContent}
+              placeholder="Create a vars..."
+              className="w-full text-[20px] font-normal text-[#adacb2] bg-transparent border-none outline-none focus:outline-none"
+            />
+            <div className="flex flex-1 justify-end items-center gap-6 px-1.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCreatePostOpen(true);
+                }}
+                className="cursor-pointer"
+              >
+                <Img src="images/vectors/image.svg" alt="Image" className="lg:h-[24px] lg:w-[24px] h-[14px] w-[14px]" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Posts Section with Lazy Loader */}
+        <div className="w-full post-section">
+          {currentIsLoading && currentPosts.length === 0 && (
+            <div className="space-y-6 w-full animate-fade-in">
+              {[...Array(5)].map((_, idx) => (
+                <PostSkeleton key={`skeleton-${idx}`} />
+              ))}
             </div>
           )}
 
-          <div className="w-full post-section">
-            {currentIsLoading && currentPosts.length === 0 && (
-              <div className="flex justify-center items-center py-20 animate-fade-in">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
-              </div>
-            )}
-
-            {error && !currentIsLoading && !isAuthLoading && (
-              <div className="flex flex-col justify-center items-center py-20 animate-fade-in">
-                <p className="text-red-500 text-center mb-4">{error}</p>
-                <button
-                  onClick={refreshPosts}
-                  className="px-4 py-2 bg-[#750015] text-white rounded hover:bg-[#600012] transition-colors"
-                >
-                  Try Again
-                </button>
-              </div>
-            )}
-
-            {!currentIsLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
-              <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-                <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                  No {activeTab === 'forYou' ? 'posts' : 'official posts'} in your feed yet.
-                </Text>
-              </div>
-            )}
-
-            {!isAuthLoading && currentPosts.length > 0 && (
-              <div className="space-y-6 w-full">
-                {currentPosts.map((post, idx) => {
-                  const uniqueKey = `${post.id}-${idx}`;
-                  return (
-                    <div 
-                      key={uniqueKey}
-                      className="animate-slide-up" 
-                      style={{ animationDelay: `${idx * 60}ms` }}
-                    >
-                      <Post
-                        post={post}
-                        onPostUpdate={handlePostUpdate}
-                        onPostDelete={handlePostDelete}
-                        onPostEdit={handlePostEdit}
-                        currentUserId={user?.id}
-                        currentUserEmail={user?.email}
-                        onClick={() => handlePostClick(post.id)}
-                        postsData={feedPosts}
-                      />
-                    </div>
-                  );
-                })}
-                
-                <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
-                  {currentIsLoading && (
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
-                  )}
-                  {!currentHasMore && currentPosts.length > 0 && (
-                    <div className="text-gray-500">No more posts to load</div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-              </div>
-
-        <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
-          <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
-            <div className="overflow-hidden h-full">
-              <WhoToFollowSidePanel />
+          {error && !currentIsLoading && !isAuthLoading && (
+            <div className="flex flex-col justify-center items-center py-20 animate-fade-in">
+              <p className="text-red-500 text-center mb-4">{error}</p>
+              <button
+                onClick={refreshPosts}
+                className="px-4 py-2 bg-[#750015] text-white rounded hover:bg-[#600012] transition-colors"
+              >
+                Try Again
+              </button>
             </div>
-          </div>
+          )}
 
-          <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
-            <ProfileOrganizationSection />
-          </div>
+          {!currentIsLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
+            <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+              <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                No {activeTab === 'forYou' ? 'posts' : 'official posts'} in your feed yet.
+              </Text>
+            </div>
+          )}
+
+          {!isAuthLoading && currentPosts.length > 0 && (
+            <div className="space-y-6 w-full">
+              {currentPosts.map((post, idx) => {
+                const uniqueKey = `${post.id}-${idx}`;
+                return (
+                  <div 
+                    key={uniqueKey}
+                    className="animate-slide-up" 
+                    style={{ animationDelay: `${idx * 60}ms` }}
+                  >
+                    <Post
+                      post={post}
+                      onPostUpdate={handlePostUpdate}
+                      onPostDelete={handlePostDelete}
+                      onPostEdit={handlePostEdit}
+                      currentUserId={user?.id}
+                      currentUserEmail={user?.email}
+                      onClick={() => handlePostClick(post.id)}
+                      postsData={feedPosts}
+                    />
+                  </div>
+                );
+              })}
+              
+              {/* Loading more posts skeleton */}
+              {currentIsLoading && currentPosts.length > 0 && (
+                <div className="space-y-6">
+                  {[...Array(3)].map((_, idx) => (
+                    <PostSkeleton key={`more-skeleton-${idx}`} />
+                  ))}
+                </div>
+              )}
+              
+              <div ref={loadingRef} className="h-20 flex items-center justify-center mt-4">
+                {currentIsLoading && currentPosts.length > 0 && (
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]" />
+                )}
+                {!currentHasMore && currentPosts.length > 0 && (
+                  <div className="text-gray-500">No more posts to load</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* <BottomNav /> */}
-      
-
-      {isSearchOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center md:items-center justify-center p-2 md:p-4"
-          onClick={() => {
-            setIsSearchOpen(false);
-            setSearchQuery("");
-            setSearchResults({ users: [], posts: [] });
-            setSearchFaculty("");
-            setSearchDepartment("");
-            setSearchType('all');
-          }}
-        >
-          <div
-            className="bg-white rounded-t-2xl md:rounded-[32px] w-full h-full md:h-auto max-h-screen md:max-h-[80vh] overflow-y-auto shadow-lg p-4 md:p-6"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div
-                  className="cursor-pointer"
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setSearchQuery("");
-                    setSearchResults({ users: [], posts: [] });
-                    setSearchFaculty("");
-                    setSearchDepartment("");
-                    setSearchType('all');
-                  }}
-                >
-                  <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
-                </div>
-                 <input
-                          type="text"
-                          className="flex-1 text-lg border-none outline-none"
-                          placeholder="Search by name, faculty, or department..."
-                          value={searchQuery}
-                          onChange={handleSearchInputChange}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSearchButtonClick();
-                          }}
-                          autoFocus
-                    />
-                 <button
-                    className="text-[#750015] font-medium disabled:text-gray-400"
-                    onClick={handleSearchButtonClick}
-                    disabled={isSearching || (!searchQuery.trim() && !searchFaculty && !searchDepartment)}
-                  >
-                    {isSearching ? 'Searching...' : 'Search'}
-                  </button>
-              </div>
-
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
-                <select
-                    className="border rounded px-2 py-1"
-                    value={searchType}
-                    onChange={e => setSearchType(e.target.value as 'all' | 'student' | 'organization')}
-                  >
-                    <option value="all">All</option>
-                    <option value="student">Students</option>
-                    <option value="organization">Organizations</option>
-                  </select>
-
-                <select
-                  className="border rounded px-2 py-1"
-                  value={searchFaculty}
-                  onChange={e => {
-                    setSearchFaculty(e.target.value);
-                    setSearchDepartment("");
-                  }}
-                >
-                  <option value="">Select Faculties</option>
-                  {faculties.map(faculty => (
-                    <option key={faculty} value={faculty}>{faculty}</option>
-                  ))}
-                </select>
-                <select
-                  className="border rounded px-2 py-1"
-                  value={searchDepartment}
-                  onChange={e => setSearchDepartment(e.target.value)}
-                  disabled={!searchFaculty}
-                >
-                  <option value="">Select Departments</option>
-                  {(facultyDepartments[searchFaculty] || []).map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-                <div className="text-xs text-gray-500 flex items-center">
-                  {searchResults.users.length > 0 && `${searchResults.users.length} results`}
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
-              {isSearching ? (
-                <div className="flex justify-center items-center py-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
-                </div>
-              ) : (
-                <div className="p-4">
-              {filteredResults.length > 0 ? (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3">
-                    {filteredResults.length} {filteredResults.length === 1 ? 'Result' : 'Results'}
-                  </h3>
-                  <div className="space-y-4">
-                    {filteredResults.map((user) => (
-                      <div 
-                        key={user.id} 
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-                        onClick={() => {
-                          if (user.display_name_slug) {
-                            navigate(`/user-profile/${user.display_name_slug}`);
-                            setIsSearchOpen(false);
-                          }
-                        }}
-                      >
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-900">{user.fullName}</div>
-                          <div className="text-sm text-gray-500">
-                            {user.type === "student" ? (
-                              <>
-                                {user.faculty} {user.department && `• ${user.department}`}
-                              </>
-                            ) : (
-                              <>Organization {user.exclusive && '• Verified'}</>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
-                          {user.type}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : searchQuery || searchFaculty || searchDepartment ? (
-                <div className="text-center py-10 text-gray-500">
-                  No results found for your search criteria
-                </div>
-              ) : (
-                <div className="text-center py-10 text-gray-400">
-                  Enter search terms or select filters to begin
-                </div>
-              )
-              }
-            </div>
-              )}
-            </div>
+      {/* Sidebar */}
+      <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
+        <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
+          <div className="overflow-hidden h-full">
+            <WhoToFollowSidePanel />
           </div>
         </div>
-      )}
+
+        <div className="rounded-[32px] border border-solid border-[#d9d9d9] bg-white animate-fade-in">
+          <ProfileOrganizationSection />
+        </div>
+      </div>
     </div>
-  );
+
+    {/* Search Modal */}
+    {isSearchOpen && (
+      <div
+        className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center md:items-center justify-center p-2 md:p-4"
+        onClick={() => {
+          setIsSearchOpen(false);
+          setSearchQuery("");
+          setSearchResults({ users: [], posts: [] });
+          setSearchFaculty("");
+          setSearchDepartment("");
+          setSearchType('all');
+        }}
+      >
+        <div
+          className="bg-white rounded-t-2xl md:rounded-[32px] w-full h-full md:h-auto max-h-screen md:max-h-[80vh] overflow-y-auto shadow-lg p-4 md:p-6"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  setSearchQuery("");
+                  setSearchResults({ users: [], posts: [] });
+                  setSearchFaculty("");
+                  setSearchDepartment("");
+                  setSearchType('all');
+                }}
+              >
+                <Img src="images/vectors/x.svg" alt="Close" className="h-6 w-6" />
+              </div>
+              <input
+                type="text"
+                className="flex-1 text-lg border-none outline-none"
+                placeholder="Search by name, faculty, or department..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearchButtonClick();
+                }}
+                autoFocus
+              />
+              <button
+                className="text-[#750015] font-medium disabled:text-gray-400"
+                onClick={handleSearchButtonClick}
+                disabled={isSearching || (!searchQuery.trim() && !searchFaculty && !searchDepartment)}
+              >
+                {isSearching ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3">
+              <select
+                className="border rounded px-2 py-1"
+                value={searchType}
+                onChange={e => setSearchType(e.target.value as 'all' | 'student' | 'organization')}
+              >
+                <option value="all">All</option>
+                <option value="student">Students</option>
+                <option value="organization">Organizations</option>
+              </select>
+
+              <select
+                className="border rounded px-2 py-1"
+                value={searchFaculty}
+                onChange={e => {
+                  setSearchFaculty(e.target.value);
+                  setSearchDepartment("");
+                }}
+              >
+                <option value="">Select Faculties</option>
+                {faculties.map(faculty => (
+                  <option key={faculty} value={faculty}>{faculty}</option>
+                ))}
+              </select>
+              <select
+                className="border rounded px-2 py-1"
+                value={searchDepartment}
+                onChange={e => setSearchDepartment(e.target.value)}
+                disabled={!searchFaculty}
+              >
+                <option value="">Select Departments</option>
+                {(facultyDepartments[searchFaculty] || []).map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              <div className="text-xs text-gray-500 flex items-center">
+                {searchResults.users.length > 0 && `${searchResults.users.length} results`}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
+            {isSearching ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#750015]"></div>
+              </div>
+            ) : (
+              <div className="p-4">
+                {filteredResults.length > 0 ? (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3">
+                      {filteredResults.length} {filteredResults.length === 1 ? 'Result' : 'Results'}
+                    </h3>
+                    <div className="space-y-4">
+                      {filteredResults.map((user) => (
+                        <div 
+                          key={user.id} 
+                          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          onClick={() => {
+                            if (user.display_name_slug) {
+                              navigate(`/user-profile/${user.display_name_slug}`);
+                              setIsSearchOpen(false);
+                            }
+                          }}
+                        >
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900">{user.fullName}</div>
+                            <div className="text-sm text-gray-500">
+                              {user.type === "student" ? (
+                                <>
+                                  {user.faculty} {user.department && `• ${user.department}`}
+                                </>
+                              ) : (
+                                <>Organization {user.exclusive && '• Verified'}</>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
+                            {user.type}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : searchQuery || searchFaculty || searchDepartment ? (
+                  <div className="text-center py-10 text-gray-500">
+                    No results found for your search criteria
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-gray-400">
+                    Enter search terms or select filters to begin
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 }

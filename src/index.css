@@ -32,3 +32,14 @@
 body {
   overflow-x: hidden;
 }
+
+
+/* Add this to your global CSS file */
+.break-words {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.whitespace-pre-line {
+  white-space: pre-line;
+}

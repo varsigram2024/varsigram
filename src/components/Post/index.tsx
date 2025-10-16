@@ -1,9 +1,10 @@
 // ... existing code ...
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useViewTracking } from '../../context/viewTrackingContext';
 import { useInView } from 'react-intersection-observer';
 import { Text } from "../Text";
 import { Img } from "../Img";
+import { PostSkeleton } from "../PostSkeleton";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebase/config";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -16,7 +17,7 @@ import CommentSection from "../CommentSection";
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from "../EditPostModal";
 import { Link } from "react-router-dom";
-import { createPortal } from "react-dom";
+
 
 interface Post {
   id: string;
@@ -31,6 +32,7 @@ interface Post {
   comment_count: number;
   share_count: number;
   has_liked: boolean;
+  has_rewarded?: boolean; // Make this optional
   view_count: number;
   trending_score: number;
   last_engagement_at: string | null;
@@ -57,7 +59,7 @@ interface Post {
 }
 
 interface PostProps {
-  post: Post;
+     post: Post;
   onPostUpdate?: (updatedPost: Post) => void;
   onPostDelete?: (post: Post) => void;
   onPostEdit?: (post: Post) => void;
@@ -66,7 +68,9 @@ interface PostProps {
   onClick?: () => void;
   showFullContent?: boolean;
   postsData?: Post[];
-  isPublicView?: boolean; // Add this prop
+  isPublicView?: boolean;
+  onRequireAuth?: () => void;
+  isLoading?: boolean;
 }
 
   // Add this interface near your other interfaces
@@ -81,7 +85,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
 export const Post: React.FC<PostProps> = ({
-  post,
+    post,
   onPostUpdate,
   onPostDelete,
   onPostEdit,
@@ -91,7 +95,12 @@ export const Post: React.FC<PostProps> = ({
   showFullContent = false,
   postsData = [],
   isPublicView = false,
+  isLoading = false,
+  onRequireAuth,
 }) => {
+    if (isLoading) {
+    return <PostSkeleton />;
+  }
   const { addToBatch } = useViewTracking();
   const [viewRef, inView] = useInView({
     threshold: 0.5, // 50% of the post is visible
@@ -108,6 +117,15 @@ export const Post: React.FC<PostProps> = ({
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(post.has_liked);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [isRewarding, setIsRewarding] = useState(false);
+  const [hasRewarded, setHasRewarded] = useState(post.has_rewarded || false);
+  const [isWindowActive, setIsWindowActive] = useState(false);
+  const clickCountRef = useRef(0);
+  const windowTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSentRef = useRef(false);
+
+
   const [showOptions, setShowOptions] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -119,7 +137,180 @@ export const Post: React.FC<PostProps> = ({
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
 
+  // Add this function to check reward status from backend
+const checkRewardStatus = async () => {
+  if (!token || !post.id) return;
   
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/posts/${post.id}/`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (response.data.has_rewarded) {
+      setHasRewarded(true);
+      // If we have a callback to update parent, use it
+      if (onPostUpdate && !post.has_rewarded) {
+        onPostUpdate({
+          ...post,
+          has_rewarded: true,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check reward status:", error);
+  }
+};
+
+// Check reward status when component mounts and post.id changes
+useEffect(() => {
+  if (token && post.id && !hasRewarded) {
+    checkRewardStatus();
+  }
+}, [token, post.id]);
+
+// Update the sendFinalPoints function to be more reliable
+const sendFinalPoints = async () => {
+  if (hasSentRef.current) {
+    console.log("🛑 Already sent points, skipping duplicate call");
+    return;
+  }
+
+  if (windowTimerRef.current) {
+    clearTimeout(windowTimerRef.current);
+    windowTimerRef.current = null;
+  }
+
+  const finalPoints = clickCountRef.current;
+  
+  if (finalPoints === 0) {
+    console.log("❌ No points to send - user clicked 0 times");
+    setIsWindowActive(false);
+    return;
+  }
+
+  try {
+    hasSentRef.current = true;
+    setIsRewarding(true);
+    
+    const payload = {
+      post_id: post.id,
+      points: finalPoints,
+    };
+
+    console.log("📤 Sending final points to backend:", payload);
+
+    const response = await axios.post(
+      `${API_BASE_URL}/reward-points/`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Reward submitted successfully:", response.data);
+
+    // Update local state immediately
+    setHasRewarded(true);
+    
+    // Update parent component if callback exists
+    if (onPostUpdate) {
+      onPostUpdate({
+        ...post,
+        has_rewarded: true,
+      });
+    }
+
+    // Also refresh from server to confirm
+    setTimeout(() => {
+      checkRewardStatus();
+    }, 500);
+
+    toast.success(`+${finalPoints} points awarded!`);
+    
+  } catch (error: any) {
+    console.error("❌ Error submitting reward:", error);
+    
+    // Revert state on error
+    setHasRewarded(false);
+    setRewardPoints(0);
+    clickCountRef.current = 0;
+    
+    if (error.response?.status === 400) {
+      const data = error.response.data;
+      if (data.points) toast.error(data.points[0]);
+      else if (data.post_id) toast.error(data.post_id[0]);
+      else toast.error("Invalid reward request.");
+    } else if (error.response?.status === 401) {
+      toast.error("You must be logged in to submit points.");
+    } else if (error.response?.status === 500) {
+      toast.error("Server error. Please try again later.");
+    } else {
+      toast.error("Failed to submit reward.");
+    }
+  } finally {
+    setIsWindowActive(false);
+    setIsRewarding(false);
+  }
+};
+
+// Update the handlePoint function to include the missing logic
+const handlePoint = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+
+  if (!token) {
+    toast.error("Please log in to reward points.");
+    navigate("/welcome");
+    return;
+  }
+
+  // If user has already rewarded this post, show message and return early
+  if (hasRewarded) {
+    toast.error("You've already rewarded this post!");
+    return;
+  }
+
+  // Prevent clicking after window closed
+  if (!isWindowActive && clickCountRef.current > 0) {
+    toast.error("Reward window has closed. Points cannot be changed.");
+    return;
+  }
+
+  // Start the 10-second window on first click
+  if (!isWindowActive) {
+    setIsWindowActive(true);
+    hasSentRef.current = false;
+    console.log("⏰ 10-second reward window started");
+    
+    windowTimerRef.current = setTimeout(() => {
+      console.log("⏰ Reward window closed - sending final points");
+      sendFinalPoints();
+    }, 10000);
+  }
+
+  // Accumulate points (max 5)
+  if (clickCountRef.current < 5) {
+    clickCountRef.current += 1;
+    setRewardPoints(clickCountRef.current);
+    
+    console.log(`🟢 Click ${clickCountRef.current}/5 - ${clickCountRef.current} point(s) accumulated`);
+    
+    if (clickCountRef.current === 5) {
+      toast.success("Maximum 5 points reached!");
+      console.log("🎯 Max points reached - sending immediately");
+      sendFinalPoints();
+    }
+  } else {
+    toast.error("Maximum 5 points reached!");
+  }
+};
 
   const handleShareClick = () => {
     handleWebShare();
@@ -455,12 +646,44 @@ useEffect(() => {
 
 
 
+// Add this useEffect for debugging
+useEffect(() => {
+  console.log("🎯 Reward status debug:", {
+    postId: post.id,
+    hasRewarded: hasRewarded,
+    postHasRewarded: post.has_rewarded,
+    rewardPoints: rewardPoints,
+    isWindowActive: isWindowActive
+  });
+}, [hasRewarded, post.has_rewarded, rewardPoints, isWindowActive, post.id]);
+
+
+useEffect(() => {
+  setHasRewarded(post.has_rewarded || false);
+}, [post.has_rewarded]);
+
+// Cleanup timer on component unmount
+useEffect(() => {
+  return () => {
+    if (windowTimerRef.current) {
+      clearTimeout(windowTimerRef.current);
+    }
+  };
+}, []);
+
+
 
 
 
 
   const handleLike = async () => {
+    
     if (isLiking) return;
+
+      if (isPublicView && onRequireAuth) {
+    onRequireAuth();
+    return;
+  }
 
     if (!token) {
       toast.error("Please sign up to like posts");
@@ -647,8 +870,6 @@ useEffect(() => {
     if (navigator.share) {
       navigator
         .share({
-          title: "Check out this post on Varsigram",
-          text: post.content,
           url: postUrl,
         })
         .catch(() => toast.error("Share cancelled or failed"));
@@ -691,6 +912,10 @@ useEffect(() => {
   const shouldShowReadMore = post.content.length > 200;
 
   const handleCommentClick = (e: React.MouseEvent) => {
+      if (isPublicView && onRequireAuth) {
+    onRequireAuth();
+    return;
+  }
   e.stopPropagation();
   const postPagePath = `/posts/${post.id}`;
   
@@ -725,6 +950,8 @@ useEffect(() => {
 
   return (
     <>
+
+    
     
       <div ref={viewRef}
       className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
@@ -748,7 +975,7 @@ useEffect(() => {
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span
-                        className="font-semibold lg:text-[20px] text-[14px] text-[#750015] cursor-pointer hover:underline"
+                        className="font-semibold lg:text-[20px] text-[14px] text-[#3a3a3a] cursor-pointer hover:underline"
                         onClick={() => {
                           console.log("Clicked name", post.author_display_name_slug);
                           if (post.author_display_name_slug) {
@@ -797,7 +1024,7 @@ useEffect(() => {
                         : post.author_faculty || post.author_department}
                     </Text>
                   )}
-{/*                   <Text
+            {/*     <Text
                     as="p"
                     className="text-[9px] lg:text-[16px] text-gray-500"
                   >
@@ -853,56 +1080,60 @@ useEffect(() => {
           </div>
           <div className="h-[0.6px] w-92 bg-gray-300"></div>
           <Text
-            as="p"
-            className={`w-full text-[10px] sm:text-[10px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words ${
-              !expanded && isLong ? "max-h-32 overflow-hidden" : ""
-            }`}
-            style={{ lineHeight: "1.6" }}
-          >
-            {isRevarsed && (
-              <div className="text-xs text-gray-500 mb-2">
-                <span>
-                  <b>{post.author_name || post.author_display_name}</b> revarsed
-                </span>
-              </div>
-            )}
-            {isRevarsed ? (
-              <div className="border p-2 rounded bg-gray-50 whitespace-pre-line">
-                <Text className="text-[12px] sm:text-[14px] lg:text-[16px]">
-                  {makeLinksClickable(post.original_post?.content || "")}
-                </Text>
-                <div className="text-xs text-gray-400 mt-1">
-                  by{" "}
-                  {post.original_post?.author_name ||
-                    post.original_post?.author_display_name}
-                </div>
-              </div>
-            ) : (
-              makeLinksClickable(displayContent)
-            )}
-            {!expanded && isLong && <span>...</span>}
-          </Text>
-
-          {/* Read more/less button */}
-          {!expanded && isLong && (
-            <button
-              className="text-[#750015] font-semibold mt-2 hover:underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                setExpanded(true);
+              as="p"
+              className={`w-full text-[10px] sm:text-[10px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words overflow-hidden ${
+                !expanded && isLong ? "max-h-32 overflow-hidden" : ""
+              }`}
+              style={{ 
+                lineHeight: "1.6",
+                wordBreak: "break-word", // This ensures long words break
+                overflowWrap: "break-word", // Alternative for better browser support
               }}
             >
-              Read more
-            </button>
-          )}
-          {expanded && isLong && (
-            <button
-              className="text-[#750015] font-semibold mt-2 hover:underline"
-              onClick={() => setExpanded(false)}
-            >
-              Show less
-            </button>
-          )}
+              {isRevarsed && (
+                <div className="text-xs text-gray-500 mb-2">
+                  <span>
+                    <b>{post.author_name || post.author_display_name}</b> revarsed
+                  </span>
+                </div>
+              )}
+              {isRevarsed ? (
+                <div className="border p-2 rounded bg-gray-50 whitespace-pre-line break-words">
+                  <Text className="text-[12px] sm:text-[14px] lg:text-[16px] break-words">
+                    {makeLinksClickable(post.original_post?.content || "")}
+                  </Text>
+                  <div className="text-xs text-gray-400 mt-1">
+                    by{" "}
+                    {post.original_post?.author_name ||
+                      post.original_post?.author_display_name}
+                  </div>
+                </div>
+              ) : (
+                makeLinksClickable(displayContent)
+              )}
+              {!expanded && isLong && (
+                <button
+                  className="text-[#750015] font-semibold mt-2 hover:underline block"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpanded(true);
+                  }}
+                >
+                  Read more
+                </button>
+              )}
+              
+              {expanded && isLong && (
+                <button
+                  className="text-[#750015] font-semibold mt-2 hover:underline"
+                  onClick={() => setExpanded(false)}
+                >
+                  Show less
+                </button>
+              )}
+            </Text>
+
+
 
           {renderMedia()}
 
@@ -950,12 +1181,73 @@ useEffect(() => {
               <span>{likeCount}</span>
             </div> */}
 
+
+
+               
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <svg
+                        onClick={handlePoint}
+                        width="15"
+                        height="12"
+                        viewBox="0 0 15 12"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`transition-transform active:scale-90 ${
+                          hasRewarded 
+                            ? "opacity-50 cursor-not-allowed" 
+                            : (isRewarding || (isWindowActive && clickCountRef.current >= 5)
+                              ? "opacity-50 cursor-not-allowed" 
+                              : "opacity-100 cursor-pointer hover:opacity-80")
+                        }`}
+                      >
+                        <path
+                          d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267"
+                          stroke="#750015"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031"
+                          stroke="#750015"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312"
+                          stroke="#750015"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z"
+                          stroke="#750015"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+
+                    <span className={`text-sm font-medium ${
+                      hasRewarded ? 'text-green-600' : (rewardPoints > 0 ? 'text-[#750015]' : 'text-gray-500')
+                    }`}>
+                      {isWindowActive && !hasRewarded && (
+                        <span className="text-xs text-orange-500 ml-1">
+                          ({clickCountRef.current}/5 points)
+                        </span>
+                      )}
+                      
+                    </span>
+                  </div>
+
+
+
             {/* View count */}
             <div className="flex items-center gap-2">
-              <svg width="16px" height="16px" viewBox="0 0 16 16" fill="#750015">
-                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+              <svg width="24" height="24" viewBox="0 0 32 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 8C16.8229 8 17.599 8.15625 18.3281 8.46875C19.0573 8.78125 19.6927 9.20833 20.2344 9.75C20.776 10.2917 21.2083 10.9323 21.5312 11.6719C21.8542 12.4115 22.0104 13.1875 22 14C22 14.8333 21.8438 15.6094 21.5312 16.3281C21.2188 17.0469 20.7917 17.6823 20.25 18.2344C19.7083 18.7865 19.0677 19.2188 18.3281 19.5312C17.5885 19.8438 16.8125 20 16 20C15.1667 20 14.3906 19.8438 13.6719 19.5312C12.9531 19.2188 12.3177 18.7917 11.7656 18.25C11.2135 17.7083 10.7812 17.0729 10.4688 16.3438C10.1562 15.6146 10 14.8333 10 14C10 13.1771 10.1562 12.401 10.4688 11.6719C10.7812 10.9427 11.2083 10.3073 11.75 9.76562C12.2917 9.22396 12.9271 8.79167 13.6562 8.46875C14.3854 8.14583 15.1667 7.98958 16 8ZM16 18C16.5521 18 17.0677 17.8958 17.5469 17.6875C18.026 17.4792 18.4531 17.1927 18.8281 16.8281C19.2031 16.4635 19.4896 16.0417 19.6875 15.5625C19.8854 15.0833 19.9896 14.5625 20 14C20 13.4479 19.8958 12.9323 19.6875 12.4531C19.4792 11.974 19.1927 11.5469 18.8281 11.1719C18.4635 10.7969 18.0417 10.5104 17.5625 10.3125C17.0833 10.1146 16.5625 10.0104 16 10C15.4479 10 14.9323 10.1042 14.4531 10.3125C13.974 10.5208 13.5469 10.8073 13.1719 11.1719C12.7969 11.5365 12.5104 11.9583 12.3125 12.4375C12.1146 12.9167 12.0104 13.4375 12 14C12 14.5521 12.1042 15.0677 12.3125 15.5469C12.5208 16.026 12.8073 16.4531 13.1719 16.8281C13.5365 17.2031 13.9583 17.4896 14.4375 17.6875C14.9167 17.8854 15.4375 17.9896 16 18ZM16 0C17.4896 0 18.9688 0.182292 20.4375 0.546875C21.9062 0.911458 23.2917 1.45833 24.5938 2.1875C25.8958 2.91667 27.0729 3.80208 28.125 4.84375C29.1771 5.88542 30.0417 7.10417 30.7188 8.5C31.1354 9.36458 31.4531 10.2552 31.6719 11.1719C31.8906 12.0885 32 13.0312 32 14H30C30 12.7708 29.8125 11.6198 29.4375 10.5469C29.0625 9.47396 28.5469 8.49479 27.8906 7.60938C27.2344 6.72396 26.4531 5.93229 25.5469 5.23438C24.6406 4.53646 23.6771 3.94792 22.6562 3.46875C21.6354 2.98958 20.5469 2.625 19.3906 2.375C18.2344 2.125 17.1042 2 16 2C14.875 2 13.7448 2.125 12.6094 2.375C11.474 2.625 10.3906 2.98958 9.35938 3.46875C8.32812 3.94792 7.35938 4.53646 6.45312 5.23438C5.54688 5.93229 4.77083 6.72396 4.125 7.60938C3.47917 8.49479 2.95833 9.47396 2.5625 10.5469C2.16667 11.6198 1.97917 12.7708 2 14H0C0 13.0417 0.109375 12.1042 0.328125 11.1875C0.546875 10.2708 0.864583 9.375 1.28125 8.5C1.94792 7.125 2.80729 5.91146 3.85938 4.85938C4.91146 3.80729 6.09375 2.91667 7.40625 2.1875C8.71875 1.45833 10.1042 0.916667 11.5625 0.5625C13.0208 0.208333 14.5 0.0208333 16 0Z" fill="#750015"/>
               </svg>
+
               <span>{post.view_count || 0}</span>
             </div>
 
@@ -977,7 +1269,7 @@ useEffect(() => {
             {/* Share button */}
             <div className="relative">
               <Img
-                src="/images/vectors/sharearrow.svg"
+                src="/images/vectors/share.svg"
                 alt="Share"
                 className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
                 onClick={handleShareClick}

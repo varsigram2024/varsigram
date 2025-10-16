@@ -218,7 +218,7 @@ const getNotificationIcon = (type: string | undefined) => {
     return (
       <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen">
         <div className="flex flex-col items-center justify-center w-full max-w-[1200px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           <Text className="mt-4 text-gray-600">Loading notifications...</Text>
         </div>
       </div>
@@ -239,7 +239,7 @@ const getNotificationIcon = (type: string | undefined) => {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium" // Added font-medium
+              className="text-sm text-red-600 hover:text-red-800 font-medium" // Added font-medium
             >
               Mark all as read
             </button>
@@ -268,7 +268,7 @@ const getNotificationIcon = (type: string | undefined) => {
                 <div
                   key={notification.id}
                   className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors group ${
-                    !notification.is_read ? 'bg-blue-50' : ''
+                    !notification.is_read ? 'bg-red-50' : ''
                   }`}
                   onClick={() => handleNotificationItemClick(notification)}
                 >
@@ -302,7 +302,7 @@ const getNotificationIcon = (type: string | undefined) => {
 
 
                         {!notification.is_read && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                          <div className="w-2 h-2 bg-red-600 rounded-full flex-shrink-0"></div>
                         )}
                       </div>
                       
