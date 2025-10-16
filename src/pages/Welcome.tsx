@@ -437,7 +437,7 @@ useEffect(() => {
 
                 {/* CTA Button */}
                 <div>
-                  <button className="bg-[#750005] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a0001f] transition-all">
+                  <button onClick={handleLogin} className="bg-[#750005] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a0001f] transition-all">
                     Make a Vars now
                   </button>
                 </div>
@@ -465,21 +465,21 @@ useEffect(() => {
                         </button>
                       ) : (
                         <div className="flex items-center gap-3">
-                          <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
+                          <a href="https://x.com/thevarsigram?t=7jkCKWXhaPOe1o9Sn99SLg&s=08" target="_blank" rel="noopener noreferrer">
                             <img
                               src="/images/socials/twitter.svg"
                               className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
                               alt="Twitter"
                             />
                           </a>
-                          <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
+                          <a href="https://www.linkedin.com/company/varsigram/" target="_blank" rel="noopener noreferrer">
                             <img
                               src="/images/socials/linkedin.svg"
                               className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
                               alt="LinkedIn"
                             />
                           </a>
-                          <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
+                          <a href="https://www.instagram.com/thevarsigram?igsh=YzljYTk1ODg3Zg==" target="_blank" rel="noopener noreferrer">
                             <img
                               src="/images/socials/instagram.svg"
                               className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
