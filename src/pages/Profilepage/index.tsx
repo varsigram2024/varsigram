@@ -17,7 +17,7 @@ import LinksModal from "../../modals/LinksModal/index.tsx";
 import { Button } from "../../components/Button/index.tsx";
 import { Post } from "../../components/Post/index.tsx";
 import { uploadProfilePicture } from "../../utils/fileUpload.ts";
-import { Pencil, Save, Share, Users, X } from "lucide-react";
+import { Pencil, Save, Share, Users, X, Linkedin, Twitter, Instagram, Globe, Share2 } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -105,6 +105,12 @@ interface FollowerFollowingUser {
   is_verified?: boolean;
 }
 
+interface SocialLinks {
+  linkedin_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
+  website_url: string | null;
+}
 
 // Update component to accept props
 export default function Profile() {
@@ -136,6 +142,12 @@ export default function Profile() {
   const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
   const [currentUserFollowing, setCurrentUserFollowing] = useState<FollowerFollowingUser[]>([]);
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({
+  linkedin_url: null,
+  twitter_url: null,
+  instagram_url: null,
+  website_url: null
+});
 
 
   // Update modal handlers to use requireAuth
@@ -224,13 +236,14 @@ export default function Profile() {
   };
 
 
-  const fetchUserPoints = async () => {
+const fetchUserPoints = async () => {
   if (!token || !userProfile) return;
   
   setIsLoadingPoints(true);
   try {
+    // Use the new API endpoint with user ID in the URL
     const response = await axios.get(
-      `${API_BASE_URL}/mypoints/`,
+      `${API_BASE_URL}/profile/points/${userProfile.id}/`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -238,17 +251,23 @@ export default function Profile() {
       }
     );
     
-    console.log("📊 User points response:", response.data);
+    console.log("📊 User points response (new API):", response.data);
+    
+    // Extract total_points_received from the new response structure
     setTotalPoints(response.data.total_points_received || 0);
   } catch (error: any) {
     console.error("❌ Error fetching user points:", {
       error: error.response?.data,
-      status: error.response?.status
+      status: error.response?.status,
+      userId: userProfile.id
     });
     
     // If it's a 404, the user might not have any points yet
     if (error.response?.status === 404) {
+      console.log("👤 User has no points yet - setting to 0");
       setTotalPoints(0);
+    } else if (error.response?.status === 403) {
+      toast.error("You don't have permission to view these points");
     } else {
       toast.error("Failed to load points");
     }
@@ -315,6 +334,8 @@ const fetchFollowers = async () => {
     setIsLoadingFollowers(false);
   }
 };
+
+
 
 const fetchFollowing = async () => {
   if (!userProfile || !token) return;
@@ -550,6 +571,14 @@ const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
 
+
+// In Profile component - add useEffect for debugging
+useEffect(() => {
+  console.log("🔄 Social links state updated:", socialLinks);
+  console.log("🔍 Has social links:", hasSocialLinks());
+}, [socialLinks]);
+
+// Also add debugging to fetchUserData
 const fetchUserData = async () => {
   try {
     const response = await axios.get(
@@ -562,9 +591,19 @@ const fetchUserData = async () => {
       }
     );
 
+    console.log("📄 Profile API Response:", response.data);
+
     if (response.data && response.data.profile) {
-      const { profile_type, profile, followers_count, following_count } =
-        response.data;
+      const { profile_type, profile, followers_count, following_count } = response.data;
+      
+      // Log social links from API
+      console.log("🔗 Social links from profile API:", {
+        linkedin: profile.user?.linkedin_url,
+        twitter: profile.user?.twitter_url,
+        instagram: profile.user?.instagram_url,
+        website: profile.user?.website_url,
+      });
+
       setUserProfile({
         id: profile.user.id,
         email: profile.user.email,
@@ -572,10 +611,8 @@ const fetchUserData = async () => {
         profile_pic_url: profile.user.profile_pic_url,
         bio: profile.user.bio,
         is_verified: profile.user?.is_verified || false,
-        followers_count:
-          typeof followers_count === "number" ? followers_count : 0,
-        following_count:
-          typeof following_count === "number" ? following_count : 0,
+        followers_count: typeof followers_count === "number" ? followers_count : 0,
+        following_count: typeof following_count === "number" ? following_count : 0,
         account_type: profile_type,
         name: profile.name,
         organization_name: profile.organization_name,
@@ -590,13 +627,110 @@ const fetchUserData = async () => {
         display_name_slug: profile.display_name_slug,
         exclusive: profile.exclusive,
       });
+
+      // In fetchUserData - this is where social links are properly set
+const updatedSocialLinks = {
+  linkedin_url: profile.user?.linkedin_url || null,
+  twitter_url: profile.user?.twitter_url || null,
+  instagram_url: profile.user?.instagram_url || null,
+  website_url: profile.user?.website_url || null,
+};
+
+console.log("🔄 Setting social links:", updatedSocialLinks);
+setSocialLinks(updatedSocialLinks);
+      
+      console.log("🔄 Setting social links:", updatedSocialLinks);
+      setSocialLinks(updatedSocialLinks);
     } else {
       setUserProfile(null);
     }
   } catch (error) {
+    console.error("❌ Error fetching user data:", error);
     setUserProfile(null);
   } finally {
     setIsLoading(false);
+  }
+};
+
+// In Profile component - fix hasSocialLinks
+const hasSocialLinks = () => {
+  return (
+    (socialLinks.linkedin_url && socialLinks.linkedin_url.trim() !== '') ||
+    (socialLinks.twitter_url && socialLinks.twitter_url.trim() !== '') ||
+    (socialLinks.instagram_url && socialLinks.instagram_url.trim() !== '') ||
+    (socialLinks.website_url && socialLinks.website_url.trim() !== '')
+  );
+};
+
+const SocialLinksDisplay = () => {
+  if (!hasSocialLinks()) return null;
+
+  const socialIcons = [
+    { 
+      key: 'linkedin_url', 
+      icon: Linkedin, 
+      url: socialLinks.linkedin_url, 
+      color: 'text-[#0077b5]',
+      name: 'LinkedIn'
+    },
+    { 
+      key: 'twitter_url', 
+      icon: Twitter, 
+      url: socialLinks.twitter_url, 
+      color: 'text-[#1da1f2]',
+      name: 'Twitter'
+    },
+    { 
+      key: 'instagram_url', 
+      icon: Instagram, 
+      url: socialLinks.instagram_url, 
+      color: 'text-[#e4405f]',
+      name: 'Instagram'
+    },
+    { 
+      key: 'website_url', 
+      icon: Globe, 
+      url: socialLinks.website_url, 
+      color: 'text-[#750015]',
+      name: 'Website'
+    },
+  ];
+
+  return (
+    <div className="flex items-center gap-3 mt-3">
+      <Text as="span" className="text-sm text-gray-600 font-medium">
+        Connect:
+      </Text>
+      {socialIcons.map(({ key, icon: Icon, url, color, name }) => {
+        const isValidUrl = url && url.trim() !== '';
+        return isValidUrl ? (
+          <a
+            key={key}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors ${color} group relative`}
+            title={name}
+          >
+            <Icon size={18} />
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              {name}
+            </div>
+          </a>
+        ) : null;
+      })}
+    </div>
+  );
+};
+
+// Helper function for platform names
+const getPlatformName = (platform: keyof SocialLinks): string => {
+  switch (platform) {
+    case 'linkedin_url': return 'LinkedIn';
+    case 'twitter_url': return 'Twitter';
+    case 'instagram_url': return 'Instagram';
+    case 'website_url': return 'Website';
+    default: return platform;
   }
 };
 
@@ -958,29 +1092,29 @@ return (
                       </div>
 
                       {/* Points badge */}
-                        <div className="flex items-center gap-2 justify-center px-4 sm:px-3 xs:px-2 py-2 sm:py-1.5 xs:py-1 border rounded-2xl sm:rounded-xl xs:rounded-lg bg-white shadow-sm">
-                          <svg 
-                            width="15" 
-                            height="12" 
-                            viewBox="0 0 15 12" 
-                            fill="none" 
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="sm:w-3 sm:h-3 xs:w-2.5 xs:h-2.5"
-                          >
-                            <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path fillRule="evenodd" clipRule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          
-                          {isLoadingPoints ? (
-                            <div className="animate-pulse bg-gray-200 h-4 w-16 rounded"></div>
-                          ) : (
-                            <h1 className='text-[#3a3a3a]/70 flex items-center gap-2 font-semibold text-[14px] sm:text-[12px] xs:text-[10px] leading-5 sm:leading-4'>
-                              {totalPoints} Points
-                            </h1>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2 justify-center px-4 sm:px-3 xs:px-2 py-2 sm:py-1.5 xs:py-1 border rounded-2xl sm:rounded-xl xs:rounded-lg bg-white shadow-sm">
+                        <svg 
+                          width="15" 
+                          height="12" 
+                          viewBox="0 0 15 12" 
+                          fill="none" 
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="sm:w-3 sm:h-3 xs:w-2.5 xs:h-2.5"
+                        >
+                          <path d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path fillRule="evenodd" clipRule="evenodd" d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        
+                        {isLoadingPoints ? (
+                          <div className="animate-pulse bg-gray-200 h-4 w-16 rounded"></div>
+                        ) : (
+                          <h1 className='text-[#3a3a3a]/70 flex items-center gap-2 font-semibold text-[14px] sm:text-[12px] xs:text-[10px] leading-5 sm:leading-4'>
+                            {totalPoints} Points
+                          </h1>
+                        )}
+                      </div>
                     </div>
 
 
@@ -1120,43 +1254,47 @@ return (
                         </Button>
                       )}
 
-                      {/* Follow stats and join date */}
-                      <div className="flex w-full items-center justify-between flex-wrap gap-3 sm:gap-2 xs:gap-1">
-                        <div className="flex flex-wrap gap-6 sm:gap-4 xs:gap-3">
-                          <button
-                            onClick={handleOpenFollowers}
-                            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
-                          >
-                            <Text as="p" className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal">
-                              <span className="font-semibold">
-                                {userProfile.followers_count}
-                              </span>{" "}
-                              Followers
-                            </Text>
-                          </button>
-                          <button
-                            onClick={handleOpenFollowing}
-                            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
-                          >
-                            <Text as="p" className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal">
-                              <span className="font-semibold">
-                                {userProfile.following_count}
-                              </span>{" "}
-                              Following
-                            </Text>
-                          </button>
-                        </div>
+                      {/* Follow stats and social links */}
+                        <div className="flex w-full items-center justify-between flex-wrap gap-3 sm:gap-2 xs:gap-1">
+                          <div className="flex flex-wrap gap-6 sm:gap-4 xs:gap-3">
+                            <button
+                              onClick={handleOpenFollowers}
+                              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                            >
+                              <Text as="p" className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal">
+                                <span className="font-semibold">
+                                  {userProfile.followers_count}
+                                </span>{" "}
+                                Followers
+                              </Text>
+                            </button>
+                            <button
+                              onClick={handleOpenFollowing}
+                              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                            >
+                              <Text as="p" className="text-[16px] sm:text-[14px] xs:text-[12px] font-normal">
+                                <span className="font-semibold">
+                                  {userProfile.following_count}
+                                </span>{" "}
+                                Following
+                              </Text>
+                            </button>
+                          </div>
 
-                        <div className="flex">
-                          <button
+                          <div className="flex items-center gap-3">
+                            {/* Social Links Display */}
+                            <SocialLinksDisplay />
+                            
+                            {/* Add/Manage Links Button */}
+                            <button
                               onClick={() => setIsLinksModalOpen(true)}
                               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#750015] text-white hover:bg-[#a0001f] transition-colors text-[14px] sm:text-[12px] xs:text-[11px] font-medium"
                             >
-                              
-                              Add Links
+                              <Share2 size={16} />
+                              {hasSocialLinks() ? 'Manage Links' : 'Add Links'}
                             </button>
+                          </div>
                         </div>
-                      </div>
                     </div>
                   </div>
                   <div className="h-px bg-[#d9d9d9]" />
@@ -1292,16 +1430,16 @@ return (
     </div>
 
 
-        {isLinksModalOpen && (
-      <LinksModal
-        isOpen={isLinksModalOpen}
-        onClose={() => setIsLinksModalOpen(false)}
-        userProfile={userProfile}
-        token={token}
-        fetchUserData={fetchUserData}
-        accountType={userProfile.account_type}
-      />
-    )}
+                      {isLinksModalOpen && (
+                <LinksModal
+                  isOpen={isLinksModalOpen}
+                  onClose={() => setIsLinksModalOpen(false)}
+                  userProfile={userProfile}
+                  token={token}
+                  fetchUserData={fetchUserData}
+                  accountType={userProfile.account_type}
+                />
+              )}
 
 
     {/* Modals */}

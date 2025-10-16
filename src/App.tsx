@@ -175,7 +175,7 @@ function AppContent() {
 
       {/* Notification Prompt */}
       {showNotificationPrompt && (
-        <div className="xs:hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full">
             <h2 className="text-xl font-bold mb-3 text-[#750015]">Enable Notifications</h2>
             <p className="text-base text-gray-700 mb-6">

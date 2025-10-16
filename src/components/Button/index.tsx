@@ -9,11 +9,11 @@ const shapes = {
 
 const variants = {
   fill: {
-    pink_100: "bg-[#eacade] text-[#750015]",
-    pink_900: "bg-[#750015] text-white",
+    pink_100: "bg-[#eacade]", // Remove text color
+    pink_900: "bg-[#750015]", // Remove text color
   },
   outline: {
-    gray_400_01: "border-[#bebebe] border border-solid text-[#3a3a3a]",
+    gray_400_01: "border-[#bebebe] border border-solid", // Remove text color
   },
 } as const;
 

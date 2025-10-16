@@ -27,45 +27,65 @@ export const Welcome = () => {
     setInputValue("");
   };
 
-  useEffect(() => {
-    if (/Android/i.test(navigator.userAgent)) setIsAndroid(true);
-    setIsVisible(true);
+useEffect(() => {
+  if (/Android/i.test(navigator.userAgent)) setIsAndroid(true);
+  setIsVisible(true);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const target = entry.target;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const target = entry.target;
 
-          if (entry.isIntersecting) {
-            target.classList.add('animate-fade-in-up');
+        if (entry.isIntersecting) {
+          target.classList.add('animate-fade-in-up');
 
-            // Re-trigger feature mockups each time
-            if (target.classList.contains('features-section')) {
-              const mockup1 = target.querySelector('.feature-mockup-1');
-              const mockup2 = target.querySelector('.feature-mockup-2');
-              mockup1?.classList.add('animate-in');
-              mockup2?.classList.add('animate-in');
-            }
-          } else {
-            // Remove animation classes on exit for replay
-            if (target.classList.contains('features-section')) {
-              const mockup1 = target.querySelector('.feature-mockup-1');
-              const mockup2 = target.querySelector('.feature-mockup-2');
-              mockup1?.classList.remove('animate-in');
-              mockup2?.classList.remove('animate-in');
-            }
+          // Re-trigger feature mockups each time
+          if (target.classList.contains('features-section')) {
+            const mockup1 = target.querySelector('.feature-mockup-1');
+            const mockup2 = target.querySelector('.feature-mockup-2');
+            const mockup3 = target.querySelector('.feature-mockup-3');
+            mockup1?.classList.add('animate-in');
+            mockup2?.classList.add('animate-in');
+            mockup3?.classList.add('animate-in');
           }
-        });
-      },
-      { threshold: 0.3 } // triggers once 30% of section visible
-    );
 
-    sectionRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
+          // Trigger popup animations on scroll
+          if (target.classList.contains('conversation-section')) {
+            const popup1 = target.querySelector('.popup-image--one');
+            const popup2 = target.querySelector('.popup-image--two');
+            popup1?.classList.add('animate-in');
+            popup2?.classList.add('animate-in');
+          }
+        } else {
+          // Remove animation classes on exit for replay
+          if (target.classList.contains('features-section')) {
+            const mockup1 = target.querySelector('.feature-mockup-1');
+            const mockup2 = target.querySelector('.feature-mockup-2');
+            const mockup3 = target.querySelector('.feature-mockup-3');
+            mockup1?.classList.remove('animate-in');
+            mockup2?.classList.remove('animate-in');
+            mockup3?.classList.remove('animate-in');
+          }
+          
+          // Remove popup animations on exit for replay
+          if (target.classList.contains('conversation-section')) {
+            const popup1 = target.querySelector('.popup-image--one');
+            const popup2 = target.querySelector('.popup-image--two');
+            popup1?.classList.remove('animate-in');
+            popup2?.classList.remove('animate-in');
+          }
+        }
+      });
+    },
+    { threshold: 0.3 } // triggers once 30% of section visible
+  );
 
-    return () => observer.disconnect();
-  }, []);
+  sectionRefs.current.forEach((ref) => {
+    if (ref) observer.observe(ref);
+  });
+
+  return () => observer.disconnect();
+}, []);
 
   const handleSignUp = () => navigate('/signup');
   const handleLogin = () => navigate('/login');
@@ -74,7 +94,7 @@ export const Welcome = () => {
     <div className="flex flex-wrap justify-center lg:justify-start gap-8 sm:gap-6 lg:gap-10 mt-6 w-full">
       <Button
         onClick={handleSignUp}
-        className=" bg-white text-[#91021c] border-2 hover:bg-transparent hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
+        className=" bg-white !text-[#91021c] border-2 hover:bg-transparent hover:!text-white hover:scale-105 active:scale-95 transition-all duration-300 ease-out z-10 transform hover:-translate-y-1"
       >
         Sign up now
       </Button>
@@ -112,7 +132,7 @@ export const Welcome = () => {
        {/* Header */}
       <header 
         ref={(el) => addToRefs(el, 0)}
-        className={`max-w-7xl mx-auto flex justify-between items-center py-4 sm:py-6 px-4 sm:px-6 lg:px-10 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
+        className={`max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-10 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
       >
         <div className="flex items-center gap-2">
           <img 
@@ -181,7 +201,7 @@ export const Welcome = () => {
         </p>
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 justify-center items-center mt-8 lg:mt-12 overflow-hidden">
-          <div className="w-full max-w-lg lg:max-w-none h-auto lg:h-[600px] xl:h-[768px] flex flex-col justify-between items-center rounded-3xl lg:rounded-[60px] border-4 relative bg-[#750015]/30 lg:p-0 ">
+          <div className="w-full max-w-lg lg:max-w-none h-auto lg:h-[600px] xl:h-[768px] flex flex-col justify-between items-center rounded-3xl lg:rounded-[60px] border-4 relative bg-[#750015]/30 lg:p-0  overflow-hidden">
             <div className='px-2 lg:px-4 flex flex-col items-center animate-fade-in-up'>
               <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-semibold mt-4 lg:mt-10 px-2 lg:px-6 mb-4">
                 Follow Organisations and Student Associations
@@ -191,7 +211,7 @@ export const Welcome = () => {
               </p>
             </div>
             <div className="w-full flex justify-center items-end mt-8 lg:mt-0 lg:absolute lg:bottom-0 lg:left-0 animate-fade-in-up delay-300">
-              <div className="relative w-full h-[260px] mb-[6px] lg:mb-[8px] max-w-xs lg:max-w-[420px] flex items-center justify-center">
+              <div className="relative w-full h-[260px] max-w-xs lg:max-w-[420px] flex items-center justify-center">
                 <img
                   src={featureMockup1}
                   alt="Feature mockup 1"
@@ -218,11 +238,11 @@ export const Welcome = () => {
             <div className="w-full flex justify-center items-center mt-8 lg:mt-0 lg:absolute lg:bottom-0 lg:left-0 animate-fade-in-up delay-400">
               <div className="relative w-full max-w-xs lg:max-w-[420px] h-48 lg:h-[260px] flex items-center justify-center">
               <img
-                src={featureMockup3}
-                alt="Feature mockup 3"
-                className="w-[50%] md:w-[50%] lg:w-[65%] lg:h-auto max-w-xs lg:max-w-[420px] h-auto rounded-2xl shadow-lg z-10 transform transition-all duration-500 hover:-translate-y-2 left-1/2 -translate-x-1/2"
-                style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translateX(-50%)' }}
-              />
+                  src={featureMockup3}
+                  alt="Feature mockup 3"
+                  className="feature-mockup-3 w-[50%] md:w-[50%] lg:w-[65%] lg:h-auto max-w-xs lg:max-w-[420px] h-auto rounded-2xl shadow-lg z-10 transform transition-all duration-500 hover:-translate-y-2 left-1/2 -translate-x-1/2"
+                  style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translateX(-50%)' }}
+                />
               </div>
             </div>
             </div>
@@ -232,72 +252,77 @@ export const Welcome = () => {
 
 
 
-          {/* Conversation Section */}
-      <section 
-        ref={(el) => addToRefs(el, 3)}
-        className="items-center justify-center text-white text-center py-16 sm:py-20 px-4 sm:px-6 transition-all duration-1000"
-      >
-        <div className="bg-[#FF6682] pink-bg flex flex-col lg:flex-row items-center justify-center lg:px-12 gap-6 lg:gap-8 pt-4 rounded-3xl lg:rounded-[45px] relative overflow-hidden transform transition-all duration-500 hover:shadow-2xl">
-          <div className="absolute inset-0 w-full h-full pointer-events-none animate-pulse-slow">
-            <svg
-              className=""
-              viewBox="0 0 1269 474"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="xMidYMid slice"
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            {/* Conversation Section */}
+            <section 
+              ref={(el) => addToRefs(el, 3)}
+              className="conversation-section items-center justify-center text-white text-center py-16 sm:py-20 px-4 sm:px-6 transition-all duration-1000"
             >
-              <path
-          opacity="0.4"
-          d="M-30.5 93C-30.5 93 158.234 508.141 453.575 508.146C748.917 508.151 983.676 -353.894 1222.22 27.2691C1460.77 408.432 270.564 272.128 476.294 27.2691C682.023 -217.59 1025.24 534 1025.24 534"
-          stroke="white"
-          strokeWidth="30"
-              />
-            </svg>
-          </div>
-          
-          <div className="flex p-4 sm:p-6 lg:p-12 flex-col text-center lg:text-left items-center lg:items-start justify-center space-y-4 lg:space-y-6 max-w-2xl z-10 animate-fade-in-up">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold">
-              Engage vibrant and insightful conversations with a <span className='text-[#750015] animate-pulse'>Vars</span>
-            </h2>
-            <p className="mt-2 lg:mt-4 max-w-2xl text-sm sm:text-base">
-              Gain valuable insights by joining conversations on Varsigram that talk about growth and value.
-            </p>
-            <div className="flex justify-center lg:justify-start animate-fade-in-up delay-200">
-              <Button onClick={handleSignUp} className="bg-white text-[#750015] border-2 transition-all duration-300 hover:scale-105 active:scale-95 transform hover:-translate-y-1 text-sm sm:text-base">
-                <span className="text-[#750015]">Get Started</span>
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex justify-center items-center mt-6 lg:mt-10 z-10 w-[75%] lg:w-1/2 animate-fade-in-up delay-300">
-              <div className='relative w-full h-full flex justify-center items-center'>
-                <img 
-                  src={engageMockup} 
-                  alt="App mockup" 
-                  className="w-[85%] sm:w-4/5 lg:w-1/2" 
-                />
+              <div className="bg-[#FF6682] pink-bg flex flex-col lg:flex-row items-center justify-center lg:px-12 gap-6 lg:gap-8 pt-4 rounded-3xl lg:rounded-[45px] relative overflow-hidden transform transition-all duration-500 hover:shadow-2xl">
                 
-                <div className="w-4/5 lg:w-1/2 absolute bottom-36 xl:bottom-56 left-[-0.5rem] lg:left-10 scale-75 lg:scale-100 pointer-events-none">
-                  <img
-                    src={popup1}
-                    alt="Popup 1"
-                    className="popup-image popup-image--one w-full"
-                    aria-hidden="true"
-                    loading="lazy"
-                  />
-                  <img
-                    src={popup2}
-                    alt="Popup 2"
-                    className="popup-image popup-image--two w-full"
-                    aria-hidden="true"
-                    loading="lazy"
-                  />
+                {/* Decorative background stroke */}
+                <div className="absolute inset-0 w-full h-full pointer-events-none animate-pulse-slow">
+                  <svg
+                    className=""
+                    viewBox="0 0 1269 474"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                  >
+                    <path
+                      opacity="0.4"
+                      d="M-30.5 93C-30.5 93 158.234 508.141 453.575 508.146C748.917 508.151 983.676 -353.894 1222.22 27.2691C1460.77 408.432 270.564 272.128 476.294 27.2691C682.023 -217.59 1025.24 534 1025.24 534"
+                      stroke="white"
+                      strokeWidth="30"
+                    />
+                  </svg>
+                </div>
+
+                {/* Left text column */}
+                <div className="flex p-4 sm:p-6 lg:p-12 flex-col text-center lg:text-left items-center lg:items-start justify-center space-y-4 lg:space-y-6 max-w-2xl z-10 animate-fade-in-up">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold">
+                    Engage vibrant and insightful conversations with a <span className='text-[#750015] animate-pulse'>Vars</span>
+                  </h2>
+                  <p className="mt-2 lg:mt-4 max-w-2xl text-sm sm:text-base">
+                    Gain valuable insights by joining conversations on Varsigram that talk about growth and value.
+                  </p>
+                  <div className="flex justify-center lg:justify-start animate-fade-in-up delay-200">
+                    <Button onClick={handleSignUp} className="bg-white text-[#750015] border-2 transition-all duration-300 hover:scale-105 active:scale-95 transform hover:-translate-y-1 text-sm sm:text-base">
+                      <span className="text-[#750015]">Get Started</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right phone + popups */}
+                <div className="flex justify-center items-center mt-6 lg:mt-10 z-10 w-[75%] lg:w-1/2 animate-fade-in-up delay-300">
+                  <div className="relative w-full h-full flex justify-center items-center">
+                    {/* Phone mockup */}
+                    <img 
+                      src={engageMockup} 
+                      alt="App mockup" 
+                      className="w-[85%] sm:w-4/5 lg:w-1/2 relative z-10" 
+                    />
+
+                    {/* Popup overlays */}
+                    <div className="w-4/5 lg:w-1/2 absolute bottom-36 xl:bottom-56 left-0 lg:left-0 z-20 scale-90 lg:scale-100 pointer-events-none">
+                      <img
+                        src={popup1}
+                        alt="Popup 1"
+                        className="popup-image popup-image--one absolute -top-12 left-0 w-[85%] max-w-xs rounded-2xl shadow-xl border border-white/20 bg-white opacity-0"
+                        loading="lazy"
+                      />
+                      <img
+                        src={popup2}
+                        alt="Popup 2"
+                        className="popup-image popup-image--two absolute top-12 right-6 w-[85%] max-w-xs rounded-2xl shadow-xl border border-white/20 bg-white opacity-0"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-        </div>
-      </section>
+            </section>
+
 
       {/* Opportunities Section */}
       <section 
@@ -391,147 +416,306 @@ export const Welcome = () => {
           </div>
         </section>
 
-<section 
-      className="bg-[#fff] text-[#3a3a3a] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col items-center justify-center max-w-7xl gap-8 lg:gap-10 space-y-10 mx-auto"
-    >
-      {/* Logo and Heading */}
-      <div className="z-10 text-center flex flex-col items-center justify-center gap-4 animate-fade-in-up">
-        <div className="flex items-center gap-2">
-          <svg width="85" height="60" viewBox="0 0 64 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M31.8142 40.3235C28.8059 38.1083 28.163 33.8738 30.3782 30.8655L48.3636 6.44121C50.9834 2.88345 55.9913 2.12312 59.5491 4.74295L64.0013 8.02142L41.2723 38.8876C39.0571 41.8959 34.8225 42.5388 31.8142 40.3235Z" fill="#750015"/>
-            <path d="M18.157 32.0453C15.2635 29.9147 14.6452 25.8419 16.7758 22.9485L27.0562 8.98768C29.676 5.42992 34.684 4.66958 38.2417 7.28941L42.2778 10.2615L27.2538 30.6642C25.1232 33.5576 21.0504 34.176 18.157 32.0453Z" fill="#750015"/>
-            <path d="M6.94957 20.7166C5.79993 19.0374 5.58672 16.8876 6.38412 15.0152L7.20593 13.0856C9.18517 8.43821 14.9826 6.85431 19.0499 9.8497L22.7724 12.5911L16.6651 20.8839C14.2323 24.1873 9.2671 24.1017 6.94957 20.7166Z" fill="#750015"/>
-          </svg>
-          <h1 className="text-[#750005] text-3xl font-semibold">Varsigram</h1>
-        </div>
-
-        <h1 className='text-center leading-8 text-2xl sm:text-3xl lg:text-4xl max-w-2xl font-semibold'>
-          Grow with every content you read, Inspire with <span className='text-[#750005]'>Vars</span> you create
-        </h1>
-      </div>
-
-      {/* CTA Button */}
-      <div>
-        <button className="bg-[#750005] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a0001f] transition-all">
-          Make a Vars now
-        </button>
-      </div>
-
-      {/* Input Field with Icons */}
-      <div className="w-full flex flex-col items-center justify-center gap-4 max-w-2xl animate-fade-in-up delay-200">
-      <form onSubmit={handleSubmit} className="relative w-full max-w-lg">
-        <input
-          type="email"
-          placeholder="Reach us via other social media"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          className="w-full border border-[#750015] rounded-full py-3 pl-6 pr-24 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#750015] transition-all"
-        />
-
-        {/* Icons Section */}
-        <div className="absolute top-1/2 right-4 -translate-y-1/2 flex items-center gap-3 text-[#750015]">
-            {inputValue.trim() ? (
-              <button
-                type="submit"
-                className="hover:scale-110 transition-transform"
-                aria-label="Send"
+          <section 
+                className="bg-[#fff] text-[#3a3a3a] pt-16 sm:pt-20 px-4 sm:px-6 relative flex flex-col items-center justify-center max-w-7xl gap-8 lg:gap-10 space-y-10 mx-auto"
               >
-                <FaPaperPlane className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-              </button>
-            ) : (
-              <div className="flex items-center gap-3">
-                <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
-                  <img
-                    src="/images/socials/twitter.svg"
-                    className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
-                    alt="Twitter"
+                {/* Logo and Heading */}
+                <div className="z-10 text-center flex flex-col items-center justify-center gap-4 animate-fade-in-up">
+                  <div className="flex items-center gap-2">
+                    <svg width="85" height="60" viewBox="0 0 64 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M31.8142 40.3235C28.8059 38.1083 28.163 33.8738 30.3782 30.8655L48.3636 6.44121C50.9834 2.88345 55.9913 2.12312 59.5491 4.74295L64.0013 8.02142L41.2723 38.8876C39.0571 41.8959 34.8225 42.5388 31.8142 40.3235Z" fill="#750015"/>
+                      <path d="M18.157 32.0453C15.2635 29.9147 14.6452 25.8419 16.7758 22.9485L27.0562 8.98768C29.676 5.42992 34.684 4.66958 38.2417 7.28941L42.2778 10.2615L27.2538 30.6642C25.1232 33.5576 21.0504 34.176 18.157 32.0453Z" fill="#750015"/>
+                      <path d="M6.94957 20.7166C5.79993 19.0374 5.58672 16.8876 6.38412 15.0152L7.20593 13.0856C9.18517 8.43821 14.9826 6.85431 19.0499 9.8497L22.7724 12.5911L16.6651 20.8839C14.2323 24.1873 9.2671 24.1017 6.94957 20.7166Z" fill="#750015"/>
+                    </svg>
+                    <h1 className="text-[#750005] text-3xl font-semibold">Varsigram</h1>
+                  </div>
+
+                  <h1 className='text-center leading-8 text-2xl sm:text-3xl lg:text-4xl max-w-2xl font-semibold'>
+                    Grow with every content you read, Inspire with <span className='text-[#750005]'>Vars</span> you create
+                  </h1>
+                </div>
+
+                {/* CTA Button */}
+                <div>
+                  <button className="bg-[#750005] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a0001f] transition-all">
+                    Make a Vars now
+                  </button>
+                </div>
+
+                {/* Input Field with Icons */}
+                <div className="w-full flex flex-col items-center justify-center gap-4 max-w-2xl animate-fade-in-up delay-200">
+                <form onSubmit={handleSubmit} className="relative w-full max-w-lg">
+                  <input
+                    type="email"
+                    placeholder="Reach us via other social media"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="w-full border border-[#750015] rounded-full py-3 pl-6 pr-24 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#750015] transition-all"
                   />
-                </a>
-                <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
-                  <img
-                    src="/images/socials/linkedin.svg"
-                    className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
-                    alt="LinkedIn"
-                  />
-                </a>
-                <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
-                  <img
-                    src="/images/socials/instagram.svg"
-                    className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
-                    alt="Instagram"
-                  />
-                </a>
-              </div>
-            )}
-          </div>
 
-      </form>
+                  {/* Icons Section */}
+                  <div className="absolute top-1/2 right-4 -translate-y-1/2 flex items-center gap-3 text-[#750015]">
+                      {inputValue.trim() ? (
+                        <button
+                          type="submit"
+                          className="hover:scale-110 transition-transform"
+                          aria-label="Send"
+                        >
+                          <FaPaperPlane className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
+                            <img
+                              src="/images/socials/twitter.svg"
+                              className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                              alt="Twitter"
+                            />
+                          </a>
+                          <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer">
+                            <img
+                              src="/images/socials/linkedin.svg"
+                              className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                              alt="LinkedIn"
+                            />
+                          </a>
+                          <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
+                            <img
+                              src="/images/socials/instagram.svg"
+                              className="hover:scale-110 transition-transform w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                              alt="Instagram"
+                            />
+                          </a>
+                        </div>
+                      )}
+                    </div>
 
-                <p className='flex text-[#3a3a3a] items-center justify-center text-center'>
-          <span>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 7C3 6.46957 3.21071 5.96086 3.58579 5.58579C3.96086 5.21071 4.46957 5 5 5H19C19.5304 5 20.0391 5.21071 20.4142 5.58579C20.7893 5.96086 21 6.46957 21 7V17C21 17.5304 20.7893 18.0391 20.4142 18.4142C20.0391 18.7893 19.5304 19 19 19H5C4.46957 19 3.96086 18.7893 3.58579 18.4142C3.21071 18.0391 3 17.5304 3 17V7Z" stroke="#3A3A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M3 7L12 13L21 7" stroke="#3A3A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-          </span>varsigraminfo@gmail.com</p>
-      </div>
+                </form>
 
-      {/* Contact and Copyright */}
-      <div className="text-center text-sm text-gray-600 space-y-1">
+                          <p className='flex text-[#3a3a3a] items-center justify-center text-center'>
+                    <span>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3 7C3 6.46957 3.21071 5.96086 3.58579 5.58579C3.96086 5.21071 4.46957 5 5 5H19C19.5304 5 20.0391 5.21071 20.4142 5.58579C20.7893 5.96086 21 6.46957 21 7V17C21 17.5304 20.7893 18.0391 20.4142 18.4142C20.0391 18.7893 19.5304 19 19 19H5C4.46957 19 3.96086 18.7893 3.58579 18.4142C3.21071 18.0391 3 17.5304 3 17V7Z" stroke="#3A3A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M3 7L12 13L21 7" stroke="#3A3A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                    </span>varsigraminfo@gmail.com</p>
+                </div>
 
-        <p>© 2024 Varsigram. All rights reserved.</p>
-      </div>
-    </section>
+                {/* Contact and Copyright */}
+                <div className="text-center text-sm text-gray-600 space-y-1">
 
+                  <p>© 2024 Varsigram. All rights reserved.</p>
+                </div>
+              </section>
 
-      <style>{`
-  /* Base animations */
-  @keyframes fadeInUp {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
+<style>{`
+/* Base animations */
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
 
-
-  .feature-mockup-1 { transform: rotate(20deg); transition: transform 1s ease-in-out; }
-  .feature-mockup-2 { transform: rotate(-20deg); transition: transform 1s ease-in-out; }
-  .feature-mockup-1.animate-in,
-  .feature-mockup-2.animate-in {
-    transform: rotate(0deg) scale(1.05);
-  }
-
-  .popup-image {
-  position: absolute;
-  display: block;
-  bottom: 0;
-  left: 0;
-  transform-origin: bottom center;
-  will-change: transform, opacity;
-  max-width: 220px; /* adjust as needed for your layout */
-  transition-timing-function: ease-in-out;
-  z-index: 30;
+/* Updated feature mockup animations - Slide up from bottom */
+.feature-mockup-1, 
+.feature-mockup-2,
+.feature-mockup-3 { 
+  transform: translateY(100px) scale(0.9); 
+  opacity: 0;
+  transition: transform 1s ease-out, opacity 1s ease-out; 
 }
 
-/* First popup: main entrance early in the cycle */
+.feature-mockup-1.animate-in,
+.feature-mockup-2.animate-in,
+.feature-mockup-3.animate-in {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+/* Staggered animation delays */
+.feature-mockup-1.animate-in {
+  transition-delay: 0.2s;
+}
+
+.feature-mockup-2.animate-in {
+  transition-delay: 0.4s;
+}
+
+.feature-mockup-3.animate-in {
+  transition-delay: 0.3s;
+}
+
+/* Updated Popup Styles - Always Large and Responsive */
+.popup-image {
+  position: absolute;
+  display: block;
+  transform-origin: bottom center;
+  will-change: transform, opacity;
+  transition-timing-function: ease-in-out;
+  z-index: 30;
+  
+  /* Make bolder with shadow and border */
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  border-radius: 12px;
+  
+  /* Consistent large sizing */
+  width: auto;
+  height: auto;
+}
+
+/* First popup: main entrance */
 .popup-image--one {
   bottom: 35px;
   animation: popup-one 12s infinite ease-in-out;
-  animation-delay: 1.2s; /* staggers the two animations */
-  animation-fill-mode: both; /* keeps computed styles during/after animation */
+  animation-delay: 1.2s;
+  animation-fill-mode: both;
   z-index: 30;
+  
+  /* Large consistent sizing */
+  max-width: 280px;
+  width: 65vw;
+  min-width: 200px;
 }
 
-/* Second popup: offset in x/y and delayed so they alternate */
+/* Second popup: offset in x/y and delayed */
 .popup-image--two {
-  left: 0;   /* small horizontal offset so they don't perfectly overlap */
-  bottom: 0;  /* small vertical offset */
+  left: 15px;
+  bottom: 5px;
   animation: popup-two 6s infinite ease-in-out;
-  animation-delay: 1.2s; /* staggers the two animations */
+  animation-delay: 1.2s;
   animation-fill-mode: forwards;
   z-index: 20;
+  
+  /* Large consistent sizing */
+  max-width: 260px;
+  width: 60vw;
+  min-width: 180px;
 }
 
+/* Mobile-first responsive adjustments - Ensuring large appearance */
+@media (max-width: 480px) {
+  .popup-image--one {
+    max-width: 220px;
+    width: 55vw;
+    min-width: 180px;
+  }
+  
+  .popup-image--two {
+    max-width: 200px;
+    width: 50vw;
+    min-width: 160px;
+  }
+}
 
+@media (min-width: 481px) and (max-width: 767px) {
+  .popup-image--one {
+    max-width: 250px;
+    width: 50vw;
+  }
+  
+  .popup-image--two {
+    max-width: 230px;
+    width: 45vw;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .popup-image--one {
+    max-width: 10000000px;
+    width: 40vw;
+  }
+  
+  .popup-image--two {
+    max-width: 280px;
+    width: 38vw;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .popup-image--one {
+    max-width: 320px;
+    width: 35vw;
+  }
+  
+  .popup-image--two {
+    max-width: 300px;
+    width: 33vw;
+  }
+}
+
+@media (min-width: 1280px) {
+  .popup-image--one {
+    max-width: 350px;
+    width: 30vw;
+  }
+  
+  .popup-image--two {
+    max-width: 330px;
+    width: 28vw;
+  }
+}
+
+@media (min-width: 1536px) {
+  .popup-image--one {
+    max-width: 380px;
+    width: 25vw;
+  }
+  
+  .popup-image--two {
+    max-width: 360px;
+    width: 23vw;
+  }
+}
+
+/* Popup animations */
+@keyframes popup-one {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.9;
+  }
+  25% {
+    transform: translateY(-10px) scale(1.05);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-5px) scale(1.02);
+    opacity: 0.95;
+  }
+  75% {
+    transform: translateY(-8px) scale(1.03);
+    opacity: 0.98;
+  }
+}
+
+@keyframes popup-two {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-8px) scale(1.03);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-3px) scale(1.01);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translateY(-6px) scale(1.02);
+    opacity: 0.88;
+  }
+}
+
+/* Ensure the conversation section container has proper sizing */
+.conversation-section .relative {
+  min-height: 400px;
+}
+
+/* Make sure the engage mockup doesn't interfere with popup sizing */
+.conversation-section img[alt="App mockup"] {
+  z-index: 10;
+  position: relative;
+}
 `}</style>
     </div>
   );
