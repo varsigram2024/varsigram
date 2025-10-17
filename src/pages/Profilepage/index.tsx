@@ -136,6 +136,7 @@ export default function Profile() {
   const [bioInput, setBioInput] = useState("");
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
   const isOwnProfile = user && userProfile && user.id === userProfile.id;
+  
 
   
   // Add missing state variables
@@ -437,52 +438,24 @@ useEffect(() => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!display_name_slug) return;
-      setIsLoading(true);
-      try {
-        const headers: any = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        
-        const profileResponse = await axios.get(
-          `${API_BASE_URL}/profile/${display_name_slug}/`,
-          { headers }
-        );
-        const {
-          profile_type,
-          profile,
-          is_following,
-          followers_count,
-          following_count,
-        } = profileResponse.data;
+  try {
+    const response = await axios.get(`${API_BASE_URL}/profile/${username}/`);
+    const profileData = response.data;
 
-        setUserProfile({
-          id: profile.user.id,
-          email: profile.user.email,
-          username: profile.user.username,
-          profile_pic_url: profile.user.profile_pic_url,
-          bio: profile.user.bio,
-          is_verified: profile.user?.is_verified || false,
-          followers_count:
-            typeof followers_count === "number" ? followers_count : 0,
-          following_count:
-            typeof following_count === "number" ? following_count : 0,
-          account_type: profile_type,
-          name: profile.name,
-          organization_name: profile.organization_name,
-          university: profile.university,
-          faculty: profile.faculty,
-          department: profile.department,
-          year: profile.year,
-          display_name_slug: profile.display_name_slug,
-          exclusive: profile.exclusive,
-        });
-        setIsFollowing(is_following);
-      } catch (error) {
-        setUserProfile(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const user = profileData.profile.user;
+    const email = user.email || null;
+    const links = user.links || {};
+
+    setUserProfile({
+      ...profileData.profile,
+      email,
+      links,
+    });
+  } catch (err) {
+    console.error("Failed to fetch profile:", err);
+  }
+};
+
 
     fetchUserProfile();
   }, [display_name_slug, token, user?.email]);
@@ -664,22 +637,105 @@ const hasSocialLinks = () => {
     (socialLinks.linkedin_url && socialLinks.linkedin_url.trim() !== '') ||
     (socialLinks.twitter_url && socialLinks.twitter_url.trim() !== '') ||
     (socialLinks.instagram_url && socialLinks.instagram_url.trim() !== '') ||
-    (socialLinks.website_url && socialLinks.website_url.trim() !== '')
+    (socialLinks.website_url && socialLinks.website_url.trim() !== '') ||
+    (socialLinks.whatsapp_url && socialLinks.whatsapp_url.trim() !== '')
   );
 };
 
 const SocialLinksDisplay = () => {
-  if (!hasSocialLinks()) return null;
+  const email = userProfile?.email;
+  const links = socialLinks;
+  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [removingLink, setRemovingLink] = useState<string | null>(null);
+
+  const handleRemoveLink = async (platform: keyof SocialLinks) => {
+    if (!token || !userProfile) return;
+
+    setRemovingLink(platform);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      
+      const payload: Record<string, null> = {};
+      if (platform === 'website_url') {
+        payload['portfolio_url'] = null;
+      } else {
+        payload[platform] = null;
+      }
+
+      await axios.patch(
+        `${API_BASE_URL}/profile/social-links/`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setSocialLinks(prev => ({
+        ...prev,
+        [platform]: null
+      }));
+
+      await fetchUserData();
+      toast.success(`${getPlatformName(platform)} link removed!`);
+    } catch (error) {
+      console.error('Error removing link:', error);
+      toast.error('Failed to remove link');
+    } finally {
+      setRemovingLink(null);
+    }
+  };
+
+  const getPlatformName = (platform: string): string => {
+    switch (platform) {
+      case 'linkedin_url': return 'LinkedIn';
+      case 'twitter_url': return 'Twitter';
+      case 'instagram_url': return 'Instagram';
+      case 'website_url': return 'Website';
+      case 'whatsapp_url': return 'WhatsApp';
+      case 'email': return 'Email';
+      default: return platform;
+    }
+  };
 
   const socialIcons = [
     {
+      key: "email",
+      name: "Email",
+      url: email ? `mailto:${email}` : null,
+      svg: (
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4 xs:w-5 xs:h-5"
+        >
+          <path
+            d="M2 4C0.895 4 0 4.895 0 6V18C0 19.105 0.895 20 2 20H22C23.105 20 24 19.105 24 18V6C24 4.895 23.105 4 22 4H2ZM22 8.236L12 13.618L2 8.236V6L12 11.382L22 6V8.236Z"
+            fill="#EA4335"
+          />
+        </svg>
+      ),
+    },
+    {
       key: "twitter_url",
       svg: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <mask id="mask0_2978_12599" style={{ maskType: "luminance" }} maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4 xs:w-5 xs:h-5"
+        >
+          <mask id="mask0" style={{ maskType: "luminance" }} maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
             <path d="M0 0H20V20H0V0Z" fill="white" />
           </mask>
-          <g mask="url(#mask0_2978_12599)">
+          <g mask="url(#mask0)">
             <path
               d="M15.75 0.9375H18.8171L12.1171 8.61464L20 19.0632H13.8286L8.99143 12.7275L3.46286 19.0632H0.392857L7.55857 10.8489L0 0.938929H6.32857L10.6943 6.72893L15.75 0.9375ZM14.6714 17.2232H16.3714L5.4 2.68179H3.57714L14.6714 17.2232Z"
               fill="#3A3A3A"
@@ -687,83 +743,140 @@ const SocialLinksDisplay = () => {
           </g>
         </svg>
       ),
-      url: socialLinks.twitter_url,
+      url: links.twitter_url,
       name: "Twitter",
     },
     {
       key: "linkedin_url",
       svg: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15.3125 0H4.6875C2.09867 0 0 2.09867 0 4.6875V15.3125C0 17.9013 2.09867 20 4.6875 20H15.3125C17.9013 20 20 17.9013 20 15.3125V4.6875C20 2.09867 17.9013 0 15.3125 0Z" fill="#3A3A3A" />
-          <path
-            d="M14.4309 17.0066H16.7176C16.8004 17.0066 16.8799 16.9737 16.9385 16.9151C16.9971 16.8566 17.0301 16.7771 17.0301 16.6942L17.0312 11.8628C17.0312 9.33758 16.4871 7.39656 13.5361 7.39656C12.4143 7.35484 11.3564 7.93313 10.7855 8.89875C10.7828 8.90344 10.7785 8.90709 10.7734 8.90914C10.7684 8.91119 10.7628 8.91153 10.7575 8.9101C10.7523 8.90867 10.7476 8.90556 10.7443 8.90124C10.7409 8.89692 10.7391 8.89163 10.7391 8.88617V7.94219C10.7391 7.85931 10.7061 7.77982 10.6475 7.72122C10.5889 7.66261 10.5094 7.62969 10.4266 7.62969H8.25648C8.1736 7.62969 8.09412 7.66261 8.03551 7.72122C7.97691 7.77982 7.94398 7.85931 7.94398 7.94219V16.6937C7.94398 16.7766 7.97691 16.8561 8.03551 16.9147C8.09412 16.9733 8.1736 17.0062 8.25648 17.0062H10.543C10.6259 17.0062 10.7054 16.9733 10.764 16.9147C10.8226 16.8561 10.8555 16.7766 10.8555 16.6937V12.3677C10.8555 11.1445 11.0876 9.95992 12.6041 9.95992C14.099 9.95992 14.1184 11.3596 14.1184 12.447V16.6941C14.1184 16.777 14.1513 16.8565 14.2099 16.9151C14.2685 16.9737 14.348 17.0066 14.4309 17.0066ZM2.96875 4.65844C2.96875 5.58531 3.7318 6.34797 4.65875 6.34797C5.58547 6.34789 6.34805 5.58477 6.34805 4.65805C6.34789 3.73133 5.58523 2.96875 4.65844 2.96875C3.73141 2.96875 2.96875 3.73156 2.96875 4.65844ZM3.51242 17.0066H5.80203C5.88491 17.0066 5.9644 16.9737 6.023 16.9151C6.08161 16.8565 6.11453 16.777 6.11453 16.6941V7.94219C6.11453 7.85931 6.08161 7.77982 6.023 7.72122C5.9644 7.66261 5.88491 7.62969 5.80203 7.62969H3.51242C3.42954 7.62969 3.35006 7.66261 3.29145 7.72122C3.23285 7.77982 3.19992 7.85931 3.19992 7.94219V16.6941C3.19992 16.777 3.23285 16.8565 3.29145 16.9151C3.35006 16.9737 3.42954 17.0066 3.51242 17.0066Z"
-            fill="white"
-          />
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 xs:w-5 xs:h-5">
+          <g clipPath="url(#clip0_2978_12604)">
+            <path d="M15.3125 0H4.6875C2.09867 0 0 2.09867 0 4.6875V15.3125C0 17.9013 2.09867 20 4.6875 20H15.3125C17.9013 20 20 17.9013 20 15.3125V4.6875C20 2.09867 17.9013 0 15.3125 0Z" fill="white"/>
+            <path d="M15.3125 0H4.6875C2.09867 0 0 2.09867 0 4.6875V15.3125C0 17.9013 2.09867 20 4.6875 20H15.3125C17.9013 20 20 17.9013 20 15.3125V4.6875C20 2.09867 17.9013 0 15.3125 0Z" fill="#3A3A3A"/>
+            <path d="M14.4309 17.0066H16.7176C16.8004 17.0066 16.8799 16.9737 16.9385 16.9151C16.9971 16.8566 17.0301 16.7771 17.0301 16.6942L17.0312 11.8628C17.0312 9.33758 16.4871 7.39656 13.5361 7.39656C12.4143 7.35484 11.3564 7.93313 10.7855 8.89875C10.7828 8.90344 10.7785 8.90709 10.7734 8.90914C10.7684 8.91119 10.7628 8.91153 10.7575 8.9101C10.7523 8.90867 10.7476 8.90556 10.7443 8.90124C10.7409 8.89692 10.7391 8.89163 10.7391 8.88617V7.94219C10.7391 7.85931 10.7061 7.77982 10.6475 7.72122C10.5889 7.66261 10.5094 7.62969 10.4266 7.62969H8.25648C8.1736 7.62969 8.09412 7.66261 8.03551 7.72122C7.97691 7.77982 7.94398 7.85931 7.94398 7.94219V16.6937C7.94398 16.7766 7.97691 16.8561 8.03551 16.9147C8.09412 16.9733 8.1736 17.0062 8.25648 17.0062H10.543C10.6259 17.0062 10.7054 16.9733 10.764 16.9147C10.8226 16.8561 10.8555 16.7766 10.8555 16.6937V12.3677C10.8555 11.1445 11.0876 9.95992 12.6041 9.95992C14.099 9.95992 14.1184 11.3596 14.1184 12.447V16.6941C14.1184 16.777 14.1513 16.8565 14.2099 16.9151C14.2685 16.9737 14.348 17.0066 14.4309 17.0066ZM2.96875 4.65844C2.96875 5.58531 3.7318 6.34797 4.65875 6.34797C5.58547 6.34789 6.34805 5.58477 6.34805 4.65805C6.34789 3.73133 5.58523 2.96875 4.65844 2.96875C3.73141 2.96875 2.96875 3.73156 2.96875 4.65844ZM3.51242 17.0066H5.80203C5.88491 17.0066 5.9644 16.9737 6.023 16.9151C6.08161 16.8565 6.11453 16.777 6.11453 16.6941V7.94219C6.11453 7.85931 6.08161 7.77982 6.023 7.72122C5.9644 7.66261 5.88491 7.62969 5.80203 7.62969H3.51242C3.42954 7.62969 3.35006 7.66261 3.29145 7.72122C3.23285 7.77982 3.19992 7.85931 3.19992 7.94219V16.6941C3.19992 16.777 3.23285 16.8565 3.29145 16.9151C3.35006 16.9737 3.42954 17.0066 3.51242 17.0066Z" fill="white"/>
+          </g>
+          <defs>
+            <clipPath id="clip0_2978_12604">
+              <rect width="20" height="20" fill="white"/>
+            </clipPath>
+          </defs>
         </svg>
       ),
-      url: socialLinks.linkedin_url,
+      url: links.linkedin_url,
       name: "LinkedIn",
     },
     {
       key: "instagram_url",
       svg: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 xs:w-5 xs:h-5">
           <path d="M6.5013 1.66797H13.5013C16.168 1.66797 18.3346 3.83464 18.3346 6.5013V13.5013C18.3346 14.7832 17.8254 16.0126 16.919 16.919C16.0126 17.8254 14.7832 18.3346 13.5013 18.3346H6.5013C3.83464 18.3346 1.66797 16.168 1.66797 13.5013V6.5013C1.66797 5.21942 2.17719 3.99005 3.08362 3.08362C3.99005 2.17719 5.21942 1.66797 6.5013 1.66797ZM6.33464 3.33464C5.53899 3.33464 4.77592 3.65071 4.21332 4.21332C3.65071 4.77592 3.33464 5.53899 3.33464 6.33464V13.668C3.33464 15.3263 4.6763 16.668 6.33464 16.668H13.668C14.4636 16.668 15.2267 16.3519 15.7893 15.7893C16.3519 15.2267 16.668 14.4636 16.668 13.668V6.33464C16.668 4.6763 15.3263 3.33464 13.668 3.33464H6.33464ZM14.3763 4.58464C14.6526 4.58464 14.9175 4.69438 15.1129 4.88973C15.3082 5.08508 15.418 5.35003 15.418 5.6263C15.418 5.90257 15.3082 6.16752 15.1129 6.36287C14.9175 6.55822 14.6526 6.66797 14.3763 6.66797C14.1 6.66797 13.8351 6.55822 13.6397 6.36287C13.4444 6.16752 13.3346 5.90257 13.3346 5.6263C13.3346 5.35003 13.4444 5.08508 13.6397 4.88973C13.8351 4.69438 14.1 4.58464 14.3763 4.58464ZM10.0013 5.83464C11.1064 5.83464 12.1662 6.27362 12.9476 7.05502C13.729 7.83643 14.168 8.89623 14.168 10.0013C14.168 11.1064 13.729 12.1662 12.9476 12.9476C12.1662 13.729 11.1064 14.168 10.0013 14.168C8.89623 14.168 7.83643 13.729 7.05502 12.9476C6.27362 12.1662 5.83464 11.1064 5.83464 10.0013C5.83464 8.89623 6.27362 7.83643 7.05502 7.05502C7.83643 6.27362 8.89623 5.83464 10.0013 5.83464ZM10.0013 7.5013C9.33826 7.5013 8.70238 7.76469 8.23353 8.23353C7.76469 8.70238 7.5013 9.33826 7.5013 10.0013C7.5013 10.6643 7.76469 11.3002 8.23353 11.7691C8.70238 12.2379 9.33826 12.5013 10.0013 12.5013C10.6643 12.5013 11.3002 12.2379 11.7691 11.7691C12.2379 11.3002 12.5013 10.6643 12.5013 10.0013C12.5013 9.33826 12.2379 8.70238 11.7691 8.23353C11.3002 7.76469 10.6643 7.5013 10.0013 7.5013Z" fill="#3A3A3A"/>
-          </svg>
-
+        </svg>
       ),
-      url: socialLinks.instagram_url,
+      url: links.instagram_url,
       name: "Instagram",
     },
     {
       key: "whatsapp_url",
       svg: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15.8737 4.09301C15.1096 3.32144 14.1995 2.70965 13.1966 2.29332C12.1937 1.87698 11.1179 1.66442 10.032 1.66801C5.48203 1.66801 1.7737 5.37635 1.7737 9.92635C1.7737 11.3847 2.15703 12.8013 2.8737 14.0513L1.70703 18.3347L6.08203 17.1847C7.29036 17.843 8.6487 18.193 10.032 18.193C14.582 18.193 18.2904 14.4847 18.2904 9.93468C18.2904 7.72635 17.432 5.65135 15.8737 4.09301ZM10.032 16.793C8.7987 16.793 7.59036 16.4597 6.53203 15.8347L6.28203 15.6847L3.68203 16.368L4.3737 13.8347L4.20703 13.5763C3.52165 12.4822 3.1578 11.2174 3.15703 9.92635C3.15703 6.14301 6.24036 3.05968 10.0237 3.05968C11.857 3.05968 13.582 3.77635 14.8737 5.07635C15.5134 5.7129 16.0203 6.47013 16.3651 7.30412C16.7098 8.13811 16.8855 9.03225 16.882 9.93468C16.8987 13.718 13.8154 16.793 10.032 16.793ZM13.7987 11.6597C13.5904 11.5597 12.5737 11.0597 12.3904 10.9847C12.1987 10.918 12.0654 10.8847 11.9237 11.0847C11.782 11.293 11.3904 11.7597 11.2737 11.893C11.157 12.0347 11.032 12.0513 10.8237 11.943C10.6154 11.843 9.9487 11.618 9.16536 10.918C8.5487 10.368 8.14036 9.69301 8.01536 9.48468C7.8987 9.27635 7.9987 9.16801 8.10703 9.05968C8.1987 8.96801 8.31536 8.81801 8.41536 8.70135C8.51536 8.58468 8.55703 8.49301 8.6237 8.35968C8.69036 8.21801 8.65703 8.10135 8.60703 8.00135C8.55703 7.90135 8.14036 6.88468 7.9737 6.46801C7.80703 6.06801 7.63203 6.11801 7.50703 6.10968H7.10703C6.96536 6.10968 6.7487 6.15968 6.55703 6.36801C6.3737 6.57635 5.84036 7.07635 5.84036 8.09301C5.84036 9.10968 6.58203 10.093 6.68203 10.2263C6.78203 10.368 8.14036 12.4513 10.207 13.343C10.6987 13.5597 11.082 13.6847 11.382 13.7763C11.8737 13.9347 12.3237 13.9097 12.682 13.8597C13.082 13.8013 13.907 13.3597 14.0737 12.8763C14.2487 12.393 14.2487 11.9847 14.1904 11.893C14.132 11.8013 14.007 11.7597 13.7987 11.6597Z" fill="#3A3A3A"/>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 xs:w-5 xs:h-5">
+          <path d="M15.8737 4.09301C15.1096 3.32144 14.1995 2.70965 13.1966 2.29332C12.1937 1.87698 11.1179 1.66442 10.032 1.66801C5.48203 1.66801 1.7737 5.37635 1.7737 9.92635C1.7737 11.3847 2.15703 12.8013 2.8737 14.0513L1.707031 18.3347L6.08203 17.1847C7.29036 17.843 8.6487 18.193 10.032 18.193C14.582 18.193 18.2904 14.4847 18.2904 9.93468C18.2904 7.72635 17.432 5.65135 15.8737 4.09301ZM10.032 16.793C8.7987 16.793 7.59036 16.4597 6.53203 15.8347L6.28203 15.6847L3.68203 16.368L4.3737 13.8347L4.20703 13.5763C3.52165 12.4822 3.1578 11.2174 3.15703 9.92635C3.15703 6.14301 6.24036 3.05968 10.0237 3.05968C11.857 3.05968 13.582 3.77635 14.8737 5.07635C15.5134 5.7129 16.0203 6.47013 16.3651 7.30412C16.7098 8.13811 16.8855 9.03225 16.882 9.93468C16.8987 13.718 13.8154 16.793 10.032 16.793ZM13.7987 11.6597C13.5904 11.5597 12.5737 11.0597 12.3904 10.9847C12.1987 10.918 12.0654 10.8847 11.9237 11.0847C11.782 11.293 11.3904 11.7597 11.2737 11.893C11.157 12.0347 11.032 12.0513 10.8237 11.943C10.6154 11.843 9.9487 11.618 9.16536 10.918C8.5487 10.368 8.14036 9.69301 8.01536 9.48468C7.8987 9.27635 7.9987 9.16801 8.10703 9.05968C8.1987 8.96801 8.31536 8.81801 8.41536 8.70135C8.51536 8.58468 8.55703 8.49301 8.6237 8.35968C8.69036 8.21801 8.65703 8.10135 8.60703 8.00135C8.55703 7.90135 8.14036 6.88468 7.9737 6.46801C7.80703 6.06801 7.63203 6.11801 7.50703 6.10968H7.10703C6.96536 6.10968 6.7487 6.15968 6.55703 6.36801C6.3737 6.57635 5.84036 7.07635 5.84036 8.09301C5.84036 9.10968 6.58203 10.093 6.68203 10.2263C6.78203 10.368 8.14036 12.4513 10.207 13.343C10.6987 13.5597 11.082 13.6847 11.382 13.7763C11.8737 13.9347 12.3237 13.9097 12.682 13.8597C13.082 13.8013 13.907 13.3597 14.0737 12.8763C14.2487 12.393 14.2487 11.9847 14.1904 11.893C14.132 11.8013 14.007 11.7597 13.7987 11.6597Z" fill="#3A3A3A"/>
         </svg>
-
       ),
-      url: socialLinks.whatsapp_url,
+      url: links.whatsapp_url,
       name: "WhatsApp",
     },
     {
       key: "website_url",
       svg: (
-        <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="18"
+          height="16"
+          viewBox="0 0 18 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4 xs:w-5 xs:h-5"
+        >
           <path
             d="M16.5 4.25H12.75V1.75C12.75 1.41848 12.6183 1.10054 12.3839 0.866116C12.1495 0.631696 11.8315 0.5 11.5 0.5H6.5C6.16848 0.5 5.85054 0.631696 5.61612 0.866116C5.3817 1.10054 5.25 1.41848 5.25 1.75V4.25H1.5C1.16848 4.25 0.850537 4.3817 0.616116 4.61612C0.381696 4.85054 0.25 5.16848 0.25 5.5V14.25C0.25 14.5815 0.381696 14.8995 0.616116 15.1339C0.850537 15.3683 1.16848 15.5 1.5 15.5H16.5C16.8315 15.5 17.1495 15.3683 17.3839 15.1339C17.6183 14.8995 17.75 14.5815 17.75 14.25V5.5C17.75 5.16848 17.6183 4.85054 17.3839 4.61612C17.1495 4.3817 16.8315 4.25 16.5 4.25ZM6.5 1.75H11.5V4.25H6.5V1.75ZM1.5 14.25V5.5H16.5V14.25H1.5Z"
             fill="#3A3A3A"
           />
         </svg>
       ),
-      url: socialLinks.website_url,
+      url: links.website_url,
       name: "Website",
     },
   ];
 
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-wrap gap-2 xs:gap-3">
       {socialIcons.map(({ key, svg, url, name }) =>
         url && url.trim() ? (
-          <a
+          <div 
             key={key}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors group relative"
-            title={name}
+            className="relative group"
+            onMouseEnter={() => setHoveredLink(key)}
+            onMouseLeave={() => setHoveredLink(null)}
           >
-            {svg}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              {name}
+            <div className="relative">
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center p-2 xs:p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 hover:scale-105 shadow-sm"
+                title={name}
+              >
+                {svg}
+              </a>
+              
+              {/* Remove button - only show for own profile */}
+              {isOwnProfile && (
+                    <div className={`
+                      absolute -top-2 -right-2 transition-all duration-200
+                      ${hoveredLink === key ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
+                    `}>
+                      <button
+                        onClick={() => handleRemoveLink(key as keyof SocialLinks)}
+                        disabled={removingLink === key}
+                        className="w-3 h-3 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 hover:shadow-xl"
+                        title={`Remove ${name}`}
+                      >
+                        {removingLink === key ? (
+                          <div className="animate-spin rounded-full h-3 w-3 xs:h-4 xs:w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <svg 
+                            width="12" 
+                            height="12" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="3"
+                            className="xs:w-4 xs:h-4"
+                          >
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
             </div>
-          </a>
+
+            {/* Platform name tooltip */}
+            <div className={`
+              absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
+              px-2 py-1 text-xs text-white bg-gray-800 rounded 
+              transition-all duration-200 pointer-events-none
+              ${hoveredLink === key ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+            `}>
+              {name}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+            </div>
+          </div>
         ) : null
       )}
     </div>
   );
 };
-
 
 // Helper function for platform names
 const getPlatformName = (platform: keyof SocialLinks): string => {
@@ -1323,33 +1436,38 @@ return (
                             </button>
                           </div>
 
-                          {/* Social Links Section */}
-                      <div className="mt-4">
-                        {isOwnProfile ? (
-                          hasSocialLinks() ? (
-                            <div className="flex flex-col gap-3 mt-3">
-                              <div className="flex flex-row items-center justify-center">
-                                <SocialLinksDisplay />
+                         {/* Social Links Section */}
+                          <div className="mt-3 xs:mt-4">
+                            {isOwnProfile ? (
+                              hasSocialLinks() ? (
+                                <div className="flex flex-col gap-2 xs:gap-3">
+                                  <div className="flex flex-row items-center gap-1.5 xs:gap-2">
+                                    <SocialLinksDisplay />
+                                    <button
+                                      onClick={() => setIsLinksModalOpen(true)}
+                                      className="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+                                      title="Edit links"
+                                    >
+                                      <Pencil size={9} className="xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
                                 <button
                                   onClick={() => setIsLinksModalOpen(true)}
-                                  className="flex items-center gap-1 text-sm text-[#750015] hover:underline"
+                                  className="flex items-center gap-1.5 xs:gap-2 px-3 xs:px-4 py-1.5 xs:py-2 rounded-full bg-[#750015] text-white hover:bg-[#a0001f] transition-colors text-xs xs:text-sm"
                                 >
-                                  <span>+</span>
+                                  <span>Add Social Links</span>
                                 </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setIsLinksModalOpen(true)}
-                              className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#750015] text-white hover:bg-[#a0001f] transition-colors"
-                            >
-                              <span>Add Link</span>
-                            </button>
-                          )
-                        ) : (
-                          hasSocialLinks() && <SocialLinksDisplay />
-                        )}
-                      </div>
+                              )
+                            ) : (
+                              hasSocialLinks() && (
+                                <div className="mt-2 xs:mt-3">
+                                  <SocialLinksDisplay />
+                                </div>
+                              )
+                            )}
+                          </div>
 
 
                         </div>
@@ -1362,7 +1480,7 @@ return (
               <div className="mt-4 mb-4 bg-gray-200 h-px w-[92%] md:w-full flex-col">
                 <div className="text-[20px] font-semibold">
                   Posts
-                  <div className="h-[3px] w-20 bg-[#750015]"></div>
+                  <div className="h-[3px] w-14 bg-[#750015]"></div>
                 </div>
               </div>
 

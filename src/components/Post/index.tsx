@@ -1079,59 +1079,53 @@ useEffect(() => {
               )}
           </div>
           <div className="h-[0.6px] w-92 bg-gray-300"></div>
-          <Text
-              as="p"
-              className={`w-full text-[10px] sm:text-[10px] lg:text-[16px] font-normal text-black bg-transparent border-none outline-none focus:outline-none whitespace-pre-line break-words overflow-hidden ${
-                !expanded && isLong ? "max-h-32 overflow-hidden" : ""
-              }`}
-              style={{ 
-                lineHeight: "1.6",
-                wordBreak: "break-word", // This ensures long words break
-                overflowWrap: "break-word", // Alternative for better browser support
-              }}
-            >
+          <div className="space-y-2">
+              {/* Header for reversed posts */}
               {isRevarsed && (
-                <div className="text-xs text-gray-500 mb-2">
+                <div className="text-xs text-gray-500">
                   <span>
                     <b>{post.author_name || post.author_display_name}</b> revarsed
                   </span>
                 </div>
               )}
-              {isRevarsed ? (
-                <div className="border p-2 rounded bg-gray-50 whitespace-pre-line break-words">
-                  <Text className="text-[12px] sm:text-[14px] lg:text-[16px] break-words">
-                    {makeLinksClickable(post.original_post?.content || "")}
-                  </Text>
-                  <div className="text-xs text-gray-400 mt-1">
-                    by{" "}
-                    {post.original_post?.author_name ||
-                      post.original_post?.author_display_name}
-                  </div>
+
+              {/* Content container */}
+              <div className={isRevarsed ? "border p-3 rounded-lg bg-gray-50" : ""}>
+                {/* Content */}
+                <div
+                  className={`prose prose-sm max-w-none whitespace-pre-line break-words ${
+                    !expanded && isLong ? "line-clamp-3" : ""
+                  }`}
+                  style={{ lineHeight: "1.6" }}
+                >
+                  {isRevarsed ? (
+                    <>
+                      <div className="text-[14px] leading-relaxed">
+                        {makeLinksClickable(post.original_post?.content || "")}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        by {post.original_post?.author_name || post.original_post?.author_display_name}
+                      </div>
+                    </>
+                  ) : (
+                    makeLinksClickable(displayContent)
+                  )}
                 </div>
-              ) : (
-                makeLinksClickable(displayContent)
-              )}
-              {!expanded && isLong && (
-                <button
-                  className="text-[#750015] font-semibold mt-2 hover:underline block"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpanded(true);
-                  }}
-                >
-                  Read more
-                </button>
-              )}
-              
-              {expanded && isLong && (
-                <button
-                  className="text-[#750015] font-semibold mt-2 hover:underline"
-                  onClick={() => setExpanded(false)}
-                >
-                  Show less
-                </button>
-              )}
-            </Text>
+
+                {/* Read more/less button */}
+                {isLong && (
+                  <button
+                    className="text-[#750015] font-semibold hover:underline mt-2 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpanded(!expanded);
+                    }}
+                  >
+                    {expanded ? "Show less" : "Read more"}
+                  </button>
+                )}
+              </div>
+            </div>
 
 
 
