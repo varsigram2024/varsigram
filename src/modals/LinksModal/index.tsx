@@ -1,7 +1,7 @@
 // modals/LinksModal/index.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { X, Plus, ExternalLink } from 'lucide-react';
+import { X, Plus, ExternalLink, Trash2 } from 'lucide-react'; // Added Trash2 icon
 import { toast } from 'react-hot-toast';
 
 interface SocialLinksData {
@@ -9,9 +9,8 @@ interface SocialLinksData {
   twitter_url: string | null;
   instagram_url: string | null;
   website_url: string | null;
-  whatsapp_url: string | null; // ✅ new
+  whatsapp_url: string | null;
 }
-
 
 interface LinksModalProps {
   isOpen: boolean;
@@ -30,81 +29,73 @@ const LinksModal: React.FC<LinksModalProps> = ({
   fetchUserData,
   accountType
 }) => {
-    const [userLinks, setUserLinks] = useState<SocialLinksData>({
+  const [userLinks, setUserLinks] = useState<SocialLinksData>({
     linkedin_url: null,
     twitter_url: null,
     instagram_url: null,
     website_url: null,
-    whatsapp_url: null, // 🆕
-    });
+    whatsapp_url: null,
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   // Initialize form with existing links when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Map the user profile data to our form state
-            setUserLinks({
-            linkedin_url: userProfile?.user?.linkedin_url || null,
-            twitter_url: userProfile?.user?.twitter_url || null,
-            instagram_url: userProfile?.user?.instagram_url || null,
-            website_url: userProfile?.user?.website_url || null,
-            whatsapp_url: userProfile?.user?.whatsapp_url || null, // 🆕
-            });
+      setUserLinks({
+        linkedin_url: userProfile?.user?.linkedin_url || null,
+        twitter_url: userProfile?.user?.twitter_url || null,
+        instagram_url: userProfile?.user?.instagram_url || null,
+        website_url: userProfile?.user?.website_url || null,
+        whatsapp_url: userProfile?.user?.whatsapp_url || null,
+      });
     }
   }, [isOpen, userProfile]);
 
-// In LinksModal - fix the API endpoint
-const handleSaveLinks = async () => {
-  if (!token) {
-    toast.error('Please log in to save links');
-    return;
-  }
-
-  setIsLoading(true);
-  try {
-    // Prepare data for API - convert empty strings to null
-    // Build payload dynamically — only include non-empty fields
-const payload: Record<string, string> = {};
-
-Object.entries(userLinks).forEach(([key, value]) => {
-  if (value && value.trim() !== "") {
-    // Convert website_url → portfolio_url (backend expects this key)
-    if (key === "website_url") {
-      payload["portfolio_url"] = value.trim();
-    } else {
-      payload[key] = value.trim();
+  const handleSaveLinks = async () => {
+    if (!token) {
+      toast.error('Please log in to save links');
+      return;
     }
-  }
-});
 
+    setIsLoading(true);
+    try {
+      // Prepare data for API - convert empty strings to null
+      const payload: Record<string, string> = {};
 
+      Object.entries(userLinks).forEach(([key, value]) => {
+        if (value && value.trim() !== "") {
+          if (key === "website_url") {
+            payload["portfolio_url"] = value.trim();
+          } else {
+            payload[key] = value.trim();
+          }
+        }
+      });
 
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-    
-    // FIX: Use the correct endpoint - remove /v1/ or add it based on your API
-    await axios.patch(`${API_BASE_URL}/profile/social-links/`, payload, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  },
-});
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+      
+      await axios.patch(`${API_BASE_URL}/profile/social-links/`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    
-    await fetchUserData();
-    onClose();
-    toast.success('Links saved successfully!');
-  } catch (err: any) {
-    console.error('Error saving links:', err);
-    if (err.response?.data) {
-      const errorMessages = Object.values(err.response.data).flat().join(', ');
-      toast.error(`Failed to save links: ${errorMessages}`);
-    } else {
-      toast.error('Failed to save links. Please try again.');
+      await fetchUserData();
+      onClose();
+      toast.success('Links saved successfully!');
+    } catch (err: any) {
+      console.error('Error saving links:', err);
+      if (err.response?.data) {
+        const errorMessages = Object.values(err.response.data).flat().join(', ');
+        toast.error(`Failed to save links: ${errorMessages}`);
+      } else {
+        toast.error('Failed to save links. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleInputChange = (platform: keyof SocialLinksData, value: string) => {
     setUserLinks(prev => ({
@@ -113,15 +104,26 @@ Object.entries(userLinks).forEach(([key, value]) => {
     }));
   };
 
+  // NEW: Function to remove a specific link
+  const handleRemoveLink = (platform: keyof SocialLinksData) => {
+    setUserLinks(prev => ({
+      ...prev,
+      [platform]: null
+    }));
+  };
+
+  // NEW: Function to check if a link has content
+  const hasLinkContent = (platform: keyof SocialLinksData): boolean => {
+    return !!userLinks[platform] && userLinks[platform]!.trim() !== '';
+  };
+
   const formatUrl = (url: string | null, platform: keyof SocialLinksData): string => {
     if (!url) return '';
     
-    // If it's already a full URL, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
 
-    // Format based on platform
     switch (platform) {
       case 'linkedin_url':
         return `https://linkedin.com/in/${url.replace(/^@/, '')}`;
@@ -138,8 +140,8 @@ Object.entries(userLinks).forEach(([key, value]) => {
 
   const getPlaceholder = (platform: keyof SocialLinksData): string => {
     switch (platform) {
-         case 'whatsapp_url':
-      return 'https://wa.me/234XXXXXXXXXX';
+      case 'whatsapp_url':
+        return 'https://wa.me/234XXXXXXXXXX';
       case 'linkedin_url':
         return 'https://linkedin.com/in/yourprofile';
       case 'twitter_url':
@@ -153,16 +155,16 @@ Object.entries(userLinks).forEach(([key, value]) => {
     }
   };
 
-        const getPlatformName = (platform: keyof SocialLinksData): string => {
-        switch (platform) {
-            case 'linkedin_url': return 'LinkedIn';
-            case 'twitter_url': return 'Twitter';
-            case 'instagram_url': return 'Instagram';
-            case 'website_url': return 'Portfolio Website';
-            case 'whatsapp_url': return 'WhatsApp'; // 🆕
-            default: return platform;
-        }
-        };
+  const getPlatformName = (platform: keyof SocialLinksData): string => {
+    switch (platform) {
+      case 'linkedin_url': return 'LinkedIn';
+      case 'twitter_url': return 'Twitter';
+      case 'instagram_url': return 'Instagram';
+      case 'website_url': return 'Portfolio Website';
+      case 'whatsapp_url': return 'WhatsApp';
+      default: return platform;
+    }
+  };
 
   const getPlatformIcon = (platform: keyof SocialLinksData) => {
     const icons = {
@@ -177,10 +179,10 @@ Object.entries(userLinks).forEach(([key, value]) => {
         </svg>
       ),
       whatsapp_url: (
-      <svg className="w-6 h-6" viewBox="0 0 32 32" fill="currentColor">
-        <path d="M16.001 3C9.384 3 4 8.383 4 15c0 2.552.77 4.937 2.102 6.916L4 29l7.301-2.063A11.949 11.949 0 0 0 16 27c6.617 0 12-5.383 12-12S22.618 3 16.001 3zM16 25a9.012 9.012 0 0 1-4.605-1.27l-.33-.196-4.334 1.226 1.234-4.223-.211-.338A9.014 9.014 0 0 1 7 15c0-4.963 4.037-9 9-9s9 4.037 9 9-4.037 9-9 9zm4.992-6.623c-.273-.136-1.615-.797-1.865-.885-.25-.091-.432-.136-.613.136-.182.273-.704.885-.863 1.067-.159.182-.318.205-.591.068-.273-.136-1.154-.426-2.197-1.36-.812-.724-1.36-1.616-1.519-1.89-.159-.273-.017-.42.12-.556.124-.123.273-.319.41-.478.137-.159.182-.273.273-.455.091-.182.046-.341-.023-.478-.068-.136-.613-1.477-.84-2.023-.223-.537-.45-.464-.613-.472l-.523-.009c-.182 0-.478.068-.728.341-.25.273-.955.933-.955 2.272s.978 2.637 1.114 2.818c.136.182 1.924 2.941 4.66 4.127.652.282 1.162.45 1.559.576.655.208 1.25.179 1.719.109.524-.078 1.615-.659 1.843-1.296.227-.637.227-1.183.159-1.296-.068-.114-.25-.182-.523-.318z"/>
-      </svg>
-    ),
+        <svg className="w-6 h-6" viewBox="0 0 32 32" fill="currentColor">
+          <path d="M16.001 3C9.384 3 4 8.383 4 15c0 2.552.77 4.937 2.102 6.916L4 29l7.301-2.063A11.949 11.949 0 0 0 16 27c6.617 0 12-5.383 12-12S22.618 3 16.001 3zM16 25a9.012 9.012 0 0 1-4.605-1.27l-.33-.196-4.334 1.226 1.234-4.223-.211-.338A9.014 9.014 0 0 1 7 15c0-4.963 4.037-9 9-9s9 4.037 9 9-4.037 9-9 9zm4.992-6.623c-.273-.136-1.615-.797-1.865-.885-.25-.091-.432-.136-.613.136-.182.273-.704.885-.863 1.067-.159.182-.318.205-.591.068-.273-.136-1.154-.426-2.197-1.36-.812-.724-1.36-1.616-1.519-1.89-.159-.273-.017-.42.12-.556.124-.123.273-.319.41-.478.137-.159.182-.273.273-.455.091-.182.046-.341-.023-.478-.068-.136-.613-1.477-.84-2.023-.223-.537-.45-.464-.613-.472l-.523-.009c-.182 0-.478.068-.728.341-.25.273-.955.933-.955 2.272s.978 2.637 1.114 2.818c.136.182 1.924 2.941 4.66 4.127.652.282 1.162.45 1.559.576.655.208 1.25.179 1.719.109.524-.078 1.615-.659 1.843-1.296.227-.637.227-1.183.159-1.296-.068-.114-.25-.182-.523-.318z"/>
+        </svg>
+      ),
       instagram_url: (
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069-3.204 0-3.584-.012-4.849-.069-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
@@ -238,17 +240,33 @@ Object.entries(userLinks).forEach(([key, value]) => {
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#750015] focus:border-transparent transition-colors"
                   />
                   
-                  {userLinks[platform] && (
-                    <a
-                      href={formatUrl(userLinks[platform], platform)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                    >
-                      <ExternalLink size={16} />
-                      Test
-                    </a>
-                  )}
+                  {/* Action buttons container */}
+                  <div className="flex gap-2">
+                    {/* Test Link Button - only show if there's content */}
+                    {hasLinkContent(platform) && (
+                      <a
+                        href={formatUrl(userLinks[platform], platform)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                      >
+                        <ExternalLink size={16} />
+                        Test
+                      </a>
+                    )}
+                    
+                    {/* Remove Button - only show if there's content to remove */}
+                    {hasLinkContent(platform) && (
+                      <button
+                        onClick={() => handleRemoveLink(platform)}
+                        className="flex items-center gap-2 px-4 py-3 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
+                        title={`Remove ${getPlatformName(platform)} link`}
+                      >
+                        <Trash2 size={16} />
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
