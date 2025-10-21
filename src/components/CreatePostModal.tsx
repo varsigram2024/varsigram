@@ -92,7 +92,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         onClick={onClose}
       />
       <div 
-        className="relative z-[10000] bg-white md:rounded-lg w-full h-[100vh] lg:w-[50vw] lg:h-[50vh] shadow-2xl flex flex-col transition-all duration-200"
+        className="relative z-[10000] bg-white md:rounded-lg w-full h-auto lg:w-[50vw] shadow-2xl flex flex-col transition-all duration-200"
         style={{ 
           height: modalHeight,
           maxHeight: isKeyboardOpen ? 'none' : '90vh'
@@ -117,12 +117,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </div>
 
         {/* Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 flex flex-col h-[100vh] overflow-y-auto p-4">
           <textarea
             ref={textareaRef}
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
-            placeholder="What's good?"
+            placeholder="What did you learn today?"
             className="w-full p-2 border-none outline-none resize-none text-lg mb-4 h-full placeholder-gray-400"
             rows={4}
           />

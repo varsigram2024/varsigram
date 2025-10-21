@@ -3,6 +3,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { Link, useNavigate, useLocation, NavLink } from "react-router-dom";
 import { Text } from "../Text";
 import { Img } from "../Img";
+import userProfile from '../../../public/images/userprofile.svg';
 
 export default function BottomNav() {
   const navigate = useNavigate();
@@ -226,7 +227,7 @@ export default function BottomNav() {
 
          <div 
           onClick={() => handleNavigation('opportunities')}
-          className="flex self-stretch gap-5 px-5 py-4 items-center cursor-pointer hover:bg-gray-50"
+          className="flex self-stretch items-center cursor-pointer hover:bg-gray-50"
         >
           <svg width="24" height="24" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" className={currentPage === 'opportunities' ? 'text-[#750015]' : 'text-gray-600'}>
             <path d="M5.09 14.25C4.70052 13.3697 4.49955 12.4176 4.5 11.455C4.5 7.752 7.41 4.75 11 4.75C14.59 4.75 17.5 7.753 17.5 11.456C17.5003 12.4183 17.2993 13.37 16.91 14.25" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -245,9 +246,9 @@ export default function BottomNav() {
           }`}
         >
           <Img 
-                      src={user?.profile_pic_url || "/images/userprofile.svg"} 
+                      src={user?.profile_pic_url || userProfile} 
                       alt="Profile" 
-                      className="h-[32px] w-[32px] rounded-[50%]" 
+                      className="h-[24px] w-[24px] rounded-[50%]" 
                     />
 
                    

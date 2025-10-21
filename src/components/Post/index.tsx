@@ -135,6 +135,7 @@ export const Post: React.FC<PostProps> = ({
   const location = useLocation();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(10);
 
 
   // Add this function to check reward status from backend
@@ -185,6 +186,9 @@ const sendFinalPoints = async () => {
     windowTimerRef.current = null;
   }
 
+  // Reset timer
+  setTimeLeft(10);
+
   const finalPoints = clickCountRef.current;
   
   if (finalPoints === 0) {
@@ -192,6 +196,7 @@ const sendFinalPoints = async () => {
     setIsWindowActive(false);
     return;
   }
+
 
   try {
     hasSentRef.current = true;
@@ -261,6 +266,17 @@ const sendFinalPoints = async () => {
   }
 };
 
+
+useEffect(() => {
+  return () => {
+    if (windowTimerRef.current) {
+      clearTimeout(windowTimerRef.current);
+    }
+  };
+}, []);
+
+
+
 // Update the handlePoint function to include the missing logic
 const handlePoint = async (e: React.MouseEvent) => {
   e.stopPropagation();
@@ -271,13 +287,11 @@ const handlePoint = async (e: React.MouseEvent) => {
     return;
   }
 
-  // If user has already rewarded this post, show message and return early
   if (hasRewarded) {
     toast.error("You've already rewarded this post!");
     return;
   }
 
-  // Prevent clicking after window closed
   if (!isWindowActive && clickCountRef.current > 0) {
     toast.error("Reward window has closed. Points cannot be changed.");
     return;
@@ -286,11 +300,24 @@ const handlePoint = async (e: React.MouseEvent) => {
   // Start the 10-second window on first click
   if (!isWindowActive) {
     setIsWindowActive(true);
+    setTimeLeft(10); // Reset timer
     hasSentRef.current = false;
     console.log("⏰ 10-second reward window started");
     
+    // Start countdown timer
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
     windowTimerRef.current = setTimeout(() => {
       console.log("⏰ Reward window closed - sending final points");
+      clearInterval(timer);
       sendFinalPoints();
     }, 10000);
   }
@@ -1178,37 +1205,72 @@ useEffect(() => {
 
 
                
-                  <div className="flex items-center gap-2 cursor-pointer">
-                    <svg
+                 <div className="flex items-center gap-2 cursor-pointer">
+                    <div className="relative">
+                      {/* Progress ring for timer */}
+                      {isWindowActive && !hasRewarded && (
+                        <svg
+                          width="28"
+                          height="28"
+                          className="absolute -top-2 -left-2 transform -rotate-90"
+                          style={{ position: 'absolute' }}
+                        >
+                          <circle
+                            cx="14"
+                            cy="14"
+                            r="12"
+                            stroke="#e5e7eb"
+                            strokeWidth="2"
+                            fill="none"
+                          />
+                          <circle
+                            cx="14"
+                            cy="14"
+                            r="12"
+                            stroke="#750015"
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeDasharray={75.4} // 2 * π * 12 ≈ 75.4
+                            strokeDashoffset={75.4 * (1 - (timeLeft / 10))} // Animate from 10 to 0 seconds
+                            className="transition-all duration-100 ease-linear"
+                          />
+                        </svg>
+                      )}
+                      
+                      <svg
                         onClick={handlePoint}
-                        width="15"
-                        height="12"
+                        width="24"
+                        height="24"
                         viewBox="0 0 15 12"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
-                        className={`transition-transform active:scale-90 ${
+                        className={`relative transition-transform active:scale-90 ${
                           hasRewarded 
-                            ? "opacity-50 cursor-not-allowed" 
+                            ? "opacity-100 cursor-not-allowed" 
                             : (isRewarding || (isWindowActive && clickCountRef.current >= 5)
                               ? "opacity-50 cursor-not-allowed" 
                               : "opacity-100 cursor-pointer hover:opacity-80")
-                        }`}
+                        } ${isWindowActive && !hasRewarded ? 'pulse-animation' : ''}`}
                       >
                         <path
                           d="M14.0964 6.76172V9.04743C14.0964 10.0379 11.7085 11.3331 8.76302 11.3331C5.8175 11.3331 3.42969 10.0379 3.42969 9.04743V7.14267"
-                          stroke="#750015"
+                          stroke={hasRewarded ? "#750015" : "#750015"}
+                          fill={hasRewarded ? "#750015" : "none"}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                         <path
                           d="M3.65234 7.34155C4.31139 8.21622 6.34949 9.03679 8.76168 9.03679C11.7072 9.03679 14.095 7.81317 14.095 6.76174C14.095 6.17127 13.343 5.52441 12.1628 5.07031"
-                          stroke="#750015"
+                          stroke={hasRewarded ? "#750015" : "#750015"}
+                          fill={hasRewarded ? "#750015" : "none"}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                         <path
                           d="M11.8112 2.95312V5.23884C11.8112 6.22932 9.42339 7.52455 6.47786 7.52455C3.53234 7.52455 1.14453 6.22932 1.14453 5.23884V2.95312"
-                          stroke="#750015"
+                          stroke={hasRewarded ? "#750015" : "#750015"}
+                          fill={hasRewarded ? "#750015" : "none"}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
@@ -1216,21 +1278,22 @@ useEffect(() => {
                           fillRule="evenodd"
                           clipRule="evenodd"
                           d="M6.47786 5.22721C9.42339 5.22721 11.8112 4.00359 11.8112 2.95216C11.8112 1.90073 9.42339 0.667969 6.47786 0.667969C3.53234 0.667969 1.14453 1.89997 1.14453 2.95216C1.14453 4.00359 3.53234 5.22721 6.47786 5.22721Z"
-                          stroke="#750015"
+                          stroke={hasRewarded ? "#750015" : "#750015"}
+                          fill={hasRewarded ? "#750015" : "none"}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                       </svg>
+                    </div>
 
                     <span className={`text-sm font-medium ${
                       hasRewarded ? 'text-green-600' : (rewardPoints > 0 ? 'text-[#750015]' : 'text-gray-500')
                     }`}>
                       {isWindowActive && !hasRewarded && (
                         <span className="text-xs text-orange-500 ml-1">
-                          ({clickCountRef.current}/5 points)
+                          ({clickCountRef.current}/5 points) • {timeLeft}s
                         </span>
                       )}
-                      
                     </span>
                   </div>
 
@@ -1250,24 +1313,22 @@ useEffect(() => {
                   className="flex items-center gap-2 cursor-pointer" 
                   onClick={handleCommentClick}
                 >
-                  <Img
-                    src="/images/vectors/vars.svg"
-                    alt="Comment"
-                    className="h-[20px] w-[20px]"
-                  />
+                  <svg width="24" height="24" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 25C15.3734 25 17.6935 24.2962 19.6668 22.9776C21.6402 21.6591 23.1783 19.7849 24.0866 17.5922C24.9948 15.3995 25.2324 12.9867 24.7694 10.6589C24.3064 8.33115 23.1635 6.19295 21.4853 4.51472C19.8071 2.83649 17.6689 1.6936 15.3411 1.23058C13.0133 0.767559 10.6005 1.0052 8.4078 1.91345C6.21509 2.8217 4.34094 4.35977 3.02236 6.33316C1.70379 8.30655 1 10.6266 1 13C1 14.984 1.48 16.8533 2.33333 18.5027L1 25L7.49733 23.6667C9.14533 24.5187 11.0173 25 13 25Z" stroke="#750015" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+
                   <Text as="p" className="text-[14px] font-normal">
                     {post.comment_count}
                   </Text>
                 </div>
 
             {/* Share button */}
-            <div className="relative">
-              <Img
-                src="/images/vectors/share.svg"
-                alt="Share"
-                className="h-[16px] w-[16px] lg:h-[32px] lg:w-[32px] cursor-pointer"
-                onClick={handleShareClick}
-              />
+            <div className="relative"
+                onClick={handleShareClick}>
+              <svg width="22" height="24" viewBox="0 0 22 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14.3333 5.66667L7.66667 10.3333M14.3333 20.3333L7.66667 15.6667M7.66667 13C7.66667 13.8841 7.31548 14.7319 6.69036 15.357C6.06523 15.9821 5.21739 16.3333 4.33333 16.3333C3.44928 16.3333 2.60143 15.9821 1.97631 15.357C1.35119 14.7319 1 13.8841 1 13C1 12.1159 1.35119 11.2681 1.97631 10.643C2.60143 10.0179 3.44928 9.66667 4.33333 9.66667C5.21739 9.66667 6.06523 10.0179 6.69036 10.643C7.31548 11.2681 7.66667 12.1159 7.66667 13ZM21 21.6667C21 22.5507 20.6488 23.3986 20.0237 24.0237C19.3986 24.6488 18.5507 25 17.6667 25C16.7826 25 15.9348 24.6488 15.3096 24.0237C14.6845 23.3986 14.3333 22.5507 14.3333 21.6667C14.3333 20.7826 14.6845 19.9348 15.3096 19.3096C15.9348 18.6845 16.7826 18.3333 17.6667 18.3333C18.5507 18.3333 19.3986 18.6845 20.0237 19.3096C20.6488 19.9348 21 20.7826 21 21.6667ZM21 4.33333C21 5.21739 20.6488 6.06523 20.0237 6.69036C19.3986 7.31548 18.5507 7.66667 17.6667 7.66667C16.7826 7.66667 15.9348 7.31548 15.3096 6.69036C14.6845 6.06523 14.3333 5.21739 14.3333 4.33333C14.3333 3.44928 14.6845 2.60143 15.3096 1.97631C15.9348 1.35119 16.7826 1 17.6667 1C18.5507 1 19.3986 1.35119 20.0237 1.97631C20.6488 2.60143 21 3.44928 21 4.33333Z" stroke="#750015" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+
             </div>
           </div>
 
