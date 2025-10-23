@@ -556,6 +556,7 @@ useEffect(() => {
 // Also add debugging to fetchUserData
 const fetchUserData = async () => {
   try {
+    setIsLoading(true); // Ensure loading starts
     const response = await axios.get(
       `${API_BASE_URL}/profile/${display_name_slug}/`,
       {
@@ -1160,11 +1161,7 @@ return (
             <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
             </div>
-          ) : !userProfile ? (
-            <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
-              <Text>User not found</Text>
-            </div>
-          ) : (
+          ) : userProfile ? (
             <>
                 {/* Cover photo section */}
                 <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full animate-fade-in">
@@ -1587,7 +1584,11 @@ return (
                 </div>
               )}
             </>
-          )}
+            ) : (
+              <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
+                <Text>User not found</Text>
+              </div>
+            )}
         </div>
 
         {/* Profile Side Panel */}

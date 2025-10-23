@@ -11,10 +11,21 @@ interface CreatePostModalProps {
   setSelectedFiles: (files: File[]) => void;
   isUploading: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: (selectedTag: string) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleRemoveFile: (index: number) => void;
 }
+
+// Define available tags - Added "explore" for main feed
+const POST_TAGS = [
+  { value: 'explore', label: 'Explore' },
+  { value: 'updates', label: 'Updates' },
+  { value: 'questions', label: 'Questions' },
+  { value: 'milestones', label: 'Milestones' },
+  { value: 'relatable', label: 'Relatables' }
+] as const;
+
+type PostTag = typeof POST_TAGS[number]['value'];
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({
   newPostContent,
@@ -31,21 +42,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [modalHeight, setModalHeight] = useState<string>('90vh');
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<PostTag>('explore'); // Default to 'explore'
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Handle keyboard visibility and adjust modal height
   useEffect(() => {
     const handleResize = () => {
       const visualViewport = window.visualViewport;
       if (visualViewport) {
-        // Check if keyboard is open (viewport height is significantly reduced)
         const isKeyboardVisible = visualViewport.height < window.screen.height * 0.7;
         setIsKeyboardOpen(isKeyboardVisible);
         
         if (isKeyboardVisible) {
-          // When keyboard is open, make modal fit the remaining space
           setModalHeight(`${visualViewport.height}px`);
         } else {
-          // When keyboard is closed, use 90vh
           setModalHeight('90vh');
         }
       }
@@ -56,7 +66,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       visualViewport.addEventListener('resize', handleResize);
     }
 
-    // Initial check
     handleResize();
 
     return () => {
@@ -75,11 +84,31 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
   }, []);
 
-  // Handle outside click to close modal
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!(event.target as Element).closest('.tag-dropdown')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const handleSubmit = () => {
+    onSubmit(selectedTag);
+  };
+
+  const handleTagSelect = (tag: PostTag) => {
+    setSelectedTag(tag);
+    setIsDropdownOpen(false);
   };
 
   return ReactDOM.createPortal(
@@ -106,14 +135,52 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           >
             <CloseSVG />
           </button>
-          <Text className="text-lg font-bold">Create Post</Text>
-          <Button
-            onClick={onSubmit}
-            disabled={isUploading || (!newPostContent.trim() && selectedFiles.length === 0)}
-            className="px-4 py-1 text-white bg-[#750015] rounded-full hover:bg-[#8c001a] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {isUploading ? 'Posting...' : 'Post'}
-          </Button>
+          
+          <div className='flex gap-5 items-center justify-center'>
+            {/* Tag Dropdown */}
+                <div className="tag-dropdown relative">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-sm hover:bg-gray-50 transition-colors"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  >
+                    <span>{POST_TAGS.find(tag => tag.value === selectedTag)?.label}</span>
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {POST_TAGS.map((tag) => (
+                        <button
+                          key={tag.value}
+                          type="button"
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                            selectedTag === tag.value ? 'bg-[#750015] text-white hover:bg-[#8c001a]' : ''
+                          } first:rounded-t-lg last:rounded-b-lg`}
+                          onClick={() => handleTagSelect(tag.value)}
+                        >
+                          {tag.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={isUploading || (!newPostContent.trim() && selectedFiles.length === 0)}
+                  className="px-4 py-1 text-white bg-[#750015] rounded-full hover:bg-[#8c001a] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {isUploading ? 'Posting...' : 'Post'}
+                </button>
+          </div>
         </div>
 
         {/* Content Area - Scrollable */}

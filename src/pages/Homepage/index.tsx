@@ -43,6 +43,7 @@ interface Post {
   account_type?: string;
   is_verified?: boolean;
   exclusive?: boolean;
+  tags?: string; // Update from 'tag' to 'tags' to match backend
 }
 
 interface User {
@@ -120,7 +121,7 @@ const useIntersectionObserver = (
 
 export default function Homepage() {
   const [searchBarValue, setSearchBarValue] = useState("");
-  const [activeTab, setActiveTab] = useState<'forYou' | 'official'>('forYou');
+  const [activeTab, setActiveTab] = useState<'forYou' | 'official' | 'questions' | 'relatable' | 'updates' | 'milestones'>('forYou');
   const [error, setError] = useState<string | null>(null);
   const { token, user, logout, isLoading: isAuthLoading } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -135,6 +136,29 @@ export default function Homepage() {
   const [feedSessionId, setFeedSessionId] = useState<string | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [questionsPosts, setQuestionsPosts] = useState<Post[]>([]);
+  const [questionsNextCursor, setQuestionsNextCursor] = useState<string | null>(null);
+  const [questionsHasMore, setQuestionsHasMore] = useState<boolean>(true);
+  const [isQuestionsLoading, setIsQuestionsLoading] = useState<boolean>(false);
+  const [lastQuestionsFetch, setLastQuestionsFetch] = useState<number>(0);
+
+  const [relatablePosts, setRelatablePosts] = useState<Post[]>([]);
+  const [relatableNextCursor, setRelatableNextCursor] = useState<string | null>(null);
+  const [relatableHasMore, setRelatableHasMore] = useState<boolean>(true);
+  const [isRelatableLoading, setIsRelatableLoading] = useState<boolean>(false);
+  const [lastRelatableFetch, setLastRelatableFetch] = useState<number>(0);
+
+  const [updatesPosts, setUpdatesPosts] = useState<Post[]>([]);
+  const [updatesNextCursor, setUpdatesNextCursor] = useState<string | null>(null);
+  const [updatesHasMore, setUpdatesHasMore] = useState<boolean>(true);
+  const [isUpdatesLoading, setIsUpdatesLoading] = useState<boolean>(false);
+  const [lastUpdatesFetch, setLastUpdatesFetch] = useState<number>(0);
+
+  const [milestonesPosts, setMilestonesPosts] = useState<Post[]>([]);
+  const [milestonesNextCursor, setMilestonesNextCursor] = useState<string | null>(null);
+  const [milestonesHasMore, setMilestonesHasMore] = useState<boolean>(true);
+  const [isMilestonesLoading, setIsMilestonesLoading] = useState<boolean>(false);
+  const [lastMilestonesFetch, setLastMilestonesFetch] = useState<number>(0);
 
 
 
@@ -162,21 +186,61 @@ export default function Homepage() {
   const [searchFaculty, setSearchFaculty] = useState('');
   const [searchDepartment, setSearchDepartment] = useState('');
 
-  const currentPosts = useMemo(() => {
-    return activeTab === 'forYou' ? feedPosts : officialPosts;
-  }, [activeTab, feedPosts, officialPosts]);
+const currentPosts = useMemo(() => {
+  switch (activeTab) {
+    case 'forYou': return feedPosts;
+    case 'official': return officialPosts;
+    case 'questions': return questionsPosts;
+    case 'relatable': return relatablePosts;
+    case 'updates': return updatesPosts;
+    case 'milestones': return milestonesPosts;
+    default: return feedPosts;
+  }
+}, [activeTab, feedPosts, officialPosts, questionsPosts, relatablePosts, updatesPosts, milestonesPosts]);
 
-  const currentHasMore = useMemo(() => {
-    return activeTab === 'forYou' ? feedHasMore : officialHasMore;
-  }, [activeTab, feedHasMore, officialHasMore]);
 
-  const currentNextCursor = useMemo(() => {
-    return activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
-  }, [activeTab, feedNextCursor, officialNextCursor]);
+const currentHasMore = useMemo(() => {
+  switch (activeTab) {
+    case 'forYou': return feedHasMore;
+    case 'official': return officialHasMore;
+    case 'questions': return questionsHasMore;
+    case 'relatable': return relatableHasMore;
+    case 'updates': return updatesHasMore;
+    case 'milestones': return milestonesHasMore;
+    default: return feedHasMore;
+  }
+}, [activeTab, feedHasMore, officialHasMore, questionsHasMore, relatableHasMore, updatesHasMore, milestonesHasMore]);
 
-  const currentIsLoading = useMemo(() => {
-    return activeTab === 'forYou' ? isFeedLoading : isOfficialLoading;
-  }, [activeTab, isFeedLoading, isOfficialLoading]);
+
+
+
+
+const currentNextCursor = useMemo(() => {
+  switch (activeTab) {
+    case 'forYou': return feedNextCursor;
+    case 'official': return officialNextCursor;
+    case 'questions': return questionsNextCursor;
+    case 'relatable': return relatableNextCursor;
+    case 'updates': return updatesNextCursor;
+    case 'milestones': return milestonesNextCursor;
+    default: return feedNextCursor;
+  }
+}, [activeTab, feedNextCursor, officialNextCursor, questionsNextCursor, relatableNextCursor, updatesNextCursor, milestonesNextCursor]);
+
+
+
+
+const currentIsLoading = useMemo(() => {
+  switch (activeTab) {
+    case 'forYou': return isFeedLoading;
+    case 'official': return isOfficialLoading;
+    case 'questions': return isQuestionsLoading;
+    case 'relatable': return isRelatableLoading;
+    case 'updates': return isUpdatesLoading;
+    case 'milestones': return isMilestonesLoading;
+    default: return isFeedLoading;
+  }
+}, [activeTab, isFeedLoading, isOfficialLoading, isQuestionsLoading, isRelatableLoading, isUpdatesLoading, isMilestonesLoading]);
 
 
 
@@ -200,20 +264,16 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
     setIsOfficialLoading(true);
   }
 
-  try {
+   try {
     const endpoint = type === 'feed' ? '/feed/' : '/official/';
-
-    // Use consistent cursor-based pagination for both endpoints
     const params: any = {
       page_size: 10,
     };
     
-    // For both feed and official, use cursor-based pagination
     if (startAfter) {
       params.start_after = startAfter;
     }
     
-    // Only include session_id for feed if we have one
     if (type === 'feed' && feedSessionId && !startAfter) {
       params.session_id = feedSessionId;
     }
@@ -231,48 +291,47 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
     let results, nextCursor, sessionId;
 
     if (type === 'feed') {
-      // Feed endpoint returns different structure
       results = response.data.results || [];
       sessionId = response.data.session_id;
-      nextCursor = response.data.next_cursor; // Feed should also return next_cursor
+      nextCursor = response.data.next_cursor;
       
-      // If feed doesn't return next_cursor, we need to implement a fallback
       if (!nextCursor && results.length >= 10) {
-        // Use the last post's ID as the next cursor
         nextCursor = results[results.length - 1]?.id || null;
       }
     } else {
-      // Official endpoint
       results = response.data.results || [];
       nextCursor = response.data.next_cursor;
     }
+
+    // Ensure all posts have the tags field properly set
+    results = results.map((post: Post) => ({
+      ...post,
+      tags: post.tags || '', // Ensure tags field exists, default to empty string
+    }));
 
     if (Array.isArray(results) && results.length > 0) {
       if (type === 'feed') {
         setFeedPosts(prev => {
           if (startAfter) {
-            // Append for pagination
             const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            const uniquePosts = results.filter((post: Post) => !existingIds.has(post.id));
             return [...prev, ...uniquePosts];
           } else {
-            // Replace for initial load
             return results;
           }
         });
         
-        // Update feed-specific state
         if (sessionId && !startAfter) {
           setFeedSessionId(sessionId);
         }
         setFeedNextCursor(nextCursor);
-        setFeedHasMore(!!nextCursor || results.length >= 10); // Has more if we got a full page
+        setFeedHasMore(!!nextCursor || results.length >= 10);
         setLastFeedFetch(now);
       } else {
         setOfficialPosts(prev => {
           if (startAfter) {
             const existingIds = new Set(prev.map(p => p.id));
-            const uniquePosts = results.filter(post => !existingIds.has(post.id));
+            const uniquePosts = results.filter((post: Post) => !existingIds.has(post.id));
             return [...prev, ...uniquePosts];
           } else {
             return results;
@@ -283,12 +342,8 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
         setLastOfficialFetch(now);
       }
     } else if (Array.isArray(results) && results.length === 0) {
-      // No more posts
-      if (type === 'feed') {
-        setFeedHasMore(false);
-      } else {
-        setOfficialHasMore(false);
-      }
+      if (type === 'feed') setFeedHasMore(false);
+      else setOfficialHasMore(false);
     }
   } catch (error) {
     console.error(`Error fetching ${type} posts:`, error);
@@ -303,24 +358,222 @@ const fetchPosts = async (type: 'feed' | 'official', startAfter: string | null =
   }
 };
 
- const loadMorePosts = async () => {
+
+const fetchTaggedPosts = async (tag: 'questions' | 'relatable' | 'updates' | 'milestones', 
+  startAfter: string | null = null) => {
+  if (!token) return;
+
+  const now = Date.now();
+  
+  // Map frontend tab names to backend PLURAL endpoints
+  const endpointMap = {
+    'questions': 'questions',    // Changed from 'question' to 'questions'
+    'relatable': 'relatable',    // Keep as 'relatable' (already plural)
+    'updates': 'updates',        // Changed from 'update' to 'updates'
+    'milestones': 'milestones'   // Changed from 'milestone' to 'milestones'
+  };
+  
+  const backendEndpoint = endpointMap[tag];
+
+  switch (tag) {
+    case 'questions': setIsQuestionsLoading(true); break;
+    case 'relatable': setIsRelatableLoading(true); break;
+    case 'updates': setIsUpdatesLoading(true); break;
+    case 'milestones': setIsMilestonesLoading(true); break;
+  }
+
+  try {
+    // Use the plural backend endpoint
+    const endpoint = `/posts/${backendEndpoint}/`;
+    const params: any = {
+      page_size: 10,
+    };
+    
+    if (startAfter) {
+      params.start_after = startAfter;
+    }
+
+    console.log(`Fetching ${tag} posts from endpoint: ${endpoint}`);
+
+    const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      params,
+    });
+
+    // Ensure the response has the expected structure
+    if (!response.data || !Array.isArray(response.data.results)) {
+      console.error(`Invalid response structure for ${tag} posts:`, response.data);
+      throw new Error(`Invalid response structure for ${tag} posts`);
+    }
+
+    console.log(`${tag} response:`, response.data);
+
+    let results = response.data.results || [];
+    const nextCursor = response.data.next_cursor;
+
+    // Ensure all posts have the tags field properly set with the backend tag value
+    results = results.map((post: Post) => ({
+      ...post,
+      tags: post.tags || backendEndpoint, // Use the backend tag value
+    }));
+
+    // Update state based on tag
+    switch (tag) {
+      case 'questions':
+        setQuestionsPosts(prev => {
+          if (startAfter) {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter((post: Post) => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            return results;
+          }
+        });
+        setQuestionsNextCursor(nextCursor);
+        setQuestionsHasMore(!!nextCursor || results.length >= 10);
+        setLastQuestionsFetch(now);
+        break;
+
+      case 'relatable':
+        setRelatablePosts(prev => {
+          if (startAfter) {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter((post: Post) => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            return results;
+          }
+        });
+        setRelatableNextCursor(nextCursor);
+        setRelatableHasMore(!!nextCursor || results.length >= 10);
+        setLastRelatableFetch(now);
+        break;
+
+      case 'updates':
+        setUpdatesPosts(prev => {
+          if (startAfter) {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter((post: Post) => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            return results;
+          }
+        });
+        setUpdatesNextCursor(nextCursor);
+        setUpdatesHasMore(!!nextCursor || results.length >= 10);
+        setLastUpdatesFetch(now);
+        break;
+
+      case 'milestones':
+        setMilestonesPosts(prev => {
+          if (startAfter) {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniquePosts = results.filter((post: Post) => !existingIds.has(post.id));
+            return [...prev, ...uniquePosts];
+          } else {
+            return results;
+          }
+        });
+        setMilestonesNextCursor(nextCursor);
+        setMilestonesHasMore(!!nextCursor || results.length >= 10);
+        setLastMilestonesFetch(now);
+        break;
+    }
+
+  } 
+  
+  catch (error) {
+    console.error(`Error fetching ${tag} posts:`, error);
+    switch (tag) {
+      case 'questions': setQuestionsHasMore(false); break;
+      case 'relatable': setRelatableHasMore(false); break;
+      case 'updates': setUpdatesHasMore(false); break;
+      case 'milestones': setMilestonesHasMore(false); break;
+    }
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      console.error(`Endpoint not found: /posts/${backendEndpoint}/`);
+      toast.error(`Unable to load ${tag} posts at this time`);
+    } else if (axios.isAxiosError(error)) {
+      console.error(`HTTP ${error.response?.status} error for ${tag} posts:`, error.response?.data);
+    }
+  } finally {
+    switch (tag) {
+      case 'questions': setIsQuestionsLoading(false); break;
+      case 'relatable': setIsRelatableLoading(false); break;
+      case 'updates': setIsUpdatesLoading(false); break;
+      case 'milestones': setIsMilestonesLoading(false); break;
+    }
+  }
+};
+
+const loadMorePosts = async () => {
   if (currentIsLoading || !currentHasMore) return;
 
-  const nextCursor = activeTab === 'forYou' ? feedNextCursor : officialNextCursor;
-  
-  await fetchPosts(activeTab === 'forYou' ? 'feed' : 'official', nextCursor);
+  switch (activeTab) {
+    case 'forYou':
+      await fetchPosts('feed', feedNextCursor);
+      break;
+    case 'official':
+      await fetchPosts('official', officialNextCursor);
+      break;
+    case 'questions':
+      await fetchTaggedPosts('questions', questionsNextCursor);
+      break;
+    case 'relatable':
+      await fetchTaggedPosts('relatable', relatableNextCursor);
+      break;
+    case 'updates':
+      await fetchTaggedPosts('updates', updatesNextCursor);
+      break;
+    case 'milestones':
+      await fetchTaggedPosts('milestones', milestonesNextCursor);
+      break;
+  }
 };
+
 
 useEffect(() => {
   if (!token) return;
 
-  // Always refresh when switching tabs or on initial load
-  if (activeTab === 'forYou' && (feedPosts.length === 0 || feedNextCursor === null)) {
-    fetchPosts('feed', null);
-  } else if (activeTab === 'official' && (officialPosts.length === 0 || officialNextCursor === null)) {
-    fetchPosts('official', null);
+  // Refresh when switching tabs or on initial load
+  switch (activeTab) {
+    case 'forYou':
+      if (feedPosts.length === 0 || feedNextCursor === null) {
+        fetchPosts('feed', null);
+      }
+      break;
+    case 'official':
+      if (officialPosts.length === 0 || officialNextCursor === null) {
+        fetchPosts('official', null);
+      }
+      break;
+    case 'questions':
+      if (questionsPosts.length === 0 || questionsNextCursor === null) {
+        fetchTaggedPosts('questions', null);
+      }
+      break;
+    case 'relatable':
+      if (relatablePosts.length === 0 || relatableNextCursor === null) {
+        fetchTaggedPosts('relatable', null);
+      }
+      break;
+    case 'updates':
+      if (updatesPosts.length === 0 || updatesNextCursor === null) {
+        fetchTaggedPosts('updates', null);
+      }
+      break;
+    case 'milestones':
+      if (milestonesPosts.length === 0 || milestonesNextCursor === null) {
+        fetchTaggedPosts('milestones', null);
+      }
+      break;
   }
 }, [activeTab, token]);
+
+
 
   const loadMoreCallback = useCallback(() => {
     if (!currentIsLoading && currentHasMore && token) {
@@ -357,73 +610,124 @@ useEffect(() => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleCreatePost = async () => {
-    if (!newPostContent.trim() && selectedFiles.length === 0) {
-      toast.error('Please enter some content or select at least one image');
-      return;
+// Update the tag mapping to match backend expectations (singular for creation)
+const TAG_MAPPING = {
+  'explore': 'explore',
+  'updates': 'update',      // Singular for backend when creating posts
+  'questions': 'question',  // Singular for backend when creating posts
+  'milestones': 'milestone', // Singular for backend when creating posts
+  'relatable': 'relatable'  // Singular for backend when creating posts
+} as const;
+
+const handleCreatePost = async (selectedTag: string = 'explore') => {
+  if (!newPostContent.trim() && selectedFiles.length === 0) {
+    toast.error('Please enter some content or select at least one image');
+    return;
+  }
+
+  try {
+    setIsUploading(true);
+
+    if (!token) {
+      throw new Error('Authentication token is missing.');
     }
+    const mediaUrls = await Promise.all(
+      selectedFiles.map(file => uploadPostMedia(file, token as string))
+    );
 
-    try {
-      setIsUploading(true);
+    // Map frontend tag to backend expected value
+    const backendTag = TAG_MAPPING[selectedTag as keyof typeof TAG_MAPPING] || 'explore';
 
-      if (!token) {
-        throw new Error('Authentication token is missing.');
+    const postData: any = {
+      content: newPostContent,
+      author_username: user?.email || '',
+      author_profile_pic_url: user?.profile_pic_url || null,
+      media_urls: mediaUrls,
+      timestamp: new Date().toISOString(),
+      like_count: 0,
+      comment_count: 0,
+      share_count: 0,
+      has_liked: false,
+      trending_score: 0,
+      last_engagement_at: null,
+      author_display_name: user?.fullName || 'Unknown User',
+      author_name: user?.fullName || 'Unknown User',
+      author_display_name_slug: user?.display_name_slug || '',
+      author_faculty: (user as any)?.faculty || '',
+      author_department: (user as any)?.department || '',
+      author_exclusive: (user as any)?.exclusive || false,
+      tags: backendTag, // Use the mapped backend tag value
+    };
+
+    // Always use the main posts endpoint for creation
+    const endpoint = '/posts/';
+
+    console.log('Creating post with data:', postData);
+
+    const response = await axios.post(`${API_BASE_URL}${endpoint}`, postData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const completePost = {
+      ...response.data,
+      author_display_name: user?.fullName || 'Unknown User',
+      author_name: user?.fullName || 'Unknown User',
+      author_display_name_slug: user?.display_name_slug || '',
+      author_faculty: (user as any)?.faculty || '',
+      author_department: (user as any)?.department || '',
+      author_exclusive: (user as any)?.exclusive || false,
+      author_profile_pic_url: user?.profile_pic_url || null,
+      tags: backendTag, // Use the backend tag value
+    };
+
+    // Add the new post to the main feed (always)
+    setFeedPosts(prev => [completePost, ...prev]);
+    
+    // Also add to the specific tag feed if we're not using "explore"
+    if (selectedTag !== 'explore') {
+      switch (selectedTag) {
+        case 'questions':
+          setQuestionsPosts(prev => [completePost, ...prev]);
+          break;
+        case 'relatable':
+          setRelatablePosts(prev => [completePost, ...prev]);
+          break;
+        case 'updates':
+          setUpdatesPosts(prev => [completePost, ...prev]);
+          break;
+        case 'milestones':
+          setMilestonesPosts(prev => [completePost, ...prev]);
+          break;
       }
-      const mediaUrls = await Promise.all(
-        selectedFiles.map(file => uploadPostMedia(file, token as string))
-      );
-
-      const postData = {
-        content: newPostContent,
-        author_username: user?.email || '',
-        author_profile_pic_url: user?.profile_pic_url || null,
-        media_urls: mediaUrls,
-        timestamp: new Date().toISOString(),
-        like_count: 0,
-        comment_count: 0,
-        share_count: 0,
-        has_liked: false,
-        trending_score: 0,
-        last_engagement_at: null,
-        author_display_name: user?.fullName || 'Unknown User',
-        author_name: user?.fullName || 'Unknown User',
-        author_display_name_slug: user?.display_name_slug || '',
-        author_faculty: (user as any)?.faculty || '',
-        author_department: (user as any)?.department || '',
-        author_exclusive: (user as any)?.exclusive || false
-      };
-
-      const response = await axios.post(`${API_BASE_URL}/posts/`, postData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const completePost = {
-        ...response.data,
-        author_display_name: user?.fullName || 'Unknown User',
-        author_name: user?.fullName || 'Unknown User',
-        author_display_name_slug: user?.display_name_slug || '',
-        author_faculty: (user as any)?.faculty || '',
-        author_department: (user as any)?.department || '',
-        author_exclusive: (user as any)?.exclusive || false,
-        author_profile_pic_url: user?.profile_pic_url || null
-      };
-
-      setFeedPosts(prev => [completePost, ...prev]);
-
-      setNewPostContent('');
-      setSelectedFiles([]);
-      setIsCreatePostOpen(false);
-      toast.success('Post created successfully');
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post. Please try again.');
-    } finally {
-      setIsUploading(false);
     }
-  };
+
+    setNewPostContent('');
+    setSelectedFiles([]);
+    setIsCreatePostOpen(false);
+    toast.success('Post created successfully');
+    
+    console.log('Post created successfully:', completePost);
+  } catch (error: any) {
+    console.error('Error creating post:', error);
+    
+    // Better error logging
+    if (error.response) {
+      console.error('Response error:', error.response.data);
+      console.error('Response status:', error.response.status);
+      toast.error(`Failed to create post: ${error.response.data?.detail || error.response.statusText}`);
+    } else if (error.request) {
+      console.error('Request error:', error.request);
+      toast.error('Failed to create post: No response from server');
+    } else {
+      toast.error('Failed to create post. Please try again.');
+    }
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const handleCancelPost = () => {
     setNewPostContent('');
@@ -431,28 +735,53 @@ useEffect(() => {
     setIsCreatePostOpen(false);
   };
 
-  const handlePostUpdate = (updatedPost: Post) => {
-    setFeedPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === updatedPost.id ? updatedPost : post
-      )
-    );
-    setOfficialPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === updatedPost.id ? updatedPost : post
-      )
-    );
-  };
+const handlePostUpdate = (updatedPost: Post) => {
+  setFeedPosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    )
+  );
+  setOfficialPosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    )
+  );
+  setQuestionsPosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    )
+  );
+  setRelatablePosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    )
+  );
+  setUpdatesPosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    )
+  );
+  setMilestonesPosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    )
+  );
+};
 
-  const handlePostDelete = async (post: Post) => {
-    if (!post.id) {
-      toast.error('Cannot delete post: missing post identifier');
-      return;
-    }
+const handlePostDelete = async (post: Post) => {
+  if (!post.id) {
+    toast.error('Cannot delete post: missing post identifier');
+    return;
+  }
 
-    setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-    setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
-  };
+  setFeedPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+  setOfficialPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+  setQuestionsPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+  setRelatablePosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+  setUpdatesPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+  setMilestonesPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
+};
+
 
   const handlePostEdit = (post: Post) => {
     setEditingPost(post);
@@ -489,22 +818,21 @@ useEffect(() => {
     navigate(`/${path}`);
   };
 
-  const handlePostLikeUpdate = (postId: string, like_count: number, has_liked: boolean) => {
-    setFeedPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? { ...post, like_count, has_liked }
-          : post
-      )
+const handlePostLikeUpdate = (postId: string, like_count: number, has_liked: boolean) => {
+  const updateFunction = (prevPosts: Post[]) =>
+    prevPosts.map((post) =>
+      post.id === postId
+        ? { ...post, like_count, has_liked }
+        : post
     );
-    setOfficialPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? { ...post, like_count, has_liked }
-          : post
-      )
-    );
-  };
+
+  setFeedPosts(updateFunction);
+  setOfficialPosts(updateFunction);
+  setQuestionsPosts(updateFunction);
+  setRelatablePosts(updateFunction);
+  setUpdatesPosts(updateFunction);
+  setMilestonesPosts(updateFunction);
+};
 
 
   useEffect(() => {
@@ -576,20 +904,48 @@ function throttle(func, limit) {
     }
   };
 
-  const refreshPosts = async () => {
-  if (activeTab === 'forYou') {
-    setFeedPosts([]);
-    setFeedNextCursor(null);
-    setFeedSessionId(null);
-    setFeedHasMore(true);
-    await fetchPosts('feed', null);
-  } else {
-    setOfficialPosts([]);
-    setOfficialNextCursor(null);
-    setOfficialHasMore(true);
-    await fetchPosts('official', null);
+const refreshPosts = async () => {
+  switch (activeTab) {
+    case 'forYou':
+      setFeedPosts([]);
+      setFeedNextCursor(null);
+      setFeedSessionId(null);
+      setFeedHasMore(true);
+      await fetchPosts('feed', null);
+      break;
+    case 'official':
+      setOfficialPosts([]);
+      setOfficialNextCursor(null);
+      setOfficialHasMore(true);
+      await fetchPosts('official', null);
+      break;
+    case 'questions':
+      setQuestionsPosts([]);
+      setQuestionsNextCursor(null);
+      setQuestionsHasMore(true);
+      await fetchTaggedPosts('questions', null);
+      break;
+    case 'relatable':
+      setRelatablePosts([]);
+      setRelatableNextCursor(null);
+      setRelatableHasMore(true);
+      await fetchTaggedPosts('relatable', null);
+      break;
+    case 'updates':
+      setUpdatesPosts([]);
+      setUpdatesNextCursor(null);
+      setUpdatesHasMore(true);
+      await fetchTaggedPosts('updates', null);
+      break;
+    case 'milestones':
+      setMilestonesPosts([]);
+      setMilestonesNextCursor(null);
+      setMilestonesHasMore(true);
+      await fetchTaggedPosts('milestones', null);
+      break;
   }
 };
+
 
   const handleSearch = async () => {
   // Don't search if no criteria provided (matches API requirement)
@@ -834,29 +1190,41 @@ useEffect(() => {
           </div>
          
           {/* Tabs */}
-          <div className="lg:mt-5 mt-8 flex justify-between animate-slide-up">
-            <div
-              className={`flex px-3 cursor-pointer ${activeTab === 'forYou' ? 'border-b-2 border-solid border-[#750015]' : ''}`}
-              onClick={() => setActiveTab('forYou')}
-            >
-              <Text as="p" className={`text-[14px] font-medium md:text-[22px] ${activeTab === 'forYou' ? '' : '!text-[#adacb2]'}`}>
-                For you
-              </Text>
-            </div>
-            <div
-              className={`flex border-b-2 border-solid px-1.5 cursor-pointer ${activeTab === 'official' ? 'border-[#750015]' : 'border-transparent'}`}
-              onClick={() => setActiveTab('official')}
-            >
-              <Text
-                as="p"
-                className={`text-[14px] font-medium md:text-[22px] ${
-                  activeTab === 'official' ? '' : '!text-[#adacb2]'
-                }`}
-              >
-                Official
-              </Text>
+          <div className="lg:mt-5 mt-8 flex justify-between animate-slide-up overflow-x-auto scrollbar-hide">
+            <div className="flex items-center justify-between space-x-4">
+              {[
+                { key: 'forYou', label: 'Explore' },
+                { key: 'official', label: 'Official' },
+                { key: 'questions', label: 'Questions' },
+                { key: 'relatable', label: 'Relatable' },
+                { key: 'updates', label: 'Updates' },
+                { key: 'milestones', label: 'Milestones' },
+                
+              ].map((tab) => (
+                <div
+                  key={tab.key}
+                  className={`flex px-3 cursor-pointer whitespace-nowrap ${
+                    activeTab === tab.key 
+                      ? 'border-b-2 border-solid border-[#750015]' 
+                      : ''
+                  }`}
+                  onClick={() => setActiveTab(tab.key as any)}
+                >
+                  <Text 
+                    as="p" 
+                    className={`text-[14px] font-medium md:text-[16px] ${
+                      activeTab === tab.key 
+                        ? 'text-[#750015]' 
+                        : '!text-[#adacb2]'
+                    }`}
+                  >
+                    {tab.label}
+                  </Text>
+                </div>
+              ))}
             </div>
           </div>
+
         </div>
 
         {/* Create Post Section */}
@@ -869,7 +1237,7 @@ useEffect(() => {
               setSelectedFiles={setSelectedFiles}
               isUploading={isUploading}
               onClose={handleCancelPost}
-              onSubmit={handleCreatePost}
+              onSubmit={handleCreatePost} // Now this passes the selected tag
               handleFileChange={handleFileChange}
               handleRemoveFile={handleRemoveFile}
             />
@@ -924,12 +1292,17 @@ useEffect(() => {
           )}
 
           {!currentIsLoading && !isAuthLoading && !error && currentPosts.length === 0 && (
-            <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
-              <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
-                No {activeTab === 'forYou' ? 'posts' : 'official posts'} in your feed yet.
-              </Text>
-            </div>
-          )}
+              <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
+                <Text as="p" className="text-[14px] font-normal text-[#adacb2]">
+                  No {activeTab === 'forYou' ? 'posts' : 
+                      activeTab === 'questions' ? 'questions' :
+                      activeTab === 'relatable' ? 'relatable posts' :
+                      activeTab === 'updates' ? 'updates' :
+                      activeTab === 'milestones' ? 'milestones' :
+                      'official posts'} in your feed yet.
+                </Text>
+              </div>
+            )}
 
           {!isAuthLoading && currentPosts.length > 0 && (
             <div className="space-y-6 w-full">
