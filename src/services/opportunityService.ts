@@ -12,6 +12,7 @@ const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
   </svg>
 `)}`;
 
+// services/opportunityService.ts - Update interface
 export interface Opportunity {
   id: string;
   title: string;
@@ -27,6 +28,7 @@ export interface Opportunity {
   excerpt: string | null;
   requirements: string | null;
   tags: string[] | null;
+  link: string | null;
   createdBy?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -63,6 +65,9 @@ export const categoryToTypeMap = {
   'OTHER': 'Others'
 } as const;
 
+
+
+// services/opportunityService.ts - Update transform function
 const transformOpportunity = (data: any): Opportunity => {
   const excerpt = data.excerpt || (data.description ? `${data.description.substring(0, 100)}${data.description.length > 100 ? '...' : ''}` : 'No description available');
 
@@ -87,6 +92,7 @@ const transformOpportunity = (data: any): Opportunity => {
     excerpt: excerpt,
     requirements: data.requirements,
     tags: data.tags || [],
+    link: data.link || null, 
     createdBy: data.createdBy,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
@@ -184,8 +190,9 @@ export const opportunityService = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
-      return transformOpportunity(data);
+      const responseData = await response.json();
+      const opportunityData = responseData.data || responseData;
+      return transformOpportunity(opportunityData);
     } catch (error) {
       console.error('Get opportunity by ID failed:', error);
       return null;

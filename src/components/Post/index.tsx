@@ -432,76 +432,193 @@ useEffect(() => {
   
 
 
+const isVideoUrl = (url: string): boolean => {
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.webm', '.m4v', '.mkv'];
+    return videoExtensions.some(ext => 
+        url.toLowerCase().includes(ext) || 
+        url.toLowerCase().includes('video/')
+    );
+};
+
+// Update the renderMedia function to handle videos
 const renderMedia = () => {
-  if (!post.media_urls || post.media_urls.length === 0) return null;
+    if (!post.media_urls || post.media_urls.length === 0) return null;
 
-  const mediaToShow = post.media_urls.slice(0, 4);
+    const mediaToShow = post.media_urls.slice(0, 4);
+    const videos = mediaToShow.filter(url => isVideoUrl(url));
+    const images = mediaToShow.filter(url => !isVideoUrl(url));
 
-  // Different layouts based on number of images
-  if (mediaToShow.length === 1) {
+    // Handle mixed media (videos and images)
+    if (videos.length > 0) {
+        // For simplicity, show the first video prominently
+        return (
+            <div className="mt-4">
+                <video
+                    controls
+                    className="w-full max-h-96 object-cover rounded-lg"
+                    poster={images[0]} // Optional: use first image as poster
+                >
+                    <source src={videos[0]} type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+                
+                {/* Show remaining images in grid if any */}
+                {images.length > 0 && (
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                        {images.map((url, index) => (
+                            <Img
+                                key={index}
+                                src={url}
+                                alt={`Post media ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => openImagePreview(index + videos.length)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Original image rendering logic for images only
+    if (images.length === 1) {
+        return (
+            <div className="mt-4">
+                <Img
+                    src={images[0]}
+                    alt="Post media"
+                    className="w-full max-h-96 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => openImagePreview(0)}
+                />
+            </div>
+        );
+    } else if (images.length === 2) {
+        return (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+                {images.map((url, index) => (
+                    <Img
+                        key={index}
+                        src={url}
+                        alt={`Post media ${index + 1}`}
+                        className="w-full h-64 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                        onClick={() => openImagePreview(index)}
+                    />
+                ))}
+            </div>
+        );
+    } else if (images.length === 3) {
+        return (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+                <Img
+                    src={images[0]}
+                    alt="Post media 1"
+                    className="w-full h-64 object-cover rounded-lg row-span-2 cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => openImagePreview(0)}
+                />
+                <Img
+                    src={images[1]}
+                    alt="Post media 2"
+                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => openImagePreview(1)}
+                />
+                <Img
+                    src={images[2]}
+                    alt="Post media 3"
+                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => openImagePreview(2)}
+                />
+            </div>
+        );
+    } else if (images.length >= 4) {
+        return (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+                {images.slice(0, 4).map((url, index) => (
+                    <Img
+                        key={index}
+                        src={url}
+                        alt={`Post media ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                        onClick={() => openImagePreview(index)}
+                    />
+                ))}
+            </div>
+        );
+    }
+
+    return null;
+};
+
+
+const renderMediaPreview = () => {
+    if (!imagePreview.isOpen) return null;
+
+    const currentMedia = imagePreview.images[imagePreview.currentIndex];
+    const isVideo = isVideoUrl(currentMedia);
+
     return (
-      <div className="mt-4">
-        <Img
-          src={mediaToShow[0]}
-          alt="Post media"
-          className="w-full max-h-96 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-          onClick={() => openImagePreview(0)}
-        />
-      </div>
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+            <button
+                onClick={closeImagePreview}
+                className="absolute top-4 right-4 text-white p-2 z-10"
+            >
+                <X size={24} />
+            </button>
+
+            {isVideo ? (
+                <div className="relative w-full max-w-4xl max-h-full">
+                    <video
+                        controls
+                        autoPlay
+                        className="w-full h-full max-h-[80vh] object-contain"
+                    >
+                        <source src={currentMedia} type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            ) : (
+                // Your existing image preview logic
+                <div className="relative w-full max-w-4xl max-h-full">
+                    <Img
+                        src={currentMedia}
+                        alt="Preview"
+                        className="w-full h-full max-h-[80vh] object-contain"
+                    />
+                    
+                    {imagePreview.images.length > 1 && (
+                        <>
+                            <button
+                                onClick={goToPrevImage}
+                                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 bg-black bg-opacity-50 rounded-full"
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                            <button
+                                onClick={goToNextImage}
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 bg-black bg-opacity-50 rounded-full"
+                            >
+                                <ChevronRight size={24} />
+                            </button>
+                            
+                            {/* Thumbnail navigation */}
+                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                                {imagePreview.images.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => selectImage(index)}
+                                        className={`w-3 h-3 rounded-full ${
+                                            index === imagePreview.currentIndex 
+                                            ? 'bg-white' 
+                                            : 'bg-gray-400'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
     );
-  } else if (mediaToShow.length === 2) {
-    return (
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {mediaToShow.map((url, index) => (
-          <Img
-            key={index}
-            src={url}
-            alt={`Post media ${index + 1}`}
-            className="w-full h-64 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-            onClick={() => openImagePreview(index)}
-          />
-        ))}
-      </div>
-    );
-  } else if (mediaToShow.length === 3) {
-    return (
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Img
-          src={mediaToShow[0]}
-          alt="Post media 1"
-          className="w-full h-64 object-cover rounded-lg row-span-2 cursor-pointer hover:opacity-95 transition-opacity"
-          onClick={() => openImagePreview(0)}
-        />
-        <Img
-          src={mediaToShow[1]}
-          alt="Post media 2"
-          className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-          onClick={() => openImagePreview(1)}
-        />
-        <Img
-          src={mediaToShow[2]}
-          alt="Post media 3"
-          className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-          onClick={() => openImagePreview(2)}
-        />
-      </div>
-    );
-  } else {
-    // 4 images
-    return (
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {mediaToShow.map((url, index) => (
-          <Img
-            key={index}
-            src={url}
-            alt={`Post media ${index + 1}`}
-            className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-            onClick={() => openImagePreview(index)}
-          />
-        ))}
-      </div>
-    );
-  }
 };
 
 
@@ -1388,13 +1505,7 @@ useEffect(() => {
         />
       )}
 
-       <ImagePreviewer
-      imagePreview={imagePreview}
-      onClose={closeImagePreview}
-      onNext={goToNextImage}
-      onPrev={goToPrevImage}
-      onSelectImage={selectImage}
-    />
+       {imagePreview.isOpen && renderMediaPreview()}
     </>
   );
 };

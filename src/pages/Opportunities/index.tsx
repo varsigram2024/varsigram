@@ -182,7 +182,7 @@ const getEmptyMessage = () => {
         </div>
 
         {/* Create Button */}
-        <div className="flex items-center gap-4 mt-0 lg:mt-0 w-full justify-end p-8 sticky bottom-11 z-20">
+        <div className="flex items-center gap-4 mt-0 lg:mt-0 w-full justify-end sticky bottom-11 z-20">
           <button
             className="w-12 h-12 bg-[#750015] text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-[#5a0010] transition-colors"
             onClick={() => navigate("/opportunities/create")}

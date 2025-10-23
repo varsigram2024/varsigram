@@ -1,3 +1,4 @@
+// CreateOpportunity.tsx - Add link field
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heading } from '../../components/Heading';
@@ -24,7 +25,8 @@ const CreateOpportunity: React.FC = () => {
     contactEmail: '',
     image: '',
     requirements: '',
-    tags: [] as string[]
+    tags: [] as string[],
+    link: '', // NEW: Application link field
   });
   const [tagInput, setTagInput] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -64,24 +66,20 @@ const CreateOpportunity: React.FC = () => {
     }
   };
 
-  // Upload image to Firebase using the specific opportunity endpoint
+  // Upload image to Firebase
   const uploadImage = async (): Promise<string | null> => {
-    if (!selectedFile || !token) {
-      console.error('No file or token available for upload');
-      return null;
-    }
+    if (!selectedFile || !token) return null;
 
     setIsUploading(true);
 
     try {
-      console.log('Starting opportunity image upload...');
+      console.log('Starting image upload...');
       const imageUrl = await uploadOpportunityImage(selectedFile, token);
-      console.log('Opportunity image uploaded successfully:', imageUrl);
+      console.log('Image uploaded successfully:', imageUrl);
       return imageUrl;
     } catch (error: any) {
-      console.error('Opportunity image upload failed:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Upload failed';
-      alert(`Failed to upload image: ${errorMessage}`);
+      console.error('Image upload failed:', error);
+      alert(`Failed to upload image: ${error.response?.data?.message || error.message}`);
       return null;
     } finally {
       setIsUploading(false);
@@ -132,12 +130,28 @@ const CreateOpportunity: React.FC = () => {
     });
   };
 
+  // Validate URL format
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user || !token) {
       setAuthError('Please log in to create opportunities');
       alert('Please log in first');
+      return;
+    }
+
+    // Validate link if provided
+    if (formData.link && !isValidUrl(formData.link)) {
+      alert('Please enter a valid URL for the application link (e.g., https://example.com/apply)');
       return;
     }
     
@@ -149,16 +163,14 @@ const CreateOpportunity: React.FC = () => {
 
       // Upload image if a new file is selected
       if (selectedFile && !formData.image) {
-        console.log('Uploading new opportunity image...');
+        console.log('Uploading new image...');
         const uploadedUrl = await uploadImage();
         if (uploadedUrl) {
           finalImageUrl = uploadedUrl;
           setFormData(prev => ({ ...prev, image: uploadedUrl }));
-          console.log('Image URL set for opportunity:', uploadedUrl);
         } else {
           // Continue without image if upload fails
           console.warn('Image upload failed, continuing without image');
-          alert('Image upload failed. Creating opportunity without image.');
         }
       }
 
@@ -174,13 +186,11 @@ const CreateOpportunity: React.FC = () => {
         organization: formData.organization || null,
         image: finalImageUrl || null,
         requirements: formData.requirements || null,
-        tags: formData.tags.length > 0 ? formData.tags : null
+        tags: formData.tags.length > 0 ? formData.tags : null,
+        link: formData.link || null, // NEW: Include link field
       };
       
-      console.log('Submitting opportunity data:', {
-        ...submissionData,
-        image: finalImageUrl ? `Firebase URL (${finalImageUrl.length} chars)` : null
-      });
+      console.log('Submitting opportunity data:', submissionData);
       
       const newOpportunity = await opportunityService.createOpportunity(submissionData);
       console.log('Opportunity created successfully:', newOpportunity);
@@ -278,7 +288,7 @@ const CreateOpportunity: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Opportunity Category *
                 </label>
@@ -317,7 +327,25 @@ const CreateOpportunity: React.FC = () => {
               </div>
             </div>
 
-              
+            {/* Application Link Field - NEW */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Application Link
+              </label>
+              <Input
+                type="url"
+                placeholder="https://example.com/apply"
+                value={formData.link}
+                onChange={(e: any) => setFormData({...formData, link: e.target.value})}
+                className="rounded-lg border-gray-300"
+                disabled={!!authError || isLoading}
+              />
+              <Text className="text-sm text-gray-500 mt-1">
+                Provide a direct link to the application page (optional)
+              </Text>
+            </div>
+
+            {/* Image Upload Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Opportunity Image
@@ -386,7 +414,6 @@ const CreateOpportunity: React.FC = () => {
                 </div>
               )}
             </div>
-
 
             {/* Remote Work Checkbox */}
             <div className="flex items-center">
@@ -518,7 +545,7 @@ const CreateOpportunity: React.FC = () => {
               </div>
             </div>
 
-             <div className="flex gap-4 pt-6">
+            <div className="flex gap-4 pt-6">
               <Button
                 type="button"
                 onClick={() => navigate(-1)}
