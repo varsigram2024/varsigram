@@ -1,66 +1,125 @@
-// index.tsx – Opportunities Page with Tab Navigation and Click-to-Detail
-import { useMemo, useState } from 'react'
-import { useNavigate } from "react-router-dom"
-import OpportunityCard from './OpportunityCard'
-import { Heading } from '../../components/Heading'
-import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel'
-import { Text } from '../../components/Text'
-import { Img } from '../../components/Img'
-import { Input } from '../../components/Input'
-import { Button } from '../../components/Button'
-import ProfileOrganizationSection from '../Profilepage/ProfilepageOrganizationSection'
-
-type Opportunity = {
-  id: string
-  title: string
-  organization: string
-  location?: string
-  tags?: string[]
-  postedAt?: string
-  excerpt?: string
-  type?: string
-  applicants?: number
-  deadline?: string
-  image?: string
-}
-
-const MOCK: Opportunity[] = Array.from({ length: 12 }).map((_, i) => ({
-  id: String(i + 1),
-  title: `Program ${i + 1}`,
-  organization: ['Unilag', 'Varsigram', 'KPMG'][i % 3],
-  location: i % 2 === 0 ? 'Lagos, NG' : 'Remote',
-  type: ['Internships', 'Scholarships', 'Others'][i % 3],
-  tags: i % 3 === 0 ? ['career', 'remote'] : ['scholarships', 'deadline'],
-  postedAt: `${i + 1}d ago`,
-  applicants: Math.floor(Math.random() * 100) + 1,
-  deadline: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i * 2) + 1).padStart(2, '0')}`,
-  excerpt: 'Brief description of this opportunity and how to apply.',
-  image: '/images/opportunity.png'
-}))
+// index.tsx - Remove fallback data and use proper empty states
+import { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import OpportunityCard from './OpportunityCard';
+import { Heading } from '../../components/Heading';
+import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel';
+import { Text } from '../../components/Text';
+import { Img } from '../../components/Img';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import ProfileOrganizationSection from '../Profilepage/ProfilepageOrganizationSection';
+import { opportunityService, type Opportunity } from '../../services/opportunityService';
 
 export default function Opportunities() {
-  const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<'Internships' | 'Scholarships' | 'Others'>('Internships')
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'Internships' | 'Scholarships' | 'Others'>('Internships');
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch opportunities based on active tab
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        console.log('Fetching opportunities for tab:', activeTab);
+        const data = await opportunityService.getOpportunities(activeTab);
+        setOpportunities(data);
+      } catch (err) {
+        console.error('Error in fetch:', err);
+        setError('Failed to load opportunities from server');
+        setOpportunities([]); // Set empty array instead of fallback
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOpportunities();
+  }, [activeTab]);
+
+  // Search functionality - client-side filtering only
+  useEffect(() => {
+    if (query.trim()) {
+      // Client-side search is handled in useMemo below
+      // No API search call since backend might not support it
+    }
+  }, [query, activeTab]);
+
+  // Client-side filtered data
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return MOCK.filter(m => {
-      const matchesType = m.type?.toLowerCase() === activeTab.toLowerCase()
-      const matchesQ = q === '' ||
-        m.title.toLowerCase().includes(q) ||
-        m.organization.toLowerCase().includes(q)
-      return matchesType && matchesQ
-    })
-  }, [query, activeTab])
+    if (!query.trim()) return opportunities;
+    
+    const q = query.trim().toLowerCase();
+    
+    return opportunities.filter(item => 
+      item.title.toLowerCase().includes(q) ||
+      item.organization?.toLowerCase().includes(q) ||
+      item.description?.toLowerCase().includes(q) ||
+      item.tags?.some(tag => tag.toLowerCase().includes(q))
+    );
+  }, [opportunities, query]);
+
+  // Display data is always the filtered array
+  const displayData = filtered;
+
+  // Get empty state message based on context
+const getEmptyMessage = () => {
+  if (query.trim()) {
+    return {
+      title: 'No opportunities found',
+      description: 'Try a different search term or browse all opportunities'
+    };
+  }
+  
+  const messages = {
+    'Internships': {
+      title: 'No internships available',
+      description: 'Check back later for new internship opportunities'
+    },
+    'Scholarships': {
+      title: 'No scholarships available', 
+      description: 'Check back later for new scholarship opportunities'
+    },
+    'Others': {
+      title: 'No other opportunities available',
+      description: 'Check back later for new competitions, gigs, or other opportunities'
+    }
+  };
+  
+  return messages[activeTab] || {
+    title: 'No opportunities available',
+    description: 'Check back later for new opportunities'
+  };
+};
 
   return (
     <div className="flex w-full bg-white min-h-screen space-x-4">
-      <div className="hidden flex-1 p-4 lg:p-6 items-start justify-center relative border-x border-solid">
+      <div className="flex-1 p-4 lg:p-6 items-start justify-center relative border-x border-solid">
         <div className="max-w-6xl mx-auto flex-1 w-full">
          
           {/* Sticky Tabs Container */}
           <div className="sticky top-16 bg-white z-10 pt-2 pb-2">
+            {/* Error message - only show real errors */}
+            {error && opportunities.length === 0 && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 rounded text-sm">
+                <Text className="text-red-700">{error}</Text>
+              </div>
+            )}
+            
+            {/* Search Input */}
+            <div className="mb-4">
+              <Input
+                type="text"
+                placeholder="Search opportunities..."
+                value={query}
+                onChange={(e: any) => setQuery(e.target.value)}
+                className="w-full rounded-lg border-gray-300"
+              />
+            </div>
+
             {/* Tabs */}
             <div className="flex items-center self-stretch justify-between gap-4 border-b border-gray-200 mb-6 bg-white">
               {['Internships', 'Scholarships', 'Others'].map(tab => (
@@ -80,7 +139,12 @@ export default function Opportunities() {
           </div>
 
           {/* Content */}
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#750015] mx-auto"></div>
+              <Text className="text-gray-500 mt-4">Loading opportunities...</Text>
+            </div>
+          ) : displayData.length === 0 ? (
             <div className="text-center py-12">
               <Img 
                 src="/images/empty-state.svg" 
@@ -88,15 +152,23 @@ export default function Opportunities() {
                 className="h-24 w-24 mx-auto mb-4 opacity-50"
               />
               <Heading as="h3" className="text-lg font-medium text-gray-600 mb-2">
-                No opportunities found
+                {getEmptyMessage().title}
               </Heading>
               <Text className="text-gray-500 text-sm">
-                Try a different tab or search term
+                {getEmptyMessage().description}
               </Text>
+              {query.trim() && (
+                <Button
+                  onClick={() => setQuery('')}
+                  className="mt-4 bg-[#750015] text-white"
+                >
+                  Clear Search
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-2 lg:px-16">
-              {filtered.map(item => (
+              {displayData.map(item => (
                 <div
                   key={item.id}
                   className="cursor-pointer"
@@ -108,10 +180,11 @@ export default function Opportunities() {
             </div>
           )}
         </div>
-        {/* Create Button at the bottom (sticky for all screens) */}
-        <div className="flex items-center gap-4 mt-0 lg:mt-0 w-full justify-end p-8 sticky bottom-11 z-20 ">
+
+        {/* Create Button */}
+        <div className="flex items-center gap-4 mt-0 lg:mt-0 w-full justify-end sticky bottom-11 z-20">
           <button
-            className="w-12 h-12 bg-[#750015] text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+            className="w-12 h-12 bg-[#750015] text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-[#5a0010] transition-colors"
             onClick={() => navigate("/opportunities/create")}
             aria-label="Create Opportunity"
           >
@@ -120,50 +193,7 @@ export default function Opportunities() {
         </div>
       </div>
 
-      `   ` <div className="flex flex-col max-w-full gap-8">
-                <div className="mt-[38px] lg:mt-[0px] flex flex-1 items-center justify-center gap-[45px] md:flex-col md:self-stretch"> 
-                <div className="w-full md:w-full lg:mt-[30px] flex lg:flex-1 flex-col lg:h-[100vh] max-h-full md:gap-[15px] lg:overflow-auto scrollbar-hide sm:gap-[52px] px-3 md:px-5 gap-[35px] pb-20 lg:pb-0">
-                    <div className="flex items-center gap-2.5 mb-8">
-                    <div 
-                        className="hover:opacity-80 transition-opacity cursor-pointer"
-                    >
-                        <Text as="p" className="text-[24px] font-medium md:text-[22px]">
-                        <b>Opportunity</b>
-                        </Text>
-                    </div>
-                    </div>
-                    
-                
-              
-
-                    <div className="ml-[22px] flex flex-col gap-2 md:ml-0">
-
-                        <div className="flex items-start justify-between gap-5">
-                        <Text as="p" className="self-end text-[16px] font-extrabold">Messages</Text>
-                        <div className="mr-[34px] border-b border-solid border-[#750015]">
-                          
-                        </div>
-                        </div>
-
-                    </div>
-
-
-                    <div className="ml-[22px] flex flex-col items-center justify-center p-4 gap-2 md:ml-0 h-[400px]">
-
-                        <div className="flex flex-col items-center h-full justify-center gap-5">
-                        <Text as="p" className="text-left self-start text-[24px] font-extrabold"> Coming Soon!</Text>
-                        <Text as="p" className="text-left self-start text-[14px] font-medium">Stay tuned! This feature is on its way to make campus connections even easier.</Text>
-                        
-                        </div>
-
-                    </div>
-
-                    
-                </div>
-                </div>
-
-            </div>
-
+      {/* Sidebar */}
       <div className="hidden lg:flex flex-col sticky top-0 max-w-[35%] gap-8 mt-[72px] mb-8 pb-20 h-[100vh] overflow-scroll scrollbar-hide animate-slide-left">
         <div className="rounded-[32px] border border-solid h-auto max-h-[60vh] border-[#d9d9d9] bg-white px-[22px] py-5 animate-fade-in">
           <div className="overflow-hidden h-full">
@@ -175,5 +205,5 @@ export default function Opportunities() {
         </div>
       </div>
     </div>
-  )
+  );
 }

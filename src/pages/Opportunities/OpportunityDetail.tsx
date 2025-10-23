@@ -1,37 +1,173 @@
-// OpportunityDetail.tsx – Detailed Opportunity View Page
-import { useParams, useNavigate } from "react-router-dom"
-import { Button } from "../../components/Button"
-import { Heading } from "../../components/Heading"
-import { Text } from "../../components/Text"
-import { Img } from "../../components/Img"
+// OpportunityDetail.tsx - Updated with link field for Apply button
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "../../components/Button";
+import { Heading } from "../../components/Heading";
+import { Text } from "../../components/Text";
+import { Img } from "../../components/Img";
+import { opportunityService, type Opportunity, categoryToTypeMap } from "../../services/opportunityService";
 
-// Temporary mock data — replace with API or global state later
-const MOCK = Array.from({ length: 12 }).map((_, i) => ({
-  id: String(i + 1),
-  title: `Program ${i + 1}`,
-  organization: ['Unilag', 'Varsigram', 'KPMG'][i % 3],
-  location: i % 2 === 0 ? 'Lagos, NG' : 'Remote',
-  type: ['Internship', 'Scholarship', 'Others'][i % 3],
-  image: "/images/opportunity.png",
-  applicants: Math.floor(Math.random() * 100) + 1,
-  deadline: `2024-${String((i % 12) + 1).padStart(2, '0')}-${String((i * 2) + 1).padStart(2, '0')}`,
-  description: `This is a detailed description of ${['Internship', 'Scholarship', 'Others'][i % 3]} program ${i + 1}. 
-  It includes eligibility requirements, benefits, how to apply, and important deadlines. 
-  Ensure you read the full details carefully before submitting your application.`
-}))
+// SVG placeholder for image error
+const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
+  <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100%" height="100%" fill="#f3f4f6"/>
+    <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-anchor="middle" dy=".3em">Opportunity Image</text>
+  </svg>
+`)}`;
 
 export default function OpportunityDetail() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const opportunity = MOCK.find(o => o.id === id)
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+
+  console.log('OpportunityDetail - ID from URL:', id);
+
+  useEffect(() => {
+    const fetchOpportunity = async () => {
+      if (!id || id === 'undefined') {
+        console.error('Invalid opportunity ID:', id);
+        setError('Invalid opportunity ID');
+        setIsLoading(false);
+        return;
+      }
+      
+      setIsLoading(true);
+      setError(null);
+      setImageError(false);
+      try {
+        console.log('Fetching opportunity with ID:', id);
+        const data = await opportunityService.getOpportunityById(id);
+        
+        if (data) {
+          setOpportunity(data);
+          console.log('Opportunity data:', data);
+        } else {
+          setError('Opportunity not found');
+        }
+      } catch (err) {
+        console.error('Error fetching opportunity:', err);
+        setError('Failed to load opportunity');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOpportunity();
+  }, [id]);
+
+  const handleApply = () => {
+    if (opportunity?.link) {
+      // Open the application link in a new tab
+      window.open(opportunity.link, '_blank', 'noopener,noreferrer');
+    } else if (opportunity?.contactEmail) {
+      // Fallback to email if no link is provided
+      window.location.href = `mailto:${opportunity.contactEmail}?subject=Application for ${opportunity.title}&body=Hello, I am interested in applying for the ${opportunity.title} position.`;
+    } else {
+      alert(`Application process for ${opportunity?.title} would start here.`);
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'No deadline specified';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const getDaysUntilDeadline = (deadline: string | null) => {
+    if (!deadline) return null;
+    try {
+      const now = new Date();
+      const deadlineDate = new Date(deadline);
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch {
+      return null;
+    }
+  };
+
+  // Get category display name
+  const getCategoryDisplayName = (category: string) => {
+    return categoryToTypeMap[category as keyof typeof categoryToTypeMap] || category;
+  };
+
+  // Check if the link is a valid URL
+  const isValidUrl = (url: string | null) => {
+    if (!url) return false;
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#750015] mx-auto"></div>
+          <Text className="text-gray-500 mt-4">Loading opportunity...</Text>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !opportunity) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-6">
+        <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+          <Text className="text-gray-500 text-4xl">⚠️</Text>
+        </div>
+        <Heading as="h2" className="text-lg font-semibold text-gray-700 mb-2">
+          {error}
+        </Heading>
+        <Text className="text-gray-500 text-sm mb-4">
+          {error.includes('Invalid') ? 'Please check the URL and try again.' : 'The opportunity could not be loaded.'}
+        </Text>
+        <div className="flex gap-2">
+          <Button
+            className="bg-[#750015] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#5a0010]"
+            onClick={() => navigate(-1)}
+          >
+            Go Back
+          </Button>
+          <Button
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"
+            onClick={() => navigate('/opportunities')}
+          >
+            Browse Opportunities
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!opportunity) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center px-6">
-        <Img src="/images/empty-state.svg" alt="Not found" className="h-24 w-24 mb-4 opacity-60" />
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-6">
+        <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+          <Text className="text-gray-500 text-4xl">❓</Text>
+        </div>
         <Heading as="h2" className="text-lg font-semibold text-gray-700 mb-2">
           Opportunity not found
         </Heading>
+        <Text className="text-gray-500 text-sm mb-4">
+          The opportunity you're looking for doesn't exist or may have been removed.
+        </Text>
         <Button
           className="bg-[#750015] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#5a0010]"
           onClick={() => navigate(-1)}
@@ -39,54 +175,253 @@ export default function OpportunityDetail() {
           Go Back
         </Button>
       </div>
-    )
+    );
   }
 
+  const daysUntilDeadline = getDaysUntilDeadline(opportunity.deadline);
+  const isDeadlineApproaching = daysUntilDeadline !== null && daysUntilDeadline <= 7 && daysUntilDeadline > 0;
+  const isDeadlinePassed = daysUntilDeadline !== null && daysUntilDeadline < 0;
+  const hasApplicationLink = isValidUrl(opportunity.link);
+
   return (
-    <div className="bg-white flex flex-col lg:flex-row min-h-screen">
-      {/* Header Image */}
-      <div className="w-full h-auto bg-gray-100 overflow-hidden">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <Heading as="h1" className="text-2xl font-semibold text-gray-900 mb-1">
+    <div className="bg-white min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Error warning */}
+        {error && (
+          <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg">
+            <Text className="text-yellow-800 text-sm">{error}</Text>
+          </div>
+        )}
+
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
+          <div className="flex-1">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center text-gray-600 hover:text-gray-900 mb-4 text-sm font-medium"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to opportunities
+            </button>
+            <Heading as="h1" className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
               {opportunity.title}
             </Heading>
-            <Text className="text-gray-600 text-sm">
-              {opportunity.organization} — {opportunity.location}
-            </Text>
+            <div className="flex flex-wrap items-center gap-2 text-gray-600">
+              <Text className="text-lg">
+                {opportunity.organization || 'Unknown Organization'}
+              </Text>
+              <span>•</span>
+              <Text>
+                {opportunity.location || (opportunity.isRemote ? 'Remote' : 'Location not specified')}
+              </Text>
+              {opportunity.isRemote && (
+                <>
+                  <span>•</span>
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                    Remote
+                  </span>
+                </>
+              )}
+            </div>
           </div>
           <Button
-            className="bg-[#750015] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#5a0010]"
-            onClick={() => alert(`Applying for ${opportunity.title}`)}
+            className="bg-[#750015] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#5a0010] whitespace-nowrap lg:w-auto w-full shadow-lg flex items-center justify-center gap-2"
+            onClick={handleApply}
           >
-            Apply Now
+            {hasApplicationLink ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Apply Now
+              </>
+            ) : (
+              'Apply Now'
+            )}
           </Button>
         </div>
-        <Img 
-          src={opportunity.image} 
-          alt={opportunity.title} 
-          className="w-full h-full object-cover"
-        />
-      </div>
 
-      {/* Content */}
-      <div className="max-w-3xl mx-auto p-6">
-        
-
-        {/* Meta Info */}
-        <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-6">
-          <span className="inline-flex items-center bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-            {opportunity.type}
-          </span>
-          <span>Applicants: {opportunity.applicants}</span>
-          <span>Deadline: {opportunity.deadline}</span>
+        {/* Image */}
+        <div className="w-full h-64 lg:h-80 bg-gray-100 rounded-xl overflow-hidden mb-8 shadow-sm">
+          <img 
+            src={opportunity.image && !imageError ? opportunity.image : placeholderSVG} 
+            alt={opportunity.title} 
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
         </div>
 
+        {/* Meta Info */}
+        <div className="flex flex-wrap gap-3 mb-8">
+          <span className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            {getCategoryDisplayName(opportunity.category)}
+          </span>
+          
+          {opportunity.isRemote && (
+            <span className="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+              Remote
+            </span>
+          )}
+          
+          {opportunity.applicants !== undefined && opportunity.applicants > 0 && (
+            <span className="inline-flex items-center bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+              {opportunity.applicants} {opportunity.applicants === 1 ? 'applicant' : 'applicants'}
+            </span>
+          )}
+          
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            isDeadlinePassed 
+              ? 'bg-red-100 text-red-800' 
+              : isDeadlineApproaching 
+                ? 'bg-orange-100 text-orange-800'
+                : 'bg-gray-100 text-gray-800'
+          }`}>
+            {isDeadlinePassed ? 'Deadline passed' : `Deadline: ${formatDate(opportunity.deadline)}`}
+            {isDeadlineApproaching && daysUntilDeadline && (
+              <span className="ml-1">({daysUntilDeadline} {daysUntilDeadline === 1 ? 'day' : 'days'} left)</span>
+            )}
+          </span>
+
+          {opportunity.postedAt && (
+            <span className="inline-flex items-center bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+              Posted {opportunity.postedAt}
+            </span>
+          )}
+        </div>
+
+        {/* Application Link (if available) */}
+        {hasApplicationLink && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <div>
+                <Text className="text-blue-800 font-medium text-sm">
+                  External Application Link Available
+                </Text>
+                <Text className="text-blue-700 text-xs mt-1">
+                  Click "Apply Now" to be redirected to the official application page
+                </Text>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tags */}
+        {opportunity.tags && opportunity.tags.length > 0 && (
+          <div className="mb-8">
+            <Heading as="h3" className="text-xl font-semibold text-gray-900 mb-4">
+              Tags
+            </Heading>
+            <div className="flex flex-wrap gap-2">
+              {opportunity.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm border border-gray-200"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Description */}
-        <Text className="text-gray-700 leading-relaxed whitespace-pre-line">
-          {opportunity.description}
-        </Text>
+        <div className="mb-8">
+          <Heading as="h3" className="text-xl font-semibold text-gray-900 mb-4">
+            About this Opportunity
+          </Heading>
+          <div className="prose max-w-none">
+            <Text className="text-gray-700 leading-relaxed whitespace-pre-line text-base">
+              {opportunity.description || 'No description provided.'}
+            </Text>
+          </div>
+        </div>
+
+        {/* Requirements */}
+        {opportunity.requirements && (
+          <div className="mb-8">
+            <Heading as="h3" className="text-xl font-semibold text-gray-900 mb-4">
+              Requirements
+            </Heading>
+            <div className="prose max-w-none">
+              <Text className="text-gray-700 leading-relaxed whitespace-pre-line text-base">
+                {opportunity.requirements}
+              </Text>
+            </div>
+          </div>
+        )}
+
+        {/* Contact Information */}
+        <div className="border-t border-gray-200 pt-8 mb-16">
+          <Heading as="h3" className="text-xl font-semibold text-gray-900 mb-4">
+            Contact Information
+          </Heading>
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <div className="space-y-3">
+              {hasApplicationLink && (
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-gray-500 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <div>
+                    <Text className="text-gray-700 font-medium">Application Link</Text>
+                    <Text className="text-blue-600 hover:text-blue-800 cursor-pointer break-all" onClick={() => window.open(opportunity.link, '_blank')}>
+                      {opportunity.link}
+                    </Text>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-gray-500 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <div>
+                  <Text className="text-gray-700 font-medium">Email</Text>
+                  <Text className="text-gray-600">
+                    {opportunity.contactEmail || 'Not provided'}
+                  </Text>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-gray-500 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <div>
+                  <Text className="text-gray-700 font-medium">Organization</Text>
+                  <Text className="text-gray-600">
+                    {opportunity.organization || 'Not provided'}
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Apply Button at Bottom for mobile */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 px-4 lg:hidden shadow-lg">
+          <Button
+            className="bg-[#750015] text-white w-full py-3 rounded-lg font-semibold hover:bg-[#5a0010] shadow-lg flex items-center justify-center gap-2"
+            onClick={handleApply}
+          >
+            {hasApplicationLink ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Apply Now
+              </>
+            ) : (
+              'Apply Now'
+            )}
+          </Button>
+        </div>
       </div>
     </div>
-  )
+  );
 }

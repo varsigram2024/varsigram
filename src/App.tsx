@@ -164,6 +164,14 @@ function AppContent() {
             <Route path="settings/change-password" element={<AuthRoute><ChangePassword /></AuthRoute>} />
             <Route path="settings/email-verification" element={<EmailVerification />} />
             <Route path="settings/privacy-policy" element={<AuthRoute><PrivacyPolicy /></AuthRoute>} />
+
+
+
+            <Route path="opportunities" element={<Opportunities />} />
+          <Route path="opportunities/create" element={<CreateOpportunity />} />
+          <Route path="opportunities/:id" element={<OpportunityDetail />} />
+
+          
           </Route>
 
           {/* Fallback */}

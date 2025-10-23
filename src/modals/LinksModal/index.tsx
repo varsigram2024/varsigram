@@ -128,7 +128,7 @@ const LinksModal: React.FC<LinksModalProps> = ({
       case 'linkedin_url':
         return `https://linkedin.com/in/${url.replace(/^@/, '')}`;
       case 'twitter_url':
-        return `https://twitter.com/${url.replace(/^@/, '')}`;
+        return `https://x.com/${url.replace(/^@/, '')}`;
       case 'instagram_url':
         return `https://instagram.com/${url.replace(/^@/, '')}`;
       case 'website_url':
@@ -145,7 +145,7 @@ const LinksModal: React.FC<LinksModalProps> = ({
       case 'linkedin_url':
         return 'https://linkedin.com/in/yourprofile';
       case 'twitter_url':
-        return 'https://twitter.com/yourprofile';
+        return 'https://x.com/yourprofile';
       case 'instagram_url':
         return 'https://instagram.com/yourprofile';
       case 'website_url':
@@ -158,9 +158,9 @@ const LinksModal: React.FC<LinksModalProps> = ({
   const getPlatformName = (platform: keyof SocialLinksData): string => {
     switch (platform) {
       case 'linkedin_url': return 'LinkedIn';
-      case 'twitter_url': return 'Twitter';
+      case 'twitter_url': return 'X';
       case 'instagram_url': return 'Instagram';
-      case 'website_url': return 'Portfolio Website';
+      case 'website_url': return 'Portfolio/Website';
       case 'whatsapp_url': return 'WhatsApp';
       default: return platform;
     }
@@ -202,7 +202,7 @@ const LinksModal: React.FC<LinksModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="flex flex-col w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl overflow-hidden">
+      <div className="flex flex-col w-full max-w-2xl max-h-[80vh] bg-white rounded-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Manage Your Links</h2>
@@ -225,9 +225,9 @@ const LinksModal: React.FC<LinksModalProps> = ({
             {(['linkedin_url', 'twitter_url', 'instagram_url', 'website_url', 'whatsapp_url'] as const).map((platform) => (
               <div key={platform} className="flex flex-col gap-3">
                 <label className="flex items-center gap-3 text-lg font-semibold text-gray-800">
-                  <div className="text-[#750015]">
+                  {/* <div className="text-[#750015]">
                     {getPlatformIcon(platform)}
-                  </div>
+                  </div> */}
                   {getPlatformName(platform)}
                 </label>
                 

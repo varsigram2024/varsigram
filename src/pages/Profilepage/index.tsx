@@ -556,6 +556,7 @@ useEffect(() => {
 // Also add debugging to fetchUserData
 const fetchUserData = async () => {
   try {
+    setIsLoading(true); // Ensure loading starts
     const response = await axios.get(
       `${API_BASE_URL}/profile/${display_name_slug}/`,
       {
@@ -822,7 +823,7 @@ const SocialLinksDisplay = () => {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center p-2 xs:p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 hover:scale-105 shadow-sm"
+                className="flex items-center justify-center px-2 xs:px-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 hover:scale-105 shadow-sm"
                 title={name}
               >
                 {svg}
@@ -864,7 +865,7 @@ const SocialLinksDisplay = () => {
             {/* Platform name tooltip */}
             <div className={`
               absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
-              px-2 py-1 text-xs text-white bg-gray-800 rounded 
+              px-2 text-xs text-white bg-gray-800 rounded 
               transition-all duration-200 pointer-events-none
               ${hoveredLink === key ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
             `}>
@@ -1160,11 +1161,7 @@ return (
             <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#750015]"></div>
             </div>
-          ) : !userProfile ? (
-            <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
-              <Text>User not found</Text>
-            </div>
-          ) : (
+          ) : userProfile ? (
             <>
                 {/* Cover photo section */}
                 <div className="flex w-[92%] justify-end rounded-[20px] pb-2 bg-[#f6f6f6] md:w-full animate-fade-in">
@@ -1437,7 +1434,7 @@ return (
                           </div>
 
                          {/* Social Links Section */}
-                          <div className="mt-3 xs:mt-4">
+                          <div className="">
                             {isOwnProfile ? (
                               hasSocialLinks() ? (
                                 <div className="flex flex-col gap-2 xs:gap-3">
@@ -1448,7 +1445,7 @@ return (
                                       className="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
                                       title="Edit links"
                                     >
-                                      <Pencil size={9} className="xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" />
+                                      <Pencil size={12} className="xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" />
                                     </button>
                                   </div>
                                 </div>
@@ -1462,7 +1459,7 @@ return (
                               )
                             ) : (
                               hasSocialLinks() && (
-                                <div className="mt-2 xs:mt-3">
+                                <div className="">
                                   <SocialLinksDisplay />
                                 </div>
                               )
@@ -1587,7 +1584,11 @@ return (
                 </div>
               )}
             </>
-          )}
+            ) : (
+              <div className="flex justify-center items-center h-[300px] w-full animate-fade-in">
+                <Text>User not found</Text>
+              </div>
+            )}
         </div>
 
         {/* Profile Side Panel */}

@@ -51,6 +51,7 @@ export default function NotificationsPage() {
   switch (type) {
     case 'like':
     case 'new_post':
+      case 'reward_point':
       return 'View post';
     case 'comment':
     case 'reply':
@@ -192,6 +193,8 @@ const getNotificationIcon = (type: string | undefined) => {
       return '/images/vectors/bell.svg';
     case 'system':
       return '/images/vectors/settings.svg';
+    case 'reward_point':
+      return '/images/vectors/point.svg';
     default:
       return '/images/vectors/bell.svg';
   }

@@ -3,7 +3,7 @@ import React from "react";
 
 export const PostSkeleton: React.FC = () => {
   return (
-    <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff] animate-pulse">
+    <div className="flex w-full flex-col items-center p-5 mb-6 rounded-xl bg-[#ffffff]">
       <div className="flex flex-col gap-7 self-stretch">
         {/* Header Skeleton */}
         <div className="flex justify-between items-start">
