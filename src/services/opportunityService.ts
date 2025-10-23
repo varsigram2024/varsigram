@@ -1,10 +1,10 @@
 // services/opportunityService.ts - Fixed with no duplicates
-const API_BASE_URL = import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL || 'https://staging.opportunities.varsigram.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL;
 
 // Log the configuration
 console.log('🚀 Using API_BASE_URL:', API_BASE_URL);
 
-// SVG placeholder for images
+// SVG placeholder for image
 const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
   <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
     <rect width="100%" height="100%" fill="#f3f4f6"/>
