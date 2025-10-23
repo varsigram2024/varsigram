@@ -1,5 +1,4 @@
-// CreateOpportunity.tsx - Reverted to URL input
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heading } from '../../components/Heading';
 import { Text } from '../../components/Text';
@@ -7,6 +6,7 @@ import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { opportunityService, type Opportunity } from '../../services/opportunityService';
 import { useAuth } from '../../auth/AuthContext';
+import { uploadOpportunityImage, validateImageFile } from '../../services/uploadService';
 
 const CreateOpportunity: React.FC = () => {
   const navigate = useNavigate();
@@ -22,12 +22,15 @@ const CreateOpportunity: React.FC = () => {
     isRemote: false,
     deadline: '',
     contactEmail: '',
-    image: '', // Will store image URL
+    image: '',
     requirements: '',
     tags: [] as string[]
   });
   const [tagInput, setTagInput] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -40,20 +43,74 @@ const CreateOpportunity: React.FC = () => {
     }
   }, [user, token]);
 
-  // Handle image URL change with preview
-  const handleImageUrlChange = (url: string) => {
-    setFormData(prev => ({ ...prev, image: url }));
-    
-    // Validate URL and set preview
-    if (url) {
-      try {
-        new URL(url); // This will throw if invalid URL
-        setImagePreview(url);
-      } catch (error) {
-        setImagePreview(null);
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const validation = validateImageFile(file);
+      if (!validation.isValid) {
+        alert(validation.error);
+        return;
       }
-    } else {
-      setImagePreview(null);
+
+      setSelectedFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload image to Firebase using the specific opportunity endpoint
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedFile || !token) {
+      console.error('No file or token available for upload');
+      return null;
+    }
+
+    setIsUploading(true);
+
+    try {
+      console.log('Starting opportunity image upload...');
+      const imageUrl = await uploadOpportunityImage(selectedFile, token);
+      console.log('Opportunity image uploaded successfully:', imageUrl);
+      return imageUrl;
+    } catch (error: any) {
+      console.error('Opportunity image upload failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Upload failed';
+      alert(`Failed to upload image: ${errorMessage}`);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      const inputEvent = {
+        target: { files: [file] }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleFileSelect(inputEvent);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  // Remove image
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -88,6 +145,23 @@ const CreateOpportunity: React.FC = () => {
     setAuthError(null);
     
     try {
+      let finalImageUrl = formData.image;
+
+      // Upload image if a new file is selected
+      if (selectedFile && !formData.image) {
+        console.log('Uploading new opportunity image...');
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl;
+          setFormData(prev => ({ ...prev, image: uploadedUrl }));
+          console.log('Image URL set for opportunity:', uploadedUrl);
+        } else {
+          // Continue without image if upload fails
+          console.warn('Image upload failed, continuing without image');
+          alert('Image upload failed. Creating opportunity without image.');
+        }
+      }
+
       // Prepare data for backend
       const submissionData = {
         title: formData.title,
@@ -98,12 +172,15 @@ const CreateOpportunity: React.FC = () => {
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
         contactEmail: formData.contactEmail || null,
         organization: formData.organization || null,
-        image: formData.image || null, // Send image URL
+        image: finalImageUrl || null,
         requirements: formData.requirements || null,
         tags: formData.tags.length > 0 ? formData.tags : null
       };
       
-      console.log('Submitting opportunity data:', submissionData);
+      console.log('Submitting opportunity data:', {
+        ...submissionData,
+        image: finalImageUrl ? `Firebase URL (${finalImageUrl.length} chars)` : null
+      });
       
       const newOpportunity = await opportunityService.createOpportunity(submissionData);
       console.log('Opportunity created successfully:', newOpportunity);
@@ -120,8 +197,8 @@ const CreateOpportunity: React.FC = () => {
         setAuthError('Authentication failed. Please log in again.');
         alert('Authentication failed. Please log in again.');
       } else if (error.message.includes('413')) {
-        setAuthError('Request too large. Please check image URL or remove image.');
-        alert('Request too large. Please use a smaller image URL or remove the image.');
+        setAuthError('Image is too large. Please try with a smaller image.');
+        alert('Image is too large for the server. Please choose a smaller image.');
       } else {
         alert(`Failed to create opportunity: ${error.message}`);
       }
@@ -201,7 +278,7 @@ const CreateOpportunity: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+                            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Opportunity Category *
                 </label>
@@ -240,40 +317,76 @@ const CreateOpportunity: React.FC = () => {
               </div>
             </div>
 
-            {/* Image URL Field */}
+              
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Opportunity Image URL
+                Opportunity Image
               </label>
-              <Input
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={formData.image}
-                onChange={(e: any) => handleImageUrlChange(e.target.value)}
-                className="rounded-lg border-gray-300"
-                disabled={!!authError || isLoading}
-              />
-              <Text className="text-sm text-gray-500 mt-1">
-                Provide a direct link to an image that represents this opportunity
-              </Text>
               
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="mt-3">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">Image Preview:</Text>
-                  <div className="w-32 h-32 border border-gray-300 rounded-lg overflow-hidden">
+              {!selectedFile ? (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/*"
+                    className="hidden"
+                    disabled={!!authError || isLoading || isUploading}
+                  />
+                  
+                  {isUploading ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#750015] mb-2"></div>
+                      <Text className="text-gray-500">Uploading to Firebase...</Text>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mx-auto w-12 h-12 mb-3 text-gray-400">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <Text className="text-gray-600 mb-1">
+                        <span className="text-[#750015] font-semibold">Click to upload</span> or drag and drop
+                      </Text>
+                      <Text className="text-gray-500 text-sm">
+                        PNG, JPG, GIF up to 5MB
+                      </Text>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative w-full max-w-xs mx-auto">
                     <img 
-                      src={imagePreview} 
+                      src={imagePreview || ''} 
                       alt="Preview" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmM2Y0ZjYiLz4gIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbnZhbGlkIEltYWdlIFVSTDwvdGV4dD48L3N2Zz4=';
-                      }}
+                      className="w-full h-48 object-cover rounded-lg border border-gray-300"
                     />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      disabled={!!authError || isLoading || isUploading}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
+                  
+                  <Text className="text-center text-sm text-gray-500">
+                    {isUploading ? 'Uploading to Firebase Storage...' : 'Image ready for upload'}
+                  </Text>
                 </div>
               )}
             </div>
+
 
             {/* Remote Work Checkbox */}
             <div className="flex items-center">
@@ -405,21 +518,21 @@ const CreateOpportunity: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-6">
+             <div className="flex gap-4 pt-6">
               <Button
                 type="button"
                 onClick={() => navigate(-1)}
-                disabled={isLoading}
+                disabled={isLoading || isUploading}
                 className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium disabled:opacity-50"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading || !!authError}
+                disabled={isLoading || !!authError || isUploading}
                 className="px-6 py-3 bg-[#750015] text-white hover:bg-[#5a0010] rounded-lg font-medium disabled:opacity-50"
               >
-                {isLoading ? 'Creating...' : 'Create Opportunity'}
+                {isUploading ? 'Uploading Image...' : isLoading ? 'Creating...' : 'Create Opportunity'}
               </Button>
             </div>
           </form>

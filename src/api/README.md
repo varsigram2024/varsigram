@@ -269,6 +269,20 @@ Most endpoints require authentication. Authentication is handled using token-bas
         ```
     *   Response (200 OK): Returns the signed upload URL and file path.
 
+*   **`POST /get_media_upload_url/`**  [name='get_media_upload_url']
+
+    *   Description: Returns a signed URL for uploading media files to Firebase Storage.
+    *   Request: `POST`
+    *   Authentication: Required
+    *   Request Body (JSON):
+        ```json
+        {
+            "file_name": "filename.jpg",
+            "content_type": "image/jpeg"
+        }
+        ```
+    *   Response (200 OK): Returns the signed upload URL and file path.
+
 *   **`GET /profile/<slug:slug>/`**  [name='public-profile']
 
     *   Description: Retrieves a user's public profile by `display_name_slug`.
@@ -367,8 +381,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
         {
             "content": "Post content",
             "slug": "optional-slug",
-            "media_urls": ["url1", "url2"],
-            "tags": ""
+            "media_urls": ["url1", "url2"]
         }
         ```
     *   Response (201 Created): Returns the created post.

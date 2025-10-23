@@ -1,3 +1,4 @@
+// utils/fileUpload.ts
 import axios from 'axios';
 
 const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Use env variable
