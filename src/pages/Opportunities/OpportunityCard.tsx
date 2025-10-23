@@ -1,8 +1,16 @@
-// OpportunityCard.tsx - Improved image handling
+// OpportunityCard.tsx - Update image handling with better fallback
 import { Img } from '../../components/Img'
 import { Text } from '../../components/Text'
 import { Button } from '../../components/Button'
 import { Opportunity, categoryToTypeMap } from '../../services/opportunityService'
+
+// SVG placeholder as fallback
+const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
+  <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100%" height="100%" fill="#f3f4f6"/>
+    <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-anchor="middle" dy=".3em">Opportunity Image</text>
+  </svg>
+`)}`;
 
 export default function OpportunityCard({ item }: { item: Opportunity }) {
   // Map backend category to frontend display type
@@ -27,8 +35,11 @@ export default function OpportunityCard({ item }: { item: Opportunity }) {
   // Use backend excerpt or generate one
   const displayExcerpt = item.excerpt || (item.description ? `${item.description.substring(0, 100)}...` : '');
 
-  // Handle image with fallback
-  const imageUrl = item.image || "/images/opportunity.png";
+  // Handle image with better fallback
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = placeholderSVG;
+  };
 
   return (
     <article className="bg-white overflow-hidden mb-4 py-8">
@@ -56,6 +67,7 @@ export default function OpportunityCard({ item }: { item: Opportunity }) {
             src="/images/avatar-placeholder.png"
             alt={displayOrganization}
             className="w-8 h-8 rounded-full"
+            onError={handleImageError}
           />
           <Text className="text-sm text-gray-600 font-medium">
             {displayOrganization} shared this
@@ -81,12 +93,10 @@ export default function OpportunityCard({ item }: { item: Opportunity }) {
       {/* Image Section */}
       <div className="px-4 pb-4">
         <Img
-          src={imageUrl}
+          src={item.image || placeholderSVG}
           alt={item.title}
           className="w-full h-44 object-cover rounded-xl mb-2"
-          onError={(e) => {
-            e.currentTarget.src = "/images/opportunity.png";
-          }}
+          onError={handleImageError}
         />
       </div>
 
