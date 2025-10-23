@@ -66,19 +66,34 @@ export default function Opportunities() {
   const displayData = filtered;
 
   // Get empty state message based on context
-  const getEmptyMessage = () => {
-    if (query.trim()) {
-      return {
-        title: 'No opportunities found',
-        description: 'Try a different search term or browse all opportunities'
-      };
-    }
-    
+const getEmptyMessage = () => {
+  if (query.trim()) {
     return {
-      title: `No ${activeTab.toLowerCase()} available`,
-      description: `Check back later for new ${activeTab.toLowerCase()} or try another category`
+      title: 'No opportunities found',
+      description: 'Try a different search term or browse all opportunities'
     };
+  }
+  
+  const messages = {
+    'Internships': {
+      title: 'No internships available',
+      description: 'Check back later for new internship opportunities'
+    },
+    'Scholarships': {
+      title: 'No scholarships available', 
+      description: 'Check back later for new scholarship opportunities'
+    },
+    'Others': {
+      title: 'No other opportunities available',
+      description: 'Check back later for new competitions, gigs, or other opportunities'
+    }
   };
+  
+  return messages[activeTab] || {
+    title: 'No opportunities available',
+    description: 'Check back later for new opportunities'
+  };
+};
 
   return (
     <div className="flex w-full bg-white min-h-screen space-x-4">

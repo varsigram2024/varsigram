@@ -1,14 +1,8 @@
-// services/opportunityService.ts - Fixed version
+// services/opportunityService.ts - Fixed with no duplicates
 const API_BASE_URL = import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL || 'https://staging.opportunities.varsigram.com/api/v1';
 
 // Log the configuration
-if (!import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL) {
-  console.warn('⚠️ VITE_OPPORTUNITIES_API_BASE_URL not found in environment variables, using fallback URL');
-} else {
-  console.log('✅ Using API_BASE_URL from environment:', import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL);
-}
-
-console.log('🚀 Final API_BASE_URL:', API_BASE_URL);
+console.log('🚀 Using API_BASE_URL:', API_BASE_URL);
 
 // SVG placeholder for images
 const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
@@ -18,7 +12,6 @@ const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
   </svg>
 `)}`;
 
-// Rest of your existing interface and functions remain the same...
 export interface Opportunity {
   id: string;
   title: string;
@@ -60,6 +53,7 @@ const getAuthToken = (): string | null => {
   return null;
 };
 
+// SINGLE categoryToTypeMap export - COMPETITION, GIG, PITCH go under "Others"
 export const categoryToTypeMap = {
   'INTERNSHIP': 'Internship',
   'SCHOLARSHIP': 'Scholarship',
@@ -158,19 +152,23 @@ export const opportunityService = {
         }
       }
       
+      // Client-side category filtering - COMPETITION, GIG, PITCH go under "Others"
       if (category) {
-        const categoryMap: { [key: string]: string } = {
-          'Internships': 'INTERNSHIP',
-          'Scholarships': 'SCHOLARSHIP',
-          'Others': 'OTHER'
+        const categoryMap: { [key: string]: string[] } = {
+          'Internships': ['INTERNSHIP'],
+          'Scholarships': ['SCHOLARSHIP'],
+          'Others': ['COMPETITION', 'GIG', 'PITCH', 'OTHER'] // All these go under "Others"
         };
         
-        const backendCategory = categoryMap[category];
-        if (backendCategory) {
-          opportunitiesArray = opportunitiesArray.filter((opp: any) => opp.category === backendCategory);
+        const backendCategories = categoryMap[category];
+        if (backendCategories) {
+          opportunitiesArray = opportunitiesArray.filter((opp: any) => 
+            backendCategories.includes(opp.category)
+          );
         }
       }
       
+      console.log(`Transforming ${opportunitiesArray.length} opportunities for tab: ${category}`);
       return opportunitiesArray.map(transformOpportunity);
     } catch (error) {
       console.error('Get opportunities failed:', error);
