@@ -1,5 +1,4 @@
-// CreateOpportunity.tsx - Updated with image field
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heading } from '../../components/Heading';
 import { Text } from '../../components/Text';
@@ -22,11 +21,14 @@ const CreateOpportunity: React.FC = () => {
     isRemote: false,
     deadline: '',
     contactEmail: '',
-    image: '', // Added image field
+    image: '', // Will store data URL
     requirements: '',
     tags: [] as string[]
   });
   const [tagInput, setTagInput] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -38,6 +40,64 @@ const CreateOpportunity: React.FC = () => {
       setAuthError(null);
     }
   }, [user, token]);
+
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+
+      setIsUploading(true);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataURL = e.target?.result as string;
+        setFormData(prev => ({ ...prev, image: dataURL }));
+        setImagePreview(dataURL);
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        alert('Error reading file. Please try again.');
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      const inputEvent = {
+        target: { files: [file] }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleFileSelect(inputEvent);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  // Remove image
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, image: '' }));
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Handle tag input
   const handleAddTag = () => {
@@ -57,58 +117,69 @@ const CreateOpportunity: React.FC = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+// CreateOpportunity.tsx - Add API URL validation
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Check if API_BASE_URL is defined
+  if (!import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL) {
+    console.error('API_BASE_URL is undefined:', import.meta.env);
+    alert('Configuration error: API URL is not set. Please check environment variables.');
+    return;
+  }
+  
+  if (!user || !token) {
+    setAuthError('Please log in to create opportunities');
+    alert('Please log in first');
+    return;
+  }
+  
+  setIsLoading(true);
+  setAuthError(null);
+  
+  try {
+    // Prepare data for backend
+    const submissionData = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      location: formData.location || null,
+      isRemote: formData.isRemote,
+      deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
+      contactEmail: formData.contactEmail || null,
+      organization: formData.organization || null,
+      image: formData.image || null,
+      requirements: formData.requirements || null,
+      tags: formData.tags.length > 0 ? formData.tags : null
+    };
     
-    if (!user || !token) {
-      setAuthError('Please log in to create opportunities');
-      alert('Please log in first');
-      return;
+    console.log('API_BASE_URL:', import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL);
+    console.log('Submitting opportunity data:', submissionData);
+    
+    const newOpportunity = await opportunityService.createOpportunity(submissionData);
+    console.log('Opportunity created successfully:', newOpportunity);
+    
+    if (!newOpportunity.id) {
+      throw new Error('Created opportunity has no ID');
     }
     
-    setIsLoading(true);
-    setAuthError(null);
+    navigate(`/opportunities/${newOpportunity.id}`);
+  } catch (error: any) {
+    console.error('Failed to create opportunity:', error);
     
-    try {
-      // Prepare data for backend
-      const submissionData = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        location: formData.location || null,
-        isRemote: formData.isRemote,
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
-        contactEmail: formData.contactEmail || null,
-        organization: formData.organization || null,
-        image: formData.image || null, // Include image
-        requirements: formData.requirements || null,
-        tags: formData.tags.length > 0 ? formData.tags : null
-      };
-      
-      console.log('Submitting opportunity data:', submissionData);
-      
-      const newOpportunity = await opportunityService.createOpportunity(submissionData);
-      console.log('Opportunity created successfully:', newOpportunity);
-      
-      if (!newOpportunity.id) {
-        throw new Error('Created opportunity has no ID');
-      }
-      
-      navigate(`/opportunities/${newOpportunity.id}`);
-    } catch (error: any) {
-      console.error('Failed to create opportunity:', error);
-      
-      if (error.message.includes('Authentication required') || error.message.includes('401')) {
-        setAuthError('Authentication failed. Please log in again.');
-        alert('Authentication failed. Please log in again.');
-      } else {
-        alert(`Failed to create opportunity: ${error.message}`);
-      }
-    } finally {
-      setIsLoading(false);
+    if (error.message.includes('Authentication required') || error.message.includes('401')) {
+      setAuthError('Authentication failed. Please log in again.');
+      alert('Authentication failed. Please log in again.');
+    } else if (error.message.includes('405')) {
+      setAuthError('Server error: Method not allowed. Please check API configuration.');
+      alert('Server configuration error. Please try again later.');
+    } else {
+      alert(`Failed to create opportunity: ${error.message}`);
     }
-  };
-
+  } finally {
+    setIsLoading(false);
+  }
+};
   const handleLoginRedirect = () => {
     navigate('/welcome');
   };
@@ -145,14 +216,19 @@ const CreateOpportunity: React.FC = () => {
             </div>
           )}
 
-          {/* Debug info - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-3 bg-blue-100 border border-blue-400 rounded text-sm">
-              <Text className="text-blue-700">
-                Debug: User: {user ? user.email : 'Not logged in'}, Token: {token ? 'Present' : 'Missing'}
-              </Text>
-            </div>
-          )}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mb-4 p-3 bg-blue-100 border border-blue-400 rounded text-sm">
+                  <Text className="text-blue-700">
+                    Debug Info:
+                  </Text>
+                  <div className="mt-1 text-xs">
+                    <div>User: {user ? `${user.email} (${user.id})` : 'Not logged in'}</div>
+                    <div>Token: {token ? `${token.length} chars` : 'Missing'}</div>
+                    <div>API URL: {import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL || 'NOT SET!'}</div>
+                    <div>Environment: {import.meta.env.MODE}</div>
+                  </div>
+                </div>
+              )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -225,37 +301,70 @@ const CreateOpportunity: React.FC = () => {
               </div>
             </div>
 
-            {/* Image URL Field */}
-            <div>
+                <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Opportunity Image URL
+                Opportunity Image
               </label>
-              <Input
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={formData.image}
-                onChange={(e: any) => setFormData({...formData, image: e.target.value})}
-                className="rounded-lg border-gray-300"
-                disabled={!!authError || isLoading}
-              />
-              <Text className="text-sm text-gray-500 mt-1">
-                Provide a direct link to an image that represents this opportunity
-              </Text>
               
-              {/* Image Preview */}
-              {formData.image && (
-                <div className="mt-3">
-                  <Text className="text-sm font-medium text-gray-700 mb-2">Image Preview:</Text>
-                  <div className="w-32 h-32 border border-gray-300 rounded-lg overflow-hidden">
+              {!formData.image ? (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/*"
+                    className="hidden"
+                    disabled={!!authError || isLoading || isUploading}
+                  />
+                  
+                  {isUploading ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#750015] mb-2"></div>
+                      <Text className="text-gray-500">Uploading image...</Text>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mx-auto w-12 h-12 mb-3 text-gray-400">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <Text className="text-gray-600 mb-1">
+                        <span className="text-[#750015] font-semibold">Click to upload</span> or drag and drop
+                      </Text>
+                      <Text className="text-gray-500 text-sm">
+                        PNG, JPG, GIF up to 5MB
+                      </Text>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative w-full max-w-xs mx-auto">
                     <img 
-                      src={formData.image} 
+                      src={imagePreview || formData.image} 
                       alt="Preview" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/images/opportunity.png';
-                      }}
+                      className="w-full h-48 object-cover rounded-lg border border-gray-300"
                     />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      disabled={!!authError || isLoading}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
+                  <Text className="text-center text-sm text-gray-500">
+                    Image ready for upload
+                  </Text>
                 </div>
               )}
             </div>
@@ -390,7 +499,7 @@ const CreateOpportunity: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-6">
+             <div className="flex gap-4 pt-6">
               <Button
                 type="button"
                 onClick={() => navigate(-1)}
@@ -401,7 +510,7 @@ const CreateOpportunity: React.FC = () => {
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading || !!authError}
+                disabled={isLoading || !!authError || isUploading}
                 className="px-6 py-3 bg-[#750015] text-white hover:bg-[#5a0010] rounded-lg font-medium disabled:opacity-50"
               >
                 {isLoading ? 'Creating...' : 'Create Opportunity'}

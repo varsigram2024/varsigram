@@ -1,6 +1,15 @@
 // services/opportunityService.ts
 const API_BASE_URL = import.meta.env.VITE_OPPORTUNITIES_API_BASE_URL;
 
+// Add validation at the top
+if (!API_BASE_URL) {
+  console.error('❌ VITE_OPPORTUNITIES_API_BASE_URL is not defined!');
+  console.error('Current environment variables:', import.meta.env);
+  throw new Error('API base URL is not configured. Please check your environment variables.');
+}
+
+console.log('✅ API_BASE_URL:', API_BASE_URL);
+
 // services/opportunityService.ts - Ensure image field is properly typed
 export interface Opportunity {
   id: string;
@@ -73,7 +82,7 @@ export const categoryToTypeMap = {
   'OTHER': 'Others'
 } as const;
 
-// services/opportunityService.ts - Better transform for create response
+// services/opportunityService.ts - Update transform function
 const transformOpportunity = (data: any): Opportunity => {
   console.log('Transforming opportunity data:', data);
   
@@ -87,6 +96,9 @@ const transformOpportunity = (data: any): Opportunity => {
     postedAt = daysAgo === 0 ? 'Today' : `${daysAgo}d ago`;
   }
 
+  // Handle image - could be data URL or regular URL
+  const image = data.image || null;
+
   return {
     id: data.id,
     title: data.title,
@@ -97,7 +109,7 @@ const transformOpportunity = (data: any): Opportunity => {
     deadline: data.deadline,
     contactEmail: data.contactEmail,
     organization: data.organization,
-    image: data.image,
+    image: image,
     applicants: data.applicants || 0,
     excerpt: excerpt,
     requirements: data.requirements,
