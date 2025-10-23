@@ -1,5 +1,5 @@
 // OpportunityDetail.tsx - Updated with link field for Apply button
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/Button";
 import { Heading } from "../../components/Heading";
@@ -24,6 +24,100 @@ export default function OpportunityDetail() {
   const [imageError, setImageError] = useState(false);
 
   console.log('OpportunityDetail - ID from URL:', id);
+
+
+  const getCurrentUserId = (): string | null => {
+  const tokenSources = [
+    localStorage.getItem('auth_token'),
+    localStorage.getItem('token'),
+    localStorage.getItem('jwtToken'),
+    localStorage.getItem('access_token'),
+  ];
+  
+  const token = tokenSources.find(t => t && t !== 'null' && t !== 'undefined');
+  
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.user_id || payload.userId || payload.sub || payload.id || null;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
+  
+  return null;
+};
+
+const shareOpportunity = (opportunity: Opportunity) => {
+  const shareUrl = window.location.href;
+  const shareText = `Check out this opportunity: ${opportunity.title}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: opportunity.title,
+      text: shareText,
+      url: shareUrl,
+    });
+  } else {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('Link copied to clipboard!');
+    }).catch(() => {
+      prompt('Copy this link to share:', shareUrl);
+    });
+  }
+};
+
+// Add inside the OpportunityDetail component, after the state declarations:
+const [isMenuOpen, setIsMenuOpen] = useState(false);
+const [isDeleting, setIsDeleting] = useState(false);
+const menuRef = useRef<HTMLDivElement>(null);
+const currentUserId = getCurrentUserId();
+
+const isOwner = currentUserId && opportunity && (
+  opportunity.userId === currentUserId || 
+  opportunity.createdBy?.toString() === currentUserId
+);
+
+// Close menu when clicking outside
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setIsMenuOpen(false);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
+
+const handleDelete = async () => {
+  if (!isOwner || !opportunity) return;
+
+  if (!confirm('Are you sure you want to delete this opportunity? This action cannot be undone.')) {
+    return;
+  }
+
+  setIsDeleting(true);
+  try {
+    await opportunityService.deleteOpportunity(opportunity.id);
+    navigate('/opportunities');
+  } catch (error) {
+    console.error('Delete failed:', error);
+    alert('Failed to delete opportunity. Please try again.');
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
+const handleShare = () => {
+  if (opportunity) {
+    shareOpportunity(opportunity);
+  }
+  setIsMenuOpen(false);
+};
+
+
 
   useEffect(() => {
     const fetchOpportunity = async () => {
@@ -193,55 +287,112 @@ export default function OpportunityDetail() {
           </div>
         )}
 
-        {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
-          <div className="flex-1">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4 text-sm font-medium"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to opportunities
-            </button>
-            <Heading as="h1" className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-              {opportunity.title}
-            </Heading>
-            <div className="flex flex-wrap items-center gap-2 text-gray-600">
-              <Text className="text-lg">
-                {opportunity.organization || 'Unknown Organization'}
-              </Text>
-              <span>•</span>
-              <Text>
-                {opportunity.location || (opportunity.isRemote ? 'Remote' : 'Location not specified')}
-              </Text>
-              {opportunity.isRemote && (
-                <>
-                  <span>•</span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                    Remote
-                  </span>
-                </>
-              )}
+                {/* Header Section */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
+            <div className="flex-1">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center text-gray-600 hover:text-gray-900 mb-4 text-sm font-medium"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to opportunities
+              </button>
+              <Heading as="h1" className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+                {opportunity.title}
+              </Heading>
+              <div className="flex flex-wrap items-center gap-2 text-gray-600">
+                <Text className="text-lg">
+                  {opportunity.organization || 'Unknown Organization'}
+                </Text>
+                <span>•</span>
+                <Text>
+                  {opportunity.location || (opportunity.isRemote ? 'Remote' : 'Location not specified')}
+                </Text>
+                {opportunity.isRemote && (
+                  <>
+                    <span>•</span>
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                      Remote
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {/* Three-dot menu and Apply button container */}
+            <div className="flex items-center gap-2">
+             
+              {/* Apply Button */}
+              <Button
+                className="bg-[#750015] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#5a0010] whitespace-nowrap lg:w-auto w-full shadow-lg flex items-center justify-center gap-2"
+                onClick={handleApply}
+              >
+                {hasApplicationLink ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Apply Now
+                  </>
+                ) : (
+                  'Apply Now'
+                )}
+              </Button>
+
+
+               {/* Three-dot menu */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="More options"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                  </svg>
+                </button>
+
+                {/* Dropdown menu */}
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <button
+                      onClick={handleShare}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      Share
+                    </button>
+                    
+                    {isOwner && (
+                      <button
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <Button
-            className="bg-[#750015] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#5a0010] whitespace-nowrap lg:w-auto w-full shadow-lg flex items-center justify-center gap-2"
-            onClick={handleApply}
-          >
-            {hasApplicationLink ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Apply Now
-              </>
-            ) : (
-              'Apply Now'
-            )}
-          </Button>
-        </div>
 
         {/* Image */}
         <div className="w-full h-64 lg:h-80 bg-gray-100 rounded-xl overflow-hidden mb-8 shadow-sm">

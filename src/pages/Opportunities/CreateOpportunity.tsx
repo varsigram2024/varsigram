@@ -273,7 +273,7 @@ const CreateOpportunity: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organization *
+                  Organization 
                 </label>
                 <Input
                   type="text"
@@ -281,7 +281,6 @@ const CreateOpportunity: React.FC = () => {
                   value={formData.organization}
                   onChange={(e: any) => setFormData({...formData, organization: e.target.value})}
                   className="rounded-lg border-gray-300"
-                  required
                   disabled={!!authError || isLoading}
                 />
               </div>
@@ -311,7 +310,7 @@ const CreateOpportunity: React.FC = () => {
                 </Text>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location *
                 </label>
@@ -324,13 +323,13 @@ const CreateOpportunity: React.FC = () => {
                   required
                   disabled={!!authError || isLoading}
                 />
-              </div>
+              </div> */}
             </div>
 
             {/* Application Link Field - NEW */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Application Link
+                Application Link *
               </label>
               <Input
                 type="url"
@@ -338,10 +337,11 @@ const CreateOpportunity: React.FC = () => {
                 value={formData.link}
                 onChange={(e: any) => setFormData({...formData, link: e.target.value})}
                 className="rounded-lg border-gray-300"
+                required
                 disabled={!!authError || isLoading}
               />
               <Text className="text-sm text-gray-500 mt-1">
-                Provide a direct link to the application page (optional)
+                Provide a direct link to the application page 
               </Text>
             </div>
 
@@ -416,7 +416,7 @@ const CreateOpportunity: React.FC = () => {
             </div>
 
             {/* Remote Work Checkbox */}
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <input
                 type="checkbox"
                 id="isRemote"
@@ -428,7 +428,7 @@ const CreateOpportunity: React.FC = () => {
               <label htmlFor="isRemote" className="ml-2 block text-sm text-gray-700">
                 This is a remote opportunity
               </label>
-            </div>
+            </div> */}
 
             {/* Description */}
             <div>
@@ -447,7 +447,7 @@ const CreateOpportunity: React.FC = () => {
             </div>
 
             {/* Requirements */}
-            <div>
+            <div className='hidden'>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Requirements
               </label>
@@ -517,49 +517,28 @@ const CreateOpportunity: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Application Deadline *
+                  Application Deadline 
                 </label>
                 <Input
                   type="datetime-local"
                   value={formData.deadline}
                   onChange={(e: any) => setFormData({...formData, deadline: e.target.value})}
                   className="rounded-lg border-gray-300"
-                  required
                   disabled={!!authError || isLoading}
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Email *
-                </label>
-                <Input
-                  type="email"
-                  placeholder="contact@organization.com"
-                  value={formData.contactEmail}
-                  onChange={(e: any) => setFormData({...formData, contactEmail: e.target.value})}
-                  className="rounded-lg border-gray-300"
-                  required
-                  disabled={!!authError || isLoading}
-                />
-              </div>
+              
             </div>
 
             <div className="flex gap-4 pt-6">
-              <Button
-                type="button"
-                onClick={() => navigate(-1)}
-                disabled={isLoading || isUploading}
-                className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium disabled:opacity-50"
-              >
-                Cancel
-              </Button>
+             
               <Button
                 type="submit"
                 disabled={isLoading || !!authError || isUploading}
                 className="px-6 py-3 bg-[#750015] text-white hover:bg-[#5a0010] rounded-lg font-medium disabled:opacity-50"
               >
-                {isUploading ? 'Uploading Image...' : isLoading ? 'Creating...' : 'Create Opportunity'}
+                {isUploading ? 'Uploading Image...' : isLoading ? 'Posting...' : 'Post'}
               </Button>
             </div>
           </form>
