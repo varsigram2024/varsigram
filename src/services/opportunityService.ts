@@ -214,5 +214,31 @@ export const opportunityService = {
       console.error('Search opportunities failed:', error);
       return [];
     }
+  },
+// Add to the opportunityService object in opportunityService.ts
+async deleteOpportunity(id: string): Promise<void> {
+  try {
+    const token = getAuthToken();
+    
+    if (!token) {
+      throw new Error('Authentication required. Please log in first.');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/opportunities/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+  } catch (error) {
+    console.error('Delete opportunity failed:', error);
+    throw error;
   }
+}
+  
 };

@@ -40,16 +40,8 @@ export default function Opportunities() {
     fetchOpportunities();
   }, [activeTab]);
 
-  // Search functionality - client-side filtering only
-  useEffect(() => {
-    if (query.trim()) {
-      // Client-side search is handled in useMemo below
-      // No API search call since backend might not support it
-    }
-  }, [query, activeTab]);
-
   // Client-side filtered data
-  const filtered = useMemo(() => {
+  const displayData = useMemo(() => {
     if (!query.trim()) return opportunities;
     
     const q = query.trim().toLowerCase();
@@ -62,38 +54,40 @@ export default function Opportunities() {
     );
   }, [opportunities, query]);
 
-  // Display data is always the filtered array
-  const displayData = filtered;
+  // Handle delete opportunity
+  const handleDeleteOpportunity = (deletedId: string) => {
+    setOpportunities(prev => prev.filter(opp => opp.id !== deletedId));
+  };
 
   // Get empty state message based on context
-const getEmptyMessage = () => {
-  if (query.trim()) {
-    return {
-      title: 'No opportunities found',
-      description: 'Try a different search term or browse all opportunities'
-    };
-  }
-  
-  const messages = {
-    'Internships': {
-      title: 'No internships available',
-      description: 'Check back later for new internship opportunities'
-    },
-    'Scholarships': {
-      title: 'No scholarships available', 
-      description: 'Check back later for new scholarship opportunities'
-    },
-    'Others': {
-      title: 'No other opportunities available',
-      description: 'Check back later for new competitions, gigs, or other opportunities'
+  const getEmptyMessage = () => {
+    if (query.trim()) {
+      return {
+        title: 'No opportunities found',
+        description: 'Try a different search term or browse all opportunities'
+      };
     }
+    
+    const messages = {
+      'Internships': {
+        title: 'No internships available',
+        description: 'Check back later for new internship opportunities'
+      },
+      'Scholarships': {
+        title: 'No scholarships available', 
+        description: 'Check back later for new scholarship opportunities'
+      },
+      'Others': {
+        title: 'No other opportunities available',
+        description: 'Check back later for new competitions, gigs, or other opportunities'
+      }
+    };
+    
+    return messages[activeTab] || {
+      title: 'No opportunities available',
+      description: 'Check back later for new opportunities'
+    };
   };
-  
-  return messages[activeTab] || {
-    title: 'No opportunities available',
-    description: 'Check back later for new opportunities'
-  };
-};
 
   return (
     <div className="flex w-full bg-white min-h-screen space-x-4">
@@ -174,7 +168,7 @@ const getEmptyMessage = () => {
                   className="cursor-pointer"
                   onClick={() => navigate(`/opportunities/${item.id}`)}
                 >
-                  <OpportunityCard item={item} />
+                  <OpportunityCard item={item} onDelete={handleDeleteOpportunity} />
                 </div>
               ))}
             </div>
