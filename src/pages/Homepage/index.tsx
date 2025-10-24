@@ -1139,33 +1139,18 @@ useEffect(() => {
           {/* Mobile Header */}
           <div className="mt-5 lg:hidden flex flex-row justify-between items-center animate-fade-in">
             <div
-              onClick={() => {
-                if (user?.display_name_slug) {
-                  navigate(`/user-profile/${user.display_name_slug}`);
-                } else {
-                  toast.error("Profile link unavailable");
-                }
-              }}
-              className="hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              <Img
-                src={user?.profile_pic_url || "/public/images/user.png"}
-                alt="Profile"
-                className="h-[32px] w-[32px] rounded-[50%]"
-              />
-            </div>
-
-            <div>
-              <Text className="font-semibold text-xl">Varsigram</Text>
-            </div>
-
-            <div className='flex flex-row justify-between items-center space-x-2'>
-              <div
                 onClick={() => handleNavigation('settings')}
                 className="hover:opacity-80 transition-opacity cursor-pointer"
               >
                <Img src="images/settings-icon.svg" alt="Settings" className="h-[24px] w-[24px]" />
               </div>
+
+            <div className='flex items-center justify-center'>
+              <Text className="font-semibold text-xl text-center">Varsigram</Text>
+            </div>
+
+            <div className='flex flex-row justify-between items-center space-x-2'>
+             
            
               <Link to="/notifications" className="relative">
                 <Img
