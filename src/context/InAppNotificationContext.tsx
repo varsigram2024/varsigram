@@ -2,14 +2,25 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import axios from 'axios';
 
+// In InAppNotificationContext.tsx
 interface InAppNotification {
-  id: string;
+  id: number;                    // Change to number
   title: string;
-  message: string;
-  type: 'like' | 'comment' | 'follow' | 'message' | 'system';
-  read: boolean;
+  body: string;                  // Change to 'body'
+  type: 'like' | 'comment' | 'follow' | 'message' | 'system' | 'new_post' | 'reward_point';
+  is_read: boolean;              // Change to 'is_read'
   created_at: string;
+  read_at: string | null;
   data?: any;
+  sender?: {
+    id: number;
+    username: string;
+    profile_pic_url: string | null;
+  };
+  post?: {
+    id: string;
+    content: string;
+  };
 }
 
 interface InAppNotificationContextType {

@@ -3,6 +3,7 @@ import { messaging, getToken, onMessage } from '../firebase/messaging'; // Ensur
 import { useAuth } from '../auth/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { deleteToken } from 'firebase/messaging';
 
 // Define the shape of the context's value
 interface NotificationContextType {
@@ -215,35 +216,61 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setIsRegistering(false); // Always reset the flag
     }
   }, [token, messaging, fcmToken, isNotificationEnabled, notificationPermission, isRegistering]);
-  // Dependencies for useCallback:
-  // fcmToken: to check if token has changed before backend call
-  // isNotificationEnabled, notificationPermission: for pre-conditions check
-  // isRegistering: used internally by useCallback for debouncing
-  // token, messaging: for actual API calls and Firebase Messaging instance
-  // uniqueDeviceId (implicit from outer scope, no need to add to deps)
+// Fix the auto-registration effect
+useEffect(() => {
+  const initializeNotificationState = async () => {
+    if (!token || !isNotificationSupported) return;
 
+    // Check current permission state
+    const currentPermission = Notification.permission;
+    setNotificationPermission(currentPermission);
 
-  // --- Permission Request and Manual Registration ---
-
-  // Function to request notification permission from the user
-  const requestNotificationPermission = useCallback(async () => {
-    if (!isNotificationSupported) {
-      console.warn('Notifications are not supported in this browser.');
-      return;
+    // Sync isNotificationEnabled with actual state
+    const savedPreference = localStorage.getItem('notificationEnabled');
+    const shouldBeEnabled = savedPreference === 'true' && currentPermission === 'granted';
+    
+    if (isNotificationEnabled !== shouldBeEnabled) {
+      setIsNotificationEnabled(shouldBeEnabled);
     }
 
-    try {
-      const permission = await Notification.requestPermission();
-      setNotificationPermission(permission);
-      if (permission === 'granted') {
-        // Enable notifications
-        setIsNotificationEnabled(true);
-        console.log('Notifications enabled successfully.');
-      }
-    } catch (error) {
-      console.error('Failed to request notification permission:', error);
+    // Auto-register if conditions are met
+    if (shouldBeEnabled && currentPermission === 'granted' && !fcmToken && !isRegistering) {
+      console.log("Attempting auto-registration...");
+      await registerDeviceWithState(false);
     }
-  }, [isNotificationSupported]);
+  };
+
+  initializeNotificationState();
+}, [token, isNotificationSupported]);
+
+// Fix the requestNotificationPermission function
+const requestNotificationPermission = useCallback(async () => {
+  if (!isNotificationSupported) {
+    console.warn('Notifications are not supported in this browser.');
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    
+    if (permission === 'granted') {
+      setIsNotificationEnabled(true);
+      localStorage.setItem('notificationEnabled', 'true');
+      console.log('Notifications enabled successfully.');
+      
+      // Trigger device registration
+      await registerDeviceWithState(true);
+    } else {
+      setIsNotificationEnabled(false);
+      localStorage.setItem('notificationEnabled', 'false');
+    }
+  } catch (error) {
+    console.error('Failed to request notification permission:', error);
+    setIsNotificationEnabled(false);
+    localStorage.setItem('notificationEnabled', 'false');
+  }
+}, [isNotificationSupported, registerDeviceWithState]);
   // --- Auto-registration on Load/Login ---
   useEffect(() => {
     // Only proceed if authenticated, notifications are intended to be enabled,

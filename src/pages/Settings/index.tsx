@@ -1,13 +1,7 @@
 import React, { Suspense, ChangeEvent, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { SearchInput } from "../../components/Input/SearchInput.tsx";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
-import { Input } from "../../components/Input/index.tsx";
-import { Heading } from "../../components/Heading/index.tsx";
-import { CloseSVG } from "../../components/Input/close.tsx";
-import Sidebar1 from "../../components/Sidebar1/index.tsx";
-import BottomNav from "../../components/BottomNav";
 import { useAuth } from '../../auth/AuthContext';
 import { toast } from 'react-toastify';
 import {
@@ -59,37 +53,22 @@ export default function Settings() {
     toast.success('Logged out successfully');
   };
 
-  const handleNotificationToggle = async () => {
-    if (!isNotificationSupported) {
-      toast.error('Notifications are not supported in this browser');
-      return;
-    }
+// In Settings.tsx, fix the notification toggle section
+const handleNotificationToggle = async () => {
+  if (!isNotificationSupported) {
+    toast.error('Notifications are not supported in this browser');
+    return;
+  }
 
-    if (!isNotificationEnabled) {
-      // Enable notifications
-      await requestNotificationPermission();
-    } else {
-      // Show instructions for disabling notifications
-      toast.info(
-        'To disable notifications, please go to your browser settings and block notifications for this site.',
-        { autoClose: 5000 }
-      );
-      
-      // Optionally, you could show a modal with instructions
-      const shouldShowInstructions = window.confirm(
-        'To disable notifications, you need to update your browser settings.\n\n' +
-        '1. Click the lock/info icon in your browser address bar\n' +
-        '2. Change "Notifications" to "Block"\n' +
-        '3. Refresh the page\n\n' +
-        'Would you like to see detailed instructions?'
-      );
-      
-      if (shouldShowInstructions) {
-        // You could open a modal or navigate to a help page
-        window.open('https://support.google.com/chrome/answer/3220216?hl=en', '_blank');
-      }
-    }
-  };
+  if (!isNotificationEnabled) {
+    // Enable notifications
+    await requestNotificationPermission();
+  } else {
+    // Disable notifications
+    await unregisterDevice();
+    // The state should update automatically via the context
+  }
+};
 
   return (
     <div className="flex w-full items-start justify-center bg-[#f6f6f6] min-h-screen relative animate-fade-in">
