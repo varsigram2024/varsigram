@@ -118,10 +118,11 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const currentUserId = getCurrentUserId();
   
-  // Check if current user is the owner
-  const isOwner = currentUserId && (
+  // Check if current user is the owner - FIXED comparison
+  const isOwner = currentUserId && item && (
     item.userId === currentUserId || 
-    item.createdBy?.toString() === currentUserId
+    item.createdBy?.toString() === currentUserId ||
+    (item.createdBy && item.createdBy.toString() === currentUserId)
   );
 
   // Close menu when clicking outside
@@ -143,14 +144,21 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
 
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsMenuOpen(!isMenuOpen);
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     
     if (!isOwner) {
       alert('You can only delete opportunities you created');
+      return;
+    }
+
+    if (!item?.id) {
+      alert('Invalid opportunity data');
       return;
     }
 
@@ -163,9 +171,9 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
       await opportunityService.deleteOpportunity(item.id);
       onDelete?.(item.id);
       setIsMenuOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete failed:', error);
-      alert('Failed to delete opportunity. Please try again.');
+      alert(error.message || 'Failed to delete opportunity. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -173,8 +181,25 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     await shareOpportunity(item);
     setIsMenuOpen(false);
+  };
+
+  // Prevent card click when interacting with menu or buttons
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If click originated from menu or buttons, don't navigate
+    if (
+      menuRef.current?.contains(e.target as Node) ||
+      menuButtonRef.current?.contains(e.target as Node)
+    ) {
+      return;
+    }
+    
+    // Navigate to opportunity detail
+    if (item?.id) {
+      window.location.href = `/opportunities/${item.id}`;
+    }
   };
 
   // Map backend category to frontend display type
@@ -198,11 +223,11 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
   return (
     <article className="bg-white overflow-hidden mb-4 py-8 relative border-b border-gray-200">
       {/* Three-dot menu */}
-      <div className="absolute top-6 right-6">
+        <div className="absolute top-6 right-6">
         <button
           ref={menuButtonRef}
           onClick={handleMenuToggle}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 relative"
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 relative z-10"
           aria-label="More options"
         >
           <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
@@ -213,7 +238,7 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
         {isMenuOpen && (
           <div 
             ref={menuRef}
-            className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-30 border border-gray-200"
+            className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
           >
             <button
               onClick={handleShare}
@@ -228,12 +253,21 @@ export default function OpportunityCard({ item, onDelete }: OpportunityCardProps
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left transition-colors disabled:opacity-50"
+                className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left transition-colors disabled:opacity-50"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </>
+                )}
               </button>
             )}
           </div>

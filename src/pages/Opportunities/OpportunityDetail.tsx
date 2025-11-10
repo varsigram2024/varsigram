@@ -92,23 +92,26 @@ useEffect(() => {
 }, []);
 
 const handleDelete = async () => {
-  if (!isOwner || !opportunity) return;
+    if (!isOwner || !opportunity) {
+      alert('You can only delete opportunities you created');
+      return;
+    }
 
-  if (!confirm('Are you sure you want to delete this opportunity? This action cannot be undone.')) {
-    return;
-  }
+    if (!confirm('Are you sure you want to delete this opportunity? This action cannot be undone.')) {
+      return;
+    }
 
-  setIsDeleting(true);
-  try {
-    await opportunityService.deleteOpportunity(opportunity.id);
-    navigate('/opportunities');
-  } catch (error) {
-    console.error('Delete failed:', error);
-    alert('Failed to delete opportunity. Please try again.');
-  } finally {
-    setIsDeleting(false);
-  }
-};
+    setIsDeleting(true);
+    try {
+      await opportunityService.deleteOpportunity(opportunity.id);
+      navigate('/opportunities');
+    } catch (error: any) {
+      console.error('Delete failed:', error);
+      alert(error.message || 'Failed to delete opportunity. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
 const handleShare = () => {
   if (opportunity) {

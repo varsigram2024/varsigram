@@ -12,6 +12,18 @@ const placeholderSVG = `data:image/svg+xml;base64,${btoa(`
   </svg>
 `)}`;
 
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface OpportunitiesResponse {
+  data: Opportunity[];
+  pagination: PaginationInfo;
+}
+
 // services/opportunityService.ts - Update interface
 export interface Opportunity {
   id: string;
@@ -136,9 +148,9 @@ export const opportunityService = {
     }
   },
 
-  async getOpportunities(category?: string): Promise<Opportunity[]> {
+  async getOpportunities(category?: string, page: number = 1, limit: number = 20): Promise<OpportunitiesResponse> {
     try {
-      const endpoint = `${API_BASE_URL}/opportunities`;
+      const endpoint = `${API_BASE_URL}/opportunities?page=${page}&limit=${limit}`;
       console.log('Fetching opportunities from:', endpoint);
       
       const response = await fetch(endpoint);
@@ -158,12 +170,12 @@ export const opportunityService = {
         }
       }
       
-      // Client-side category filtering - COMPETITION, GIG, PITCH go under "Others"
+      // Client-side category filtering
       if (category) {
         const categoryMap: { [key: string]: string[] } = {
           'Internships': ['INTERNSHIP'],
           'Scholarships': ['SCHOLARSHIP'],
-          'Others': ['COMPETITION', 'GIG', 'PITCH', 'OTHER'] // All these go under "Others"
+          'Others': ['COMPETITION', 'GIG', 'PITCH', 'OTHER']
         };
         
         const backendCategories = categoryMap[category];
@@ -175,12 +187,30 @@ export const opportunityService = {
       }
       
       console.log(`Transforming ${opportunitiesArray.length} opportunities for tab: ${category}`);
-      return opportunitiesArray.map(transformOpportunity);
+      
+      return {
+        data: opportunitiesArray.map(transformOpportunity),
+        pagination: data.pagination || {
+          page: page,
+          limit: limit,
+          total: opportunitiesArray.length,
+          hasMore: false
+        }
+      };
     } catch (error) {
       console.error('Get opportunities failed:', error);
-      return [];
+      return {
+        data: [],
+        pagination: {
+          page: page,
+          limit: limit,
+          total: 0,
+          hasMore: false
+        }
+      };
     }
   },
+
 
   async getOpportunityById(id: string): Promise<Opportunity | null> {
     try {
@@ -217,28 +247,46 @@ export const opportunityService = {
   },
 // Add to the opportunityService object in opportunityService.ts
 async deleteOpportunity(id: string): Promise<void> {
-  try {
-    const token = getAuthToken();
-    
-    if (!token) {
-      throw new Error('Authentication required. Please log in first.');
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/opportunities/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
+    try {
+      const token = getAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication required. Please log in first.');
       }
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      
+      console.log('Deleting opportunity with ID:', id);
+      console.log('Using token:', token ? 'Present' : 'Missing');
+      
+      const response = await fetch(`${API_BASE_URL}/opportunities/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Delete response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Delete error response:', errorText);
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (response.status === 403) {
+          throw new Error('You do not have permission to delete this opportunity.');
+        } else if (response.status === 404) {
+          throw new Error('Opportunity not found.');
+        } else {
+          throw new Error(`Failed to delete opportunity: ${errorText}`);
+        }
+      }
+      
+      console.log('Opportunity deleted successfully');
+    } catch (error) {
+      console.error('Delete opportunity failed:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('Delete opportunity failed:', error);
-    throw error;
   }
-}
   
 };
