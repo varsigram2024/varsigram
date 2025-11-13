@@ -1,4 +1,4 @@
-// index.tsx - Remove fallback data and use proper empty states
+// index.tsx - Add pagination support
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import OpportunityCard from './OpportunityCard';
@@ -9,7 +9,7 @@ import { Img } from '../../components/Img';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import ProfileOrganizationSection from '../Profilepage/ProfilepageOrganizationSection';
-import { opportunityService, type Opportunity } from '../../services/opportunityService';
+import { opportunityService, type Opportunity, type OpportunitiesResponse } from '../../services/opportunityService';
 
 export default function Opportunities() {
   const navigate = useNavigate();
@@ -18,27 +18,58 @@ export default function Opportunities() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    hasMore: false
+  });
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Fetch opportunities based on active tab
-  useEffect(() => {
-    const fetchOpportunities = async () => {
+  const fetchOpportunities = async (page: number = 1, append: boolean = false) => {
+    if (page === 1) {
       setIsLoading(true);
-      setError(null);
-      try {
-        console.log('Fetching opportunities for tab:', activeTab);
-        const data = await opportunityService.getOpportunities(activeTab);
-        setOpportunities(data);
-      } catch (err) {
-        console.error('Error in fetch:', err);
-        setError('Failed to load opportunities from server');
-        setOpportunities([]); // Set empty array instead of fallback
-      } finally {
-        setIsLoading(false);
+    } else {
+      setIsLoadingMore(true);
+    }
+    
+    setError(null);
+    try {
+      console.log('Fetching opportunities for tab:', activeTab, 'page:', page);
+      const response: OpportunitiesResponse = await opportunityService.getOpportunities(activeTab, page, 20);
+      
+      if (append) {
+        setOpportunities(prev => [...prev, ...response.data]);
+      } else {
+        setOpportunities(response.data);
       }
-    };
+      
+      setPagination(response.pagination);
+    } catch (err) {
+      console.error('Error in fetch:', err);
+      setError('Failed to load opportunities from server');
+      if (!append) {
+        setOpportunities([]);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
 
-    fetchOpportunities();
+  // Initial load and tab change
+  useEffect(() => {
+    setOpportunities([]);
+    fetchOpportunities(1, false);
   }, [activeTab]);
+
+  // Load more opportunities
+  const handleLoadMore = () => {
+    if (pagination.hasMore && !isLoadingMore) {
+      fetchOpportunities(pagination.page + 1, true);
+    }
+  };
 
   // Client-side filtered data
   const displayData = useMemo(() => {
@@ -161,17 +192,46 @@ export default function Opportunities() {
               )}
             </div>
           ) : (
-            <div className="space-y-2 lg:px-16">
-              {displayData.map(item => (
-                <div
-                  key={item.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/opportunities/${item.id}`)}
-                >
-                  <OpportunityCard item={item} onDelete={handleDeleteOpportunity} />
+            <>
+              <div className="space-y-2 lg:px-16">
+                {displayData.map(item => (
+                  <div
+                    key={item.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/opportunities/${item.id}`)}
+                  >
+                    <OpportunityCard item={item} onDelete={handleDeleteOpportunity} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Load More Button */}
+              {pagination.hasMore && (
+                <div className="flex justify-center mt-8 lg:px-16">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="bg-[#750015] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#5a0010] disabled:opacity-50"
+                  >
+                    {isLoadingMore ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Loading...
+                      </div>
+                    ) : (
+                      'Load More Opportunities'
+                    )}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {/* Show total count */}
+              {pagination.total > 0 && (
+                <div className="text-center mt-4 text-gray-500 text-sm lg:px-16">
+                  Showing {displayData.length} of {pagination.total} opportunities
+                </div>
+              )}
+            </>
           )}
         </div>
 
