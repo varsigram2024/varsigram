@@ -16,7 +16,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import CommentSection from "../CommentSection";
 import { useAuth } from "../../auth/AuthContext";
 import EditPostModal from "../EditPostModal";
-import { Link } from "react-router-dom";
+
+
+let previewTimeout: NodeJS.Timeout | null = null;
+
 
 
 interface Post {
@@ -363,40 +366,48 @@ const handlePoint = async (e: React.MouseEvent) => {
 
 
 // Add this state with your other useState declarations
-const [imagePreview, setImagePreview] = useState<ImagePreviewState>({
+const [imagePreview, setImagePreview] = useState({
   isOpen: false,
   currentIndex: 0,
-  images: []
+  media: [] as string[],
 });
 
+
 // Add these functions to handle image preview
-const openImagePreview = (imageIndex: number) => {
+const openImagePreview = (index: number) => {
+  if (previewTimeout) return; // ignore rapid clicks
+
+  previewTimeout = setTimeout(() => {
+    previewTimeout = null;
+  }, 300); // debounce time
+
   setImagePreview({
     isOpen: true,
-    currentIndex: imageIndex,
-    images: post.media_urls
+    currentIndex: index,
+    media: post.media_urls ?? [],
   });
 };
+
 
 const closeImagePreview = () => {
   setImagePreview({
     isOpen: false,
     currentIndex: 0,
-    images: []
+    media: []
   });
 };
 
 const goToNextImage = () => {
   setImagePreview(prev => ({
     ...prev,
-    currentIndex: (prev.currentIndex + 1) % prev.images.length
+    currentIndex: (prev.currentIndex + 1) % prev.media.length
   }));
 };
 
 const goToPrevImage = () => {
   setImagePreview(prev => ({
     ...prev,
-    currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
+    currentIndex: (prev.currentIndex - 1 + prev.media.length) % prev.media.length
   }));
 };
 
@@ -440,189 +451,118 @@ const isVideoUrl = (url: string): boolean => {
     );
 };
 
-// Update the renderMedia function to handle videos
 const renderMedia = () => {
-    if (!post.media_urls || post.media_urls.length === 0) return null;
+  if (!post.media_urls || post.media_urls.length === 0) return null;
 
-    const mediaToShow = post.media_urls.slice(0, 4);
-    const videos = mediaToShow.filter(url => isVideoUrl(url));
-    const images = mediaToShow.filter(url => !isVideoUrl(url));
+  const media = post.media_urls.slice(0, 4); // show up to 4 in feed
+  const videos = media.filter((u) => isVideoUrl(u));
+  const images = media.filter((u) => !isVideoUrl(u));
 
-    // Handle mixed media (videos and images)
-    if (videos.length > 0) {
-        // For simplicity, show the first video prominently
-        return (
-            <div className="mt-4">
-                <video
-                    controls
-                    className="w-full max-h-96 object-cover rounded-lg"
-                    poster={images[0]} // Optional: use first image as poster
-                >
-                    <source src={videos[0]} type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-                
-                {/* Show remaining images in grid if any */}
-                {images.length > 0 && (
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                        {images.map((url, index) => (
-                            <Img
-                                key={index}
-                                src={url}
-                                alt={`Post media ${index + 1}`}
-                                className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => openImagePreview(index + videos.length)}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    // Original image rendering logic for images only
-    if (images.length === 1) {
-        return (
-            <div className="mt-4">
-                <Img
-                    src={images[0]}
-                    alt="Post media"
-                    className="w-full max-h-96 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                    onClick={() => openImagePreview(0)}
-                />
-            </div>
-        );
-    } else if (images.length === 2) {
-        return (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-                {images.map((url, index) => (
-                    <Img
-                        key={index}
-                        src={url}
-                        alt={`Post media ${index + 1}`}
-                        className="w-full h-64 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                        onClick={() => openImagePreview(index)}
-                    />
-                ))}
-            </div>
-        );
-    } else if (images.length === 3) {
-        return (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-                <Img
-                    src={images[0]}
-                    alt="Post media 1"
-                    className="w-full h-64 object-cover rounded-lg row-span-2 cursor-pointer hover:opacity-95 transition-opacity"
-                    onClick={() => openImagePreview(0)}
-                />
-                <Img
-                    src={images[1]}
-                    alt="Post media 2"
-                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                    onClick={() => openImagePreview(1)}
-                />
-                <Img
-                    src={images[2]}
-                    alt="Post media 3"
-                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                    onClick={() => openImagePreview(2)}
-                />
-            </div>
-        );
-    } else if (images.length >= 4) {
-        return (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-                {images.slice(0, 4).map((url, index) => (
-                    <Img
-                        key={index}
-                        src={url}
-                        alt={`Post media ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                        onClick={() => openImagePreview(index)}
-                    />
-                ))}
-            </div>
-        );
-    }
-
-    return null;
-};
-
-
-const renderMediaPreview = () => {
-    if (!imagePreview.isOpen) return null;
-
-    const currentMedia = imagePreview.images[imagePreview.currentIndex];
-    const isVideo = isVideoUrl(currentMedia);
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-            <button
-                onClick={closeImagePreview}
-                className="absolute top-4 right-4 text-white p-2 z-10"
-            >
-                <X size={24} />
-            </button>
-
-            {isVideo ? (
-                <div className="relative w-full max-w-4xl max-h-full">
-                    <video
-                        controls
-                        autoPlay
-                        className="w-full h-full max-h-[80vh] object-contain"
-                    >
-                        <source src={currentMedia} type="video/mp4" />
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-            ) : (
-                // Your existing image preview logic
-                <div className="relative w-full max-w-4xl max-h-full">
-                    <Img
-                        src={currentMedia}
-                        alt="Preview"
-                        className="w-full h-full max-h-[80vh] object-contain"
-                    />
-                    
-                    {imagePreview.images.length > 1 && (
-                        <>
-                            <button
-                                onClick={goToPrevImage}
-                                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 bg-black bg-opacity-50 rounded-full"
-                            >
-                                <ChevronLeft size={24} />
-                            </button>
-                            <button
-                                onClick={goToNextImage}
-                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 bg-black bg-opacity-50 rounded-full"
-                            >
-                                <ChevronRight size={24} />
-                            </button>
-                            
-                            {/* Thumbnail navigation */}
-                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                                {imagePreview.images.map((_, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => selectImage(index)}
-                                        className={`w-3 h-3 rounded-full ${
-                                            index === imagePreview.currentIndex 
-                                            ? 'bg-white' 
-                                            : 'bg-gray-400'
-                                        }`}
-                                    />
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
+  // Helper tile
+  const Tile: React.FC<{ url: string; idx: number; className?: string }> = ({ url, idx, className }) => (
+    <div
+      className={`${className || ""} relative rounded-lg overflow-hidden cursor-pointer`}
+      onClick={(e) => {
+        e.stopPropagation();
+        openImagePreview(idx);
+      }}
+    >
+      {isVideoUrl(url) ? (
+        // poster is the video itself; we avoid autoplay in feed
+        <div className="relative w-full h-full">
+          <video
+            src={url}
+            controls={false}
+            className="w-full h-full object-cover"
+            // no autoplay on grid
+          />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <svg className="w-10 h-10 text-white/90" viewBox="0 0 24 24" fill="none">
+              <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
+            </svg>
+          </div>
         </div>
+      ) : (
+        <Img src={url} alt={`media-${idx + 1}`} className="w-full h-full object-cover" />
+      )}
+    </div>
+  );
+
+  // Cases:
+  // 1. Only videos -> large single video (first)
+  if (videos.length > 0 && images.length === 0) {
+    return (
+      <div className="mt-4">
+        <video src={media[0]} controls className="w-full max-h-96 object-contain rounded-lg" />
+        {media.slice(1).length > 0 && (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {media.slice(1).map((u, i) => (
+              <Tile key={i + 1} url={u} idx={i + 1} className="h-40" />
+            ))}
+          </div>
+        )}
+      </div>
     );
+  }
+
+  // 2. Only images -> instagram grid variations
+  if (images.length > 0 && videos.length === 0) {
+    if (images.length === 1) {
+      return (
+        <div className="mt-4">
+          <Tile url={images[0]} idx={media.indexOf(images[0])} className="w-full h-auto max-h-96" />
+        </div>
+      );
+    }
+    if (images.length === 2) {
+      return (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {images.map((u, i) => (
+            <Tile key={i} url={u} idx={media.indexOf(u)} className="h-64" />
+          ))}
+        </div>
+      );
+    }
+    if (images.length === 3) {
+      // large left + two stacked on right
+      return (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="col-span-1 row-span-2 h-80">
+            <Tile url={images[0]} idx={media.indexOf(images[0])} className="h-full" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Tile url={images[1]} idx={media.indexOf(images[1])} className="h-38" />
+            <Tile url={images[2]} idx={media.indexOf(images[2])} className="h-38" />
+          </div>
+        </div>
+      );
+    }
+    // 4 or more images
+    return (
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {images.slice(0, 4).map((u, i) => (
+          <Tile key={i} url={u} idx={media.indexOf(u)} className="h-48" />
+        ))}
+      </div>
+    );
+  }
+
+  // 3. Mixed (videos + images) -> show first media full-width, rest in 2-col grid
+  return (
+    <div className="mt-4">
+      <div className="w-full mb-2">
+        <Tile url={media[0]} idx={0} className="w-full h-auto max-h-96" />
+      </div>
+      {media.slice(1).length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {media.slice(1).map((u, i) => (
+            <Tile key={i + 1} url={u} idx={i + 1} className="h-40" />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
-
-
-
 
 
 // In the Post component, update the handleFollow function:
@@ -1476,7 +1416,19 @@ useEffect(() => {
         />
       )}
 
-       {imagePreview.isOpen && renderMediaPreview()}
+       {/* Render ImagePreviewer overlay */}
+<ImagePreviewer
+  imagePreview={{
+    isOpen: imagePreview.isOpen,
+    currentIndex: imagePreview.currentIndex,
+    media: imagePreview.media, // keep same state property name 'images' if you use it; previewer expects .media but we pass images
+  } as any}
+  onClose={closeImagePreview}
+  onNext={goToNextImage}
+  onPrev={goToPrevImage}
+  onSelect={selectImage}
+/>
+
     </>
   );
 };

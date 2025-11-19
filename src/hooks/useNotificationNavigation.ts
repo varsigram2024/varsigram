@@ -8,18 +8,6 @@ export const useNotificationNavigation = () => {
   const { token } = useAuth();
 
   const handleNotificationClick = (notification: any) => {
-    console.log('🔔 === NOTIFICATION CLICK HANDLER DEBUG ===');
-    console.log('📦 FULL NOTIFICATION OBJECT:', notification);
-    console.log('📊 NOTIFICATION TYPE:', notification.data?.type);
-    
-    // Deep inspection of the notification object
-    console.log('🔍 DEEP INSPECTION:');
-    console.log('   - ID:', notification.id);
-    console.log('   - Title:', notification.title);
-    console.log('   - Body:', notification.body);
-    console.log('   - Is Read:', notification.is_read);
-    console.log('   - Created At:', notification.created_at);
-    console.log('   - Read At:', notification.read_at);
     
     if (notification.data) {
       console.log('   📋 DATA OBJECT:');
@@ -47,9 +35,6 @@ export const useNotificationNavigation = () => {
       case 'comment':
       case 'reply':
       case 'mention':
-        console.log('💬 Comment/Reply/Mention notification');
-        console.log('   - Post ID:', data.post_id);
-        console.log('   - Comment ID:', data.comment_id);
         
         if (data.post_id) {
           // Navigate to post page with comment highlighting
@@ -69,9 +54,6 @@ export const useNotificationNavigation = () => {
 
       case 'like':
       case 'new_post':
-        console.log('❤️ Like/New Post notification');
-        console.log('   - Post ID:', data.post_id);
-        
         if (data.post_id) {
           const targetUrl = `/posts/${data.post_id}`;
           console.log('   🚀 Navigating to:', targetUrl);
@@ -82,12 +64,19 @@ export const useNotificationNavigation = () => {
         }
         break;
 
+        case 'reward_point':
+        if (data.post_id) {
+          const targetUrl = `/posts/${data.post_id}`;
+          console.log('   🎁 Reward navigation →', targetUrl);
+          navigate(targetUrl);
+        } else {
+          console.warn('❌ Post ID missing for reward notification');
+          toast.error('Post not available');
+        }
+        break;
+
+
       case 'follow':
-        console.log('👥 Follow notification analysis:');
-        console.log('   - Follower Display Name Slug:', data.follower_display_name_slug);
-        console.log('   - Follower ID:', data.follower_id);
-        console.log('   - Follower Name:', data.follower_name);
-        console.log('   - Sender Username:', notification.sender?.username);
         
         // Priority 1: Use display name slug for organizations
         if (data.follower_display_name_slug) {
@@ -99,8 +88,6 @@ export const useNotificationNavigation = () => {
         // Priority 2: Use follower_id for students (temporary until they get display_name_slug)
         else if (data.follower_id) {
           const targetUrl = `/user-profile/${data.follower_id}`;
-          console.log('   🎓 Student detected');
-          console.log('   🚀 Navigating to (using follower_id):', targetUrl);
           navigate(targetUrl);
         }
         // Priority 3: Fallback to sender username if available
