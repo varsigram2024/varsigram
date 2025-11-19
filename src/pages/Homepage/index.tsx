@@ -592,12 +592,9 @@ useEffect(() => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please upload only image files');
-        return false;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size should be less than 5MB');
+      
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error('File size should be less than 20MB');
         return false;
       }
       return true;

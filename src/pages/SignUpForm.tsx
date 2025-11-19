@@ -196,12 +196,12 @@ export const SignUpForm = ({ onNext, onLogin }: SignUpFormProps) => {
             />
           </div>
 
-          <p className="text-sm text-[#3A3A3A] animate-slide-up" style={{ animationDelay: "500ms" }}>
+          {/* <p className="text-sm text-[#3A3A3A] animate-slide-up" style={{ animationDelay: "500ms" }}>
             By clicking continue, you are setting up a VARSIGRAM account and agree to our{" "}
             <a href="#" className="text-[#750015] hover:underline">User Agreement</a>{" "}
             and{" "}
             <a href="#" className="text-[#750015] hover:underline">Privacy Policy</a>.
-          </p>
+          </p> */}
 
           <div className="animate-slide-up" style={{ animationDelay: "600ms" }}>
             <Button fullWidth loading={isLoading} type="submit">

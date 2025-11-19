@@ -66,11 +66,6 @@ export default function NotificationsPage() {
 
 
   const handleNotificationItemClick = async (notification: Notification) => {
-  console.log('=== NOTIFICATION ITEM CLICK DEBUG ===');
-  console.log('Notification clicked:', notification);
-  console.log('Notification ID:', notification.id);
-  console.log('Is read:', notification.is_read);
-  console.log('Notification data:', notification.data);
   
   // Mark as read if not already read
   if (!notification.is_read) {
@@ -80,8 +75,6 @@ export default function NotificationsPage() {
     console.log('Notification already read, skipping mark as read');
   }
   
-  // Handle navigation
-  console.log('Calling handleNotificationClick...');
   handleNotificationClick(notification);
 };
 
@@ -269,63 +262,61 @@ const getNotificationIcon = (type: string | undefined) => {
             <div className="divide-y divide-gray-100">
               {notifications.map((notification) => (
                 <div
-                  key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors group ${
-                    !notification.is_read ? 'bg-red-50' : ''
-                  }`}
-                  onClick={() => handleNotificationItemClick(notification)}
-                >
-                  <div className="flex items-start space-x-3">
-                    {/* Notification Icon (derived from notification.type) */}
-                    <div className="flex-shrink-0">
-                      <Img
-                        src={getNotificationIcon(notification.data?.type)}
-                        alt={notification.data?.type || 'notification'}
-                        className="w-6 h-6"
-                      />
+                    key={notification.id}
+                    onClick={() => handleNotificationItemClick(notification)}
+                    className={`
+                      p-4 cursor-pointer transition-all duration-200
+                      border-b border-gray-100
+                      ${!notification.is_read ? 'bg-red-50/60' : 'bg-white'}
+                      hover:bg-gray-50 hover:shadow-sm
+                    `}
+                  >
 
-                    </div>
+                    <div className="flex items-start gap-3">
 
-                    {/* Notification Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        {notification.sender && (
-                          <Img
-                            src={notification.sender.profile_pic_url || '/images/user-image.png'}
-                            alt={notification.sender.username}
-                            className="w-6 h-6 rounded-full object-cover" 
-                          />
-                        )}
-                        <Text className="text-sm font-medium text-gray-900 flex-1">
-                          {notification.title}
-                        </Text>
-                       <span className="text-xs text-gray-400 transition-colors">
-                          {getActionText(notification.data?.type || '')} →
-                        </span>
-
-
-                        {!notification.is_read && (
-                          <div className="w-2 h-2 bg-red-600 rounded-full flex-shrink-0"></div>
-                        )}
+                      {/* Notification Type Icon */}
+                      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100">
+                        <Img
+                          src={getNotificationIcon(notification.data?.type)}
+                          className="w-5 h-5 opacity-80"
+                          alt="icon"
+                        />
                       </div>
-                      
-                      <Text className="text-sm text-gray-600 mt-1">
-                        {notification.body} {/* Use notification.body */}
-                      </Text>
-                      
-                      {notification.post && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                          {/* Display full content or truncate as needed */}
-                          "{notification.post.content}"
+
+                      <div className="flex-1 min-w-0">
+
+                        {/* Title and Unread Dot */}
+                        <div className="flex items-center justify-between">
+                          <Text className="text-sm font-semibold text-gray-900">
+                            {notification.title}
+                          </Text>
+
+                          {!notification.is_read && (
+                            <span className="w-2.5 h-2.5 bg-red-500 rounded-full inline-block" />
+                          )}
                         </div>
-                      )}
-                      
-                      <Text className="text-xs text-gray-400 mt-2">
-                        {formatTimeAgo(notification.created_at)}
-                      </Text>
+
+                        {/* Body */}
+                        <Text className="text-sm text-gray-600 mt-1 leading-snug">
+                          {notification.body}
+                        </Text>
+
+                        {/* Optional Post Preview */}
+                        {notification.post && (
+                          <div className="mt-2 p-2 rounded-md bg-gray-100 text-xs text-gray-600 line-clamp-2 border border-gray-200">
+                            “{notification.post.content}”
+                          </div>
+                        )}
+
+                        {/* Timestamp */}
+                        <Text className="text-xs text-gray-400 mt-2">
+                          {formatTimeAgo(notification.created_at)}
+                        </Text>
+                      </div>
+
                     </div>
                   </div>
-                </div>
+
               ))}
             </div>
           )}
