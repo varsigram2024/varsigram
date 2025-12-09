@@ -20,9 +20,9 @@ interface CreatePostModalProps {
 const POST_TAGS = [
   { value: 'explore', label: 'Explore' },
   { value: 'updates', label: 'Updates' },
-  { value: 'questions', label: 'Questions' },
+  { value: 'relatable', label: 'Events' },
+  { value: 'questions', label: 'Ask & Share' },
   { value: 'milestones', label: 'Milestones' },
-  { value: 'relatable', label: 'Relatables' }
 ] as const;
 
 type PostTag = typeof POST_TAGS[number]['value'];
