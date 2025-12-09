@@ -1178,9 +1178,9 @@ useEffect(() => {
                 { key: 'forYou', label: 'Explore' },
                 { key: 'official', label: 'Official' },
                 { key: 'updates', label: 'Updates' },
-                { key: 'questions', label: 'Questions' },
+                { key: 'relatable', label: 'Events' },
+                { key: 'questions', label: 'Ask & Share' },
                 { key: 'milestones', label: 'Milestones' },
-                { key: 'relatable', label: 'Relatable' },
                 
               ].map((tab) => (
                 <div
