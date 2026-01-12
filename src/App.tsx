@@ -15,6 +15,10 @@ import { useEffect, useState } from "react";
 
 // Pages
 import { Welcome } from './pages/Welcome';
+import { KnowMe } from './pages/KnowMe/index.tsx';
+import { CreateWall } from './pages/KnowMe/CreateWall';
+import { WallPage } from './pages/KnowMe/WallPage';
+import { JoinWall } from './pages/KnowMe/JoinWall';
 import { Login } from './pages/Login';
 import { MultiStepSignUp } from './pages/MultiStepSignUp';
 import ForgotPassword from "./pages/ForgotPassword";
@@ -127,6 +131,10 @@ function AppContent() {
         <Routes>
           {/* Authentication Routes */}
           <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
+          <Route path="/knowme" element={<KnowMe />} />
+          <Route path="/knowme/create-wall" element={<CreateWall />} />
+          <Route path="/knowme/wall/:wallId" element={<WallPage />} />
+          <Route path="/knowme/join/:wallId" element={<JoinWall />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />

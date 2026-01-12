@@ -54,6 +54,7 @@ Most endpoints require authentication. Authentication is handled using token-bas
             }
         }
         ```
+
     *   Response (201 Created): Returns a JWT token and a success message.
     *   Response (400 Bad Request): If registration fails (e.g., invalid input, email already exists, both student and organization provided, or neither).
 
@@ -733,6 +734,78 @@ Most endpoints require authentication. Authentication is handled using token-bas
 - Only organizations with `exclusive=True` are included.
 - If authenticated, the `has_liked` field reflects whether the current user has liked each post.
 
+---
+
+## Knowme (Walls & Members) ✅
+
+A lightweight feature for creating **Walls** and letting people **join** them with short profiles (optional photo). Images are uploaded to Firebase Storage and the API stores a public `photo_url` on the member record.
+
+**Base paths:**
+- `POST /api/v1/walls/` — Create a new wall (name, description, creator_email)
+- `GET /api/v1/walls/<uuid:id>/` — Retrieve wall details (name, description, member_count)
+- `GET /api/v1/walls/<uuid:wall_id>/members/` — List wall members (paginated)
+- `POST /api/v1/walls/<uuid:wall_id>/join/` — Join a wall (multipart form-data, optional image upload)
+
+### Models & important fields 🔧
+- **Wall**: `id` (UUID), `name`, `description`, `creator_email`, `created_at`
+- **WallMember**: `id`, `wall` (FK), `full_name`, `contact_info`, `interests`, `photo_url` (nullable), `joined_at`
+
+### Join Wall (Usage notes) 💡
+- Accepts `multipart/form-data` with fields: `full_name`, `contact_info`, `interests`, and optional file field `photo`.
+- The serializer accepts a write-only `photo` field; the view uploads the file to Firebase and stores the public `photo_url` on the `WallMember`.
+- Photo upload path: `knowme/<wall_id>/<random>.ext` in Firebase Storage. Public URL format:
+  `https://firebasestorage.googleapis.com/v0/b/<bucket-name>/o/<path>?alt=media`
+- If Firebase upload fails, the member is still created but `photo_url` may be `null` (upload errors are logged).
+- The operation is **open (AllowAny)** — authentication is not required.
+
+### Constraints & behaviors ⚠️
+- A wall is limited to **300 members**; attempts to join after the limit will return `400 Bad Request` with a message about the limit.
+- Member listing is paginated (default `page_size=50`, `max_page_size=100`). Use `?page=` and `?page_size=` query params.
+- On successful join, the backend schedules an asynchronous email to the wall creator with a link to the wall: `{FRONTEND_URL}/walls/{wall_id}` (via Celery task). Email scheduling failures do NOT block member creation.
+
+### Example: Join (multipart)
+Request (multipart/form-data):
+- `full_name=Jane Doe`
+- `contact_info=jane@example.com`
+- `interests=Photography, Art`
+- `photo` = image file (optional)
+
+Response (201 Created):
+```json
+{
+  "id": "<member_id>",
+  "full_name": "Jane Doe",
+  "contact_info": "jane@example.com",
+  "interests": "Photography, Art",
+  "photo_url": "https://... (or null)",
+  "joined_at": "2025-01-01T12:00:00Z"
+}
+```
+
+### Example: List Members (paginated)
+`GET /api/v1/walls/<wall_id>/members/?page=1`
+
+Response (200 OK):
+```json
+{
+  "count": 123,
+  "next": "...",
+  "previous": null,
+  "results": [
+    {
+      "id": "...",
+      "full_name": "Jane Doe",
+      "contact_info": "jane@example.com",
+      "interests": "Photography, Art",
+      "photo_url": "https://...",
+      "joined_at": "2025-01-01T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
 # Comments API Documentation
 
 ---
@@ -1043,7 +1116,49 @@ Most endpoints require authentication. Authentication is handled using token-bas
 **Notes:**
 - All follow/unfollow actions require authentication.
 - You can follow/unfollow between any combination of students and organizations.
-- The same endpoints
+
+#### **Department Follow Suggestions**
+
+- **`GET /follow-department/`**  
+  *Suggests students to follow from the authenticated user's department. Provides personalized follow recommendations based on shared department.*
+
+- **Authentication:**  
+  Required (JWT)
+
+- **Parameters:**
+  - No parameters required. Uses authenticated user's department automatically.
+
+- **Response (200 OK):**
+    ```json
+    {
+        "results": [
+            {
+                "type": "student",
+                "id": "string",
+                "user_id": "string",
+                "name": "string",
+                "department": "string",
+                "profile_pic_url": "string",
+                "is_verified": boolean,
+                "bio": "string"
+            }
+        ]
+    }
+    ```
+
+- **Error Responses:**
+  - `401 Unauthorized`: Authentication required
+  - `403 Forbidden`: User is not a student
+  - `404 Not Found`: User's student profile not found
+  - `400 Bad Request`: User has no department set
+
+- **Notes:**
+  - Limited to suggesting 20 students at a time
+  - Only suggests students from the same department
+  - Excludes students that are already being followed
+  - Excludes the requesting user from suggestions
+  - Results are randomized for variety
+  - Includes basic profile information for easy display
 
 *   **`GET /who-to-follow/` \[name='who-to-follow']**
 
@@ -1186,7 +1301,9 @@ This notification redirects the user to the parent post and highlights the new c
 | **`post_id`** | Direct to the Post Screen. | `/posts/:post_id` |
 | **`comment_id`** | Pass as a query parameter for scrolling/highlighting. | `?commentId=:comment_id` |
 
-**Example Server Payload:**
+---
+
+
 ```json
 {
     "type": "comment",
@@ -1195,13 +1312,15 @@ This notification redirects the user to the parent post and highlights the new c
     "commenter_id": "23456789-abcd-efgh-ijkl-1234567890ab",
     "commenter_profile_pic_url":"hbvkyfqvegwfvjwgvfoyewvf"
 }
+```
 
 ### 2. Post Like or New Post (type: 'like' or 'new_post')
 
 These actions redirect the user directly to the target post.
 
-Field Used	Action	Client Route Structure
-post_id	Direct to the Post Screen.	/posts/:post_id
+| Field Used | Action | Client Route Structure |
+| :--- | :--- | :--- |
+| **`post_id`** | Direct to the Post Screen. | `/posts/:post_id` |
 
 
 **Example Server Payload (Like):**
@@ -1213,13 +1332,15 @@ post_id	Direct to the Post Screen.	/posts/:post_id
     "post_id": "fskj34klj5h6g7f8d9s0a1",
     "liker_id": "23456789-abcd-efgh-ijkl-1234567890ab" 
 }
+```
 
 ### 3. New Follow (type: 'follow')
 
 This action redirects the user to the profile of the user who initiated the follow (the follower).
 
-Field Used	Action	Client Route Structure
-follower_display_name_slug	Direct to the User Profile Screen.	/profile/:follower_display_name_slug
+| Field Used | Action | Client Route Structure |
+| :--- | :--- | :--- |
+| **`follower_display_name_slug`** | Direct to the User Profile Screen. | `/profile/:follower_display_name_slug` |
 
 
 **Example Server Payload:**
@@ -1232,6 +1353,7 @@ follower_display_name_slug	Direct to the User Profile Screen.	/profile/:follower
     "follower_display_name_slug": "dshwydyd-1",
     "follower_profile_pic_url":"",
 }
+```
 
 ## III. Client Implementation Notes
 - Prioritization: The client should prioritize deep-linking based on the presence of the necessary ID fields. The check should prioritize follower_id for 'follow' events, and post_id for all others.
@@ -1244,28 +1366,30 @@ follower_display_name_slug	Direct to the User Profile Screen.	/profile/:follower
 
 ### Point Submission (RewardPointCreateView)
 
-    1. Reward Point Submission (UPSERT)
-This endpoint allows an authenticated user to submit points (a reward) to a post, initiating a transaction that is validated against Firestore data before being saved to the local database.
+#### 1. Reward Point Submission (UPSERT)
+    This endpoint allows an authenticated user to submit points (a reward) to a post, initiating a transaction that is validated against Firestore data before being saved to the local database.
 
-Detail	Specification
-Name	reward-submit
-URL	/api/v1/reward-points/
-Method	POST
-Authentication	Required (IsAuthenticated)
-Logic	UPSERT: If the giver has previously rewarded this post_id, the existing points are updated to the new value. If not, a new record is created. (Max 5 points total per user per post enforced).
+    Detail	Specification
+    Name	reward-submit
+    URL	/api/v1/reward-points/
+    Method	POST
+    Authentication	Required (IsAuthenticated)
+    Logic	UPSERT: If the giver has previously rewarded this post_id, the existing points are updated to the new value. If not, a new record is created. (Max 5 points total per user per post enforced).
 
-Request Payload (POST Body)
-Field	Type	Description
-post_id	string (max 100)	The unique ID of the Post document in Firestore.
-points	integer	The point value to assign (Must be between 1 and 5).
+    Request Payload (POST Body)
+    Field	Type	Description
+    post_id	string (max 100)	The unique ID of the Post document in Firestore.
+    points	integer	The point value to assign (Must be between 1 and 5).
 
-
+```
 JSON
 
 {
     "post_id": "fkewp0ldfIxpT3m7uYGh",
     "points": 4
 }
+```
+
 Data Flow Summary (on POST)
 Serializer receives post_id and points.
 
@@ -1275,27 +1399,28 @@ Serializer enforces the 1-5 point limit.
 
 Transaction is saved/updated in the Postgres RewardPointTransaction table, linking the giver, the firestore_post_id, and the denormalized post_author.
 
-2. User Total Points Retrieval (PUBLIC)
-This endpoint retrieves the aggregated total points received by a specific user across all their posts. This information is publicly viewable by any authenticated user.
+#### 2. User Total Points Retrieval (PUBLIC)
+    This endpoint retrieves the aggregated total points received by a specific user across all their posts. This information is publicly viewable by any authenticated user.
 
-Detail	Specification
-Name	profile-points-public
-URL	/api/v1/profile/points/<int:pk>/
-Method	GET
-Authentication	Required (IsAuthenticated)
-Logic	Aggregates the SUM(points) from all RewardPointTransaction records where the post_author matches the requested User ID (pk).
-
-
-Request Payload
-No request body is required. The target user is identified via the URL path.
-
-Success Response (HTTP 200 OK)
-Field	Type	Description
-id	integer	The local ID (pk) of the user whose score is being returned.
-username	string	The username of the user.
-total_points_received	integer	The total number of points received from all rewards across all their posts.
+    Detail	Specification
+    Name	profile-points-public
+    URL	/api/v1/profile/points/<int:pk>/
+    Method	GET
+    Authentication	Required (IsAuthenticated)
+    Logic	Aggregates the SUM(points) from all RewardPointTransaction records where the post_author matches the requested User ID (pk).
 
 
+    Request Payload
+    No request body is required. The target user is identified via the URL path.
+
+    Success Response (HTTP 200 OK)
+    Field	Type	Description
+    id	integer	The local ID (pk) of the user whose score is being returned.
+    username	string	The username of the user.
+    total_points_received	integer	The total number of points received from all rewards across all their posts.
+
+
+```
 JSON
 
 /* Requesting the score for User ID 42 */
@@ -1305,9 +1430,9 @@ JSON
     "username": "UserB",
     "total_points_received": 156
 }
+```
 
-
-1. Social Links Update
+### Social Links Update
 This endpoint allows an authenticated user to update their social media and website links. It performs a partial update, meaning only the fields provided in the payload will be changed.
 
 Detail	Specification
@@ -1331,9 +1456,12 @@ JSON
     "linkedin_url": "https://linkedin.com/in/varsigram_dev",
     "instagram_url": "https://instagram.com/varsigram_official"
 }
+```
+
 Success Response (HTTP 200 OK)
 The response returns the updated social link data for the authenticated user.
 
+```
 JSON
 
 {
@@ -1342,9 +1470,12 @@ JSON
     "twitter_url": null,
     "website_url": null
 }
+```
+
 Error Response Example (HTTP 400 Bad Request)
 If an invalid URL format is submitted:
 
+```
 JSON
 
 {
@@ -1352,3 +1483,154 @@ JSON
         "Enter a valid URL."
     ]
 }
+```
+
+## Leaderboards
+
+This section explains exactly how the frontend should call and render leaderboards, what query parameters are supported, the expected response shape, and operational notes (keys, tasks, backfills).
+
+Base paths (all under `/api/v1/`):
+
+- Weekly: `/api/v1/leaderboard/rewards/weekly/` (name: `reward-weekly-leaderboard`)
+- Monthly: `/api/v1/leaderboard/rewards/monthly/` (name: `reward-monthly-leaderboard`)
+- Yearly: `/api/v1/leaderboard/rewards/alltime/` (name: `reward-alltime-leaderboard`)
+
+Authentication
+- All leaderboard endpoints require authentication (JWT). Include header:
+
+```http
+Authorization: Bearer <your_token>
+```
+
+Common query parameters
+- `limit` — integer. Number of rows to return. Default: 100 (top-100). Maximum: backend may cap; keep requests to <= 500.
+
+Weekly endpoint specifics
+- Supported query params:
+    - `limit` (optional, default 100)
+    - `week_start` (optional) — choose the week by passing either:
+        - an ISO date inside the week (YYYY-MM-DD), or
+        - an ISO week string like `YYYY-Www` (e.g. `2025-W45`).
+
+- Behavior:
+    - If `week_start` is omitted, the server uses the current UTC ISO week.
+    - The server reads Redis key `leaderboard:points:weekly:<YYYY>-W<WW>` (example: `leaderboard:points:weekly:2025-W45`).
+    - If the requested key is missing, the frontend can either show an empty view or request a backfill via the ops team (see Backfill below).
+
+- Example request (fetch top 10 for the week containing 2025-11-03):
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+    "https://<api-host>/api/v1/leaderboard/rewards/weekly/?limit=10&week_start=2025-11-03"
+```
+
+Monthly endpoint specifics
+- Supported query params:
+    - `limit` (optional, default 100)
+    - `month` (optional) — `YYYY-MM` (e.g. `2025-11`). If omitted, current UTC month is used.
+
+Alltime endpoint specifics
+- Supported query params:
+    - `limit` (optional, default 100)
+
+- Note: Current implementation returns the ALL-TIME snapshot (Redis key `leaderboard:points:alltime`). If you need calendar-year snapshots, ask the backend to add `yearly` keys or a filtering endpoint.
+
+Response schema (successful 200 OK)
+```json
+{
+    "results": [
+        {
+            "user_id": "42",
+            "score": 4120,
+            "name": "Alice",
+            "profile_pic_url": "https://...",
+        }
+        // ... up to `limit` rows
+    ]
+}
+```
+
+Client rendering guidance
+- Display rank, name, score, and avatar.
+- Use `display_name_slug` to deep-link to profile pages: `/profile/:display_name_slug`.
+- For the weekly view allow a week picker UI that sends `week_start` as an ISO date within the selected week. When the user selects a calendar week, compute any date within that week and send it as `week_start`.
+
+Edge cases & fallbacks
+- Missing Redis key: If the key for a requested period is not present, show an empty leaderboard and a small help text like "No data for this period yet". If historical data is required, request a backfill.
+- Stale data: Redis receives incremental updates via Django signals on each reward save; periodic Celery recomputes reconcile any drift. Assume near-real-time but accept small delays.
+
+Redis keys (for debugging and verification)
+- All-time: `leaderboard:points:alltime`
+- Daily: `leaderboard:points:daily:<YYYY-MM-DD>`
+- Weekly: `leaderboard:points:weekly:<YYYY>-W<WW>` (ISO week)
+- Monthly: `leaderboard:points:monthly:<YYYY>-<MM>`
+
+Server-side tasks & backfills (ops)
+- Celery tasks in `postMang.tasks`:
+    - `recompute_points_daily(date_iso: str)` — recomputes the daily leaderboard for the given date (YYYY-MM-DD)
+    - `recompute_points_weekly(date_iso: str)` — recomputes the weekly leaderboard for the ISO week that contains `date_iso` (YYYY-MM-DD)
+    - `recompute_points_alltime()` — recomputes the all-time leaderboard
+
+### Posts leaderboard (top users by number of posts)
+
+We also expose leaderboards for users with the highest number of posts. These are updated in near-real-time when posts are created via the API and backed by Redis sorted sets.
+
+Base paths (all under `/api/v1/`):
+
+- Weekly: `/api/v1/leaderboard/posts/weekly/` (name: `posts-weekly-leaderboard`)
+- Monthly: `/api/v1/leaderboard/posts/monthly/` (name: `posts-monthly-leaderboard`)
+- All-time: `/api/v1/leaderboard/posts/alltime/` (name: `posts-alltime-leaderboard`)
+
+Query parameters
+- `limit` — integer. Number of rows to return. Default: 100.
+- `week_start` — for weekly endpoint, same formats as rewards (YYYY-MM-DD or YYYY-Www).
+
+Redis keys used
+- All-time: `leaderboard:posts:alltime`
+- Daily: `leaderboard:posts:daily:<YYYY-MM-DD>`
+- Weekly: `leaderboard:posts:weekly:<YYYY>-W<WW>`
+- Monthly: `leaderboard:posts:monthly:<YYYY>-<MM>`
+
+Example request (top-10 all-time posters):
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+    "https://<api-host>/api/v1/leaderboard/posts/alltime/?limit=10"
+```
+
+Response schema (200 OK)
+```json
+{
+    "results": [
+        {"user_id": "42", "score": 120, "name": "Alice", "profile_pic_url": "https://..."},
+        {"user_id": "17", "score": 98, "name": "Bob", "profile_pic_url": null}
+    ]
+}
+```
+
+Operational notes
+- Post counts are incremented when posts are created via the API (`POST /api/v1/posts/`). If posts are created outside the API (directly in Firestore), you may need to run a backfill to populate historical counts using the management command.
+
+### Top posters endpoint (fallback & on-demand compute)
+
+We also provide a convenience endpoint to list users with the highest total posts even if you don't run periodic backfills.
+
+- URL: `/api/v1/users/top-posters/` (name: `users-top-posters`)
+- Query params:
+    - `limit` (optional, default 100)
+    - `compute` (optional) — set to `true` to compute counts from Firestore on-demand if no cached Redis data exists. This operation can be slow for large datasets.
+
+- Behavior:
+    - If Redis key `leaderboard:posts:alltime` is present, the endpoint returns results from Redis.
+    - If Redis key is missing and `compute=true` is provided, the server will synchronously scan Firestore to compute counts and return top-N (and attempt to populate Redis for future calls).
+    - If Redis key is missing and `compute` is not provided, the endpoint now enqueues a background Celery backfill task (`recompute_posts_alltime`) and returns `202 Accepted`. Retry after a short while to read cached results.
+
+Example (force compute):
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+    "https://<api-host>/api/v1/users/top-posters/?limit=10&compute=true"
+```
+
+
+---

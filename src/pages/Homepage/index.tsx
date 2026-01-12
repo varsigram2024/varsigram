@@ -8,9 +8,7 @@ import { Link, useNavigate, useLocation, ScrollRestoration } from "react-router-
 import { PostSkeleton } from '../../components/PostSkeleton/index.tsx';
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
-import Sidebar1 from "../../components/Sidebar1/index.tsx";
 import ProfileOrganizationSection from "../Profilepage/ProfilepageOrganizationSection.tsx";
-import BottomNav from "../../components/BottomNav";
 import { toast } from 'react-hot-toast';
 import { uploadPostMedia } from '../../utils/fileUpload';
 import WhoToFollowSidePanel from '../../components/whoToFollowSidePanel/index.tsx';
@@ -1178,9 +1176,9 @@ useEffect(() => {
                 { key: 'forYou', label: 'Explore' },
                 { key: 'official', label: 'Official' },
                 { key: 'updates', label: 'Updates' },
-                { key: 'questions', label: 'Questions' },
+                { key: 'relatable', label: 'Events' },
+                { key: 'questions', label: 'Ask & Share' },
                 { key: 'milestones', label: 'Milestones' },
-                { key: 'relatable', label: 'Relatable' },
                 
               ].map((tab) => (
                 <div

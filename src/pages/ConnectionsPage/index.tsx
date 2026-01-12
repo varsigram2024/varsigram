@@ -345,147 +345,165 @@ export default function Connectionspage() {
               ) : activeTab === 'forYou' ? (
                 <div className="flex w-full flex-col items-center md:w-full p-5 mb-6 rounded-xl bg-[#ffffff] animate-fade-in">
                   
-                 {/* Organizations Section */}
+                  {/* Organizations Section */}
                   {filteredOrganizations.length > 0 && (
-                    <div className="w-full mb-8">
-                      <Text className="font-bold text-lg mb-4">Organizations</Text>
-                      
-                      {/* All organization cards in one consistent grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                        {/* Show first 2 cards as featured, then conditionally show more */}
-                        {filteredOrganizations
-                          .slice(0, showAllOrganizations ? filteredOrganizations.length : 2)
-                          .map((org, idx) => (
+                    <>
+                      <div className="w-full mb-6">
+                        <Text className="font-bold text-lg mb-4">Organizations</Text>
+                        
+                        {/* Top two featured organization cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-4">
+                          {filteredOrganizations.slice(0, 2).map((org, idx) => (
                             <div
-                              key={`org-${org.id}-${idx}`}
-                              className={`bg-[#f8f8f8] rounded-[14px] p-4 shadow-sm flex flex-col items-center text-center cursor-pointer hover:opacity-90 transition-all ${
-                                idx < 2 ? 'featured-card' : 'regular-card'
-                              }`}
+                              key={`org-featured-${org.id}-${idx}`}
+                              className="bg-[#f8f8f8] rounded-[14px] p-4 shadow-sm flex flex-col items-center text-center cursor-pointer hover:opacity-90"
                               onClick={() => handleUserClick(org)}
                             >
                               <Img
                                 src={org.profile_pic_url && org.profile_pic_url.startsWith('http') ? org.profile_pic_url : 'images/user.png'}
                                 alt={org.organization_name || org.email}
-                                className={`rounded-[50%] object-cover mb-3 ${
-                                  idx < 2 ? 'h-[72px] w-[72px]' : 'h-[64px] w-[64px]'
-                                }`}
+                                className="h-[72px] w-[72px] rounded-[50%] object-cover mb-3"
                               />
-                              <Text className={`font-semibold ${idx < 2 ? 'text-lg' : 'text-md'}`}>
-                                {org.organization_name}
-                              </Text>
-                              <Text className="text-sm text-gray-500 mt-1 line-clamp-2">
-                                {org.bio || 'No bio available'}
-                              </Text>
-                              {org.is_verified && org.exclusive && (
-                                <Img 
-                                  src="images/vectors/verified_icon.svg" 
-                                  alt="Verified" 
-                                  className="h-4 w-4 mt-2" 
-                                />
-                              )}
+                              <Text className="font-semibold text-lg">{org.organization_name}</Text>
+                              <Text className="text-sm text-gray-500 mt-1">{org.bio || 'No bio available'}</Text>
+                               {org.is_verified && org.exclusive && (
+                                  <Img 
+                                    src="images/vectors/verified_icon.svg" 
+                                    alt="Verified" 
+                                    className="h-4 w-4" 
+                                  />
+                                )}
                               <button
                                 onClick={(e) => { e.stopPropagation(); org.is_following ? handleUnfollow(org) : handleFollow(org); }}
-                                className={`mt-4 px-6 py-2 rounded-full transition-colors ${
-                                  org.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white hover:bg-[#5a0010]'
-                                }`}
+                                className={`mt-4 px-6 py-2 rounded-full transition-colors ${org.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
                               >
-                                {org.is_following ? 'Unfollow' : 'Follow'}
+                                Follow
                               </button>
                             </div>
                           ))}
-                      </div>
-
-                      {/* See all button - ALWAYS at the bottom */}
-                      {filteredOrganizations.length > 2 && (
-                        <div className="w-full flex justify-center mt-6">
-                          <button
-                            onClick={() => setShowAllOrganizations(!showAllOrganizations)}
-                            className="w-full max-w-md bg-white border border-gray-300 rounded-full py-3 flex items-center justify-center text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-                          >
-                            {showAllOrganizations ? 'Show less organizations' : `See all organizations (${filteredOrganizations.length})`}
-                            <Img 
-                              src="images/vectors/arrow-right.svg" 
-                              alt="arrow" 
-                              className={`h-4 w-4 ml-2 transition-transform ${
-                                showAllOrganizations ? 'rotate-90' : ''
-                              }`} 
-                            />
-                          </button>
                         </div>
-                      )}
-                    </div>
+
+                        {/* See all organizations button */}
+                        {filteredOrganizations.length > 2 && (
+                          <div className="w-full flex justify-center mb-6">
+                            <button
+                              onClick={() => setShowAllOrganizations(!showAllOrganizations)}
+                              className="w-[95%] md:w-[90%] bg-white border rounded-full py-2 flex items-center justify-center text-sm text-gray-700"
+                            >
+                              {showAllOrganizations ? 'Show less organizations' : `See all organizations (${filteredOrganizations.length})`}
+                              <Img src="images/vectors/arrow-right.svg" alt="arrow" className="h-4 w-4 ml-2" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* All organizations grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                          {(showAllOrganizations ? filteredOrganizations.slice(2) : filteredOrganizations.slice(2, 4)).map((org, idx) => (
+                            <div
+                              key={`org-grid-${org.id}-${idx}`}
+                              className="bg-[#f8f8f8] rounded-[12px] p-4 shadow-sm flex flex-col items-center text-center cursor-pointer hover:opacity-90"
+                              onClick={() => handleUserClick(org)}
+                            >
+                              <Img
+                                src={org.profile_pic_url && org.profile_pic_url.startsWith('http') ? org.profile_pic_url : 'images/user.png'}
+                                alt={org.organization_name || org.email}
+                                className="h-[64px] w-[64px] rounded-[50%] object-cover mb-3"
+                              />
+                              <Text className="font-semibold text-md">{org.organization_name}</Text>
+                              <Text className="text-sm text-gray-500 mt-1">{org.bio || 'No bio available'}</Text>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); org.is_following ? handleUnfollow(org) : handleFollow(org); }}
+                                className={`mt-4 px-6 py-2 rounded-full transition-colors ${org.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
+                              >
+                                Follow
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* Students Section */}
                   {filteredStudents.length > 0 && (
-                    <div className="w-full">
-                      <Text className="font-bold text-lg mb-4">Students</Text>
-                      
-                      {/* All student cards in one consistent grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                        {filteredStudents
-                          .slice(0, showAllStudents ? filteredStudents.length : 6)
-                          .map((student, idx) => (
+                    <>
+                      <div className="w-full">
+                        <Text className="font-bold text-lg mb-4">Students</Text>
+                        
+                        {/* Top two featured student cards */}
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full mb-4">
+                          {filteredStudents.slice(0, 2).map((student, idx) => (
                             <div
-                              key={`student-${student.id}-${idx}`}
-                              className="bg-[#f8f8f8] rounded-[14px] p-4 shadow-sm flex flex-col items-center text-center relative cursor-pointer hover:opacity-90 transition-all group"
+                              key={`student-featured-${student.id}-${idx}`}
+                              className="bg-[#f8f8f8] rounded-[14px] p-4 shadow-sm flex flex-col items-center text-center cursor-pointer hover:opacity-90"
                               onClick={() => handleUserClick(student)}
                             >
                               <Img
                                 src={student.profile_pic_url && student.profile_pic_url.startsWith('http') ? student.profile_pic_url : 'images/user.png'}
                                 alt={student.name || student.email}
-                                className="h-[64px] w-[64px] rounded-[50%] object-cover mb-3"
+                                className="h-[72px] w-[72px] rounded-[50%] object-cover mb-3"
                               />
-                              
-                              {/* Name */}
-                              <Text className="font-semibold text-md mb-1">{student.name}</Text>
-                              
-                              {/* Faculty & Department */}
-                              {(student.faculty || student.department) && (
-                                <Text className="text-xs text-gray-600 mb-2 font-medium">
-                                  {student.faculty && student.department 
-                                    ? `${student.faculty} | ${student.department}`
-                                    : student.faculty || student.department
-                                  }
-                                </Text>
-                              )}
-                              
-                              {/* Bio */}
-                              <Text className="text-sm text-gray-500 line-clamp-2 mb-2">
-                                {student.bio || 'No bio available'}
-                              </Text>
+                              <Text className="font-semibold text-lg">{student.name}</Text>
+                              <Text className="text-sm text-gray-500 mt-1">{student.bio || 'No bio available'}</Text>
                               
                               <button
                                 onClick={(e) => { e.stopPropagation(); student.is_following ? handleUnfollow(student) : handleFollow(student); }}
-                                className={`mt-auto px-6 py-2 rounded-full transition-colors ${
-                                  student.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white hover:bg-[#5a0010]'
-                                }`}
+                                className={`mt-4 px-6 py-2 rounded-full transition-colors ${student.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
                               >
-                                {student.is_following ? 'Unfollow' : 'Follow'}
+                                Follow
                               </button>
                             </div>
                           ))}
-                      </div>
-
-                      {/* See all button - ALWAYS at the bottom */}
-                      {filteredStudents.length > 6 && (
-                        <div className="w-full flex justify-center mt-6">
-                          <button
-                            onClick={() => setShowAllStudents(!showAllStudents)}
-                            className="w-full max-w-md bg-white border border-gray-300 rounded-full py-3 flex items-center justify-center text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-                          >
-                            {showAllStudents ? 'Show less students' : `See all students (${filteredStudents.length})`}
-                            <Img 
-                              src="images/vectors/arrow-right.svg" 
-                              alt="arrow" 
-                              className={`h-4 w-4 ml-2 transition-transform ${
-                                showAllStudents ? 'rotate-90' : ''
-                              }`} 
-                            />
-                          </button>
                         </div>
-                      )}
-                    </div>
+
+                        {/* See all students button */}
+                        {filteredStudents.length > 2 && (
+                          <div className="w-full flex justify-center mb-6">
+                            <button
+                              onClick={() => setShowAllStudents(!showAllStudents)}
+                              className="w-[95%] md:w-[90%] bg-white border rounded-full py-2 flex items-center justify-center text-sm text-gray-700"
+                            >
+                              {showAllStudents ? 'Show less students' : `See all students (${filteredStudents.length})`}
+                              <Img src="images/vectors/arrow-right.svg" alt="arrow" className="h-4 w-4 ml-2" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* All students grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                          {(showAllStudents ? filteredStudents.slice(2) : filteredStudents.slice(2, 6)).map((student, idx) => (
+                            <div
+                              key={`student-grid-${student.id}-${idx}`}
+                              className="bg-[#f8f8f8] rounded-[12px] p-4 shadow-sm flex flex-col items-center text-center relative cursor-pointer hover:opacity-90"
+                              onClick={() => handleUserClick(student)}
+                            >
+                              {/* Department badge */}
+                              {student.department && (
+                                <div className="absolute left-3 top-3 bg-[#f3e9e9] text-[#8b5a5a] px-2 py-1 rounded-full text-xs">
+                                  {`${student.department} department`}
+                                </div>
+                              )}
+                              <Img
+                                src={student.profile_pic_url && student.profile_pic_url.startsWith('http') ? student.profile_pic_url : 'images/user.png'}
+                                alt={student.name || student.email}
+                                className="h-[64px] w-[64px] rounded-[50%] object-cover mb-3"
+                              />
+                              <Text className="font-semibold text-md">{student.name}</Text>
+                              <Text className="text-sm text-gray-500 mt-1">{student.bio || 'No bio available'}</Text>
+                              
+                              
+                              
+                              <button
+                                onClick={(e) => { e.stopPropagation(); student.is_following ? handleUnfollow(student) : handleFollow(student); }}
+                                className={`mt-4 px-6 py-2 rounded-full transition-colors ${student.is_following ? 'bg-gray-400 text-gray-600' : 'bg-[#750015] text-white'}`}
+                              >
+                                Follow
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* No recommendations message */}
