@@ -108,6 +108,12 @@ useEffect(() => {
           <path d="M5.72656 2.86328L8.98841 6.12212L5.72957 9.38396" stroke="#ffff" strokeWidth="0.698645" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </Button>
+      <Button
+        onClick={() => navigate('/knowme')}
+        className="bg-transparent border hover:bg-white hover:text-[#750015] hover:scale-105 transition-all z-10"
+      >
+        KnowMe
+      </Button>
       
     </div>
   );
