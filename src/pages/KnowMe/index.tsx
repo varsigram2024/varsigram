@@ -6,7 +6,7 @@ export const KnowMe = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-between py-16 px-6">
       <div className="flex flex-col items-center mt-12 gap-6">
-        <img src="/images/knowme.png" alt="KnowMe" width="120" height="120" className="object-contain" />
+        <img src="/images/knowme.png" alt="KnowMe" width="350" height="280" className="object-contain bg-black" />
         
       </div>
 
