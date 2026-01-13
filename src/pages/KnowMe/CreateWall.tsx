@@ -126,9 +126,11 @@ export const CreateWall = () => {
               placeholder="What's the purpose of this wall"
               value={about}
               onChange={(e) => setAbout(e.target.value)}
-              className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015]"
+              maxLength={100}
+              className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015] resize-none"
               required
             />
+            <span className="text-xs text-gray-500 text-right">{about.length}/100</span>
           </div>
 
           <div className="flex flex-col gap-2">

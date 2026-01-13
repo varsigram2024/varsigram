@@ -78,7 +78,7 @@ export const WallPage = () => {
             <div className="flex items-start justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-[#1a1a1a]">{wall.name}</h1>
-                <p className="text-sm text-gray-600 mt-1">{wall.description}</p>
+                <p className="text-sm text-gray-600 mt-1"> {wall.description}</p>
               </div>
               <div className="bg-[#760016] text-white px-6 py-3 rounded-lg font-bold text-xl">
                 {totalCount}
@@ -88,17 +88,19 @@ export const WallPage = () => {
             {/* Members Grid */}
             {members.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-24">
-                {members.map((member, index) => (
-                  <div 
-                    key={member.id} 
-                    className="bg-white rounded-2xl p-6 shadow-sm relative"
-                    style={{
-                      animation: `slideInUp 0.6s ease-out ${index * 0.15}s forwards`
-                    }}
-                  >
-                    <div className="absolute top-4 right-4 bg-white border border-gray-300 rounded-full px-3 py-1 text-sm font-medium">
-                      {members.indexOf(member) + 1}
-                    </div>
+                {members.map((member, index) => {
+                  const memberNumber = totalCount - index;
+                  return (
+                    <div 
+                      key={member.id} 
+                      className="bg-white rounded-2xl p-6 shadow-sm relative"
+                      style={{
+                        animation: `slideInUp 0.6s ease-out ${index * 0.15}s forwards`
+                      }}
+                    >
+                      <div className="absolute top-4 right-4 bg-white border border-gray-300 rounded-full px-3 py-1 text-sm font-medium">
+                        {memberNumber}
+                      </div>
                     
                     <div className="flex flex-col items-center text-center">
                       <div className="w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-200">
@@ -119,11 +121,31 @@ export const WallPage = () => {
                       </div>
                       
                       <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">{member.full_name}</h3>
-                      <p className="text-sm text-gray-700 mb-2">{member.contact_info}</p>
+                      <div className="text-sm text-gray-700 mb-2 break-words">
+                        {member.contact_info.split(/\s+/).map((part, idx) => {
+                          const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/;
+                          if (urlRegex.test(part)) {
+                            const url = part.startsWith('http') ? part : `https://${part}`;
+                            return (
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#760016] hover:underline"
+                              >
+                                {part}{' '}
+                              </a>
+                            );
+                          }
+                          return <span key={idx}>{part} </span>;
+                        })}
+                      </div>
                       <p className="text-sm text-gray-600">{member.interests}</p>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-20 text-gray-500">
@@ -139,7 +161,7 @@ export const WallPage = () => {
                   if (navigator.share) {
                     navigator.share({
                       title: wall.name,
-                      text: wall.description,
+                      text: "Join The Wall: " + wall.description,
                       url: wallLink,
                     }).catch(err => console.log('Error sharing:', err));
                   } else {

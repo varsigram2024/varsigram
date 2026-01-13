@@ -89,14 +89,14 @@ export const JoinWall = () => {
             <label className="text-base font-semibold text-[#3a3a3a]" htmlFor="contact">
               Contact:
             </label>
-            <input
+            <textarea
               id="contact"
               name="contact"
-              type="text"
+              rows={2}
               placeholder="e.g WhatsApp number, email address or social media handles."
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015]"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015] resize-none"
               required
             />
           </div>
