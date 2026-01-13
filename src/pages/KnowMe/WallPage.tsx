@@ -105,11 +105,20 @@ export const WallPage = () => {
                     <div className="flex flex-col items-center text-center">
                       <div className="w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-200">
                         {member.photo_url ? (
-                          <img 
-                            src={member.photo_url} 
-                            alt={member.full_name}
-                            className="w-full h-full object-cover"
-                          />
+                          (() => {
+                            const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
+                            const isHttp = /^https?:\/\//i.test(member.photo_url);
+                            const displayUrl = isHttp
+                              ? member.photo_url
+                              : `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(member.photo_url)}?alt=media`;
+                            return (
+                              <img
+                                src={displayUrl}
+                                alt={member.full_name}
+                                className="w-full h-full object-cover"
+                              />
+                            );
+                          })()
                         ) : (
                           <div className="w-full h-full bg-gray-300 flex items-center justify-center">
                             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -185,10 +194,11 @@ export const WallPage = () => {
                 onClick={() => navigate(`/knowme/join/${wallId}`)}
                 className="bg-[#760016] text-white px-8 py-4 rounded-full shadow-lg font-semibold text-lg hover:bg-[#8a001c] transition-colors"
               >
-                Add Yours
+                Join Wall
               </button>
 
               <button
+                onClick={() => navigate('/knowme/create-wall')}
                 className="bg-white border-2 border-[#760016] rounded-full p-4 shadow-lg hover:bg-gray-50 transition-colors"
                 aria-label="Add"
               >

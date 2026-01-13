@@ -103,7 +103,7 @@ export const JoinWall = () => {
 
           <div className="flex flex-col gap-2">
             <label className="text-base font-semibold text-[#3a3a3a]" htmlFor="interest">
-              Interest:
+              About Me:
             </label>
             <textarea
               id="interest"
