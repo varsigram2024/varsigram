@@ -49,7 +49,6 @@ export const JoinWall = () => {
       await api.post(
         `/walls/${wallId}/join/`,
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
       );
 
       navigate(`/knowme/wall/${wallId}`);
