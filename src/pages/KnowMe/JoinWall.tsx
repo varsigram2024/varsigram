@@ -1,12 +1,10 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
 import api from '../../api/client';
 
 export const JoinWall = () => {
   const navigate = useNavigate();
-  const { wallId } = useParams<{ wallId: string }>();
-
+  const { wallId } = useParams();
   const [fullName, setFullName] = useState('');
   const [contact, setContact] = useState('');
   const [interest, setInterest] = useState('');
@@ -19,43 +17,23 @@ export const JoinWall = () => {
 
   const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      if (file.size > MAX_SIZE) {
+        setError('Image size must be less than 10MB.');
+        return;
+      }
 
-    setError('');
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file.');
-      return;
+      setPicture(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPicturePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-
-    if (file.size > MAX_SIZE) {
-      setError('Image size must be less than 10MB.');
-      return;
-    }
-
-    setPicture(file);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPicturePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removeImage = () => {
-    setPicture(null);
-    setPicturePreview('');
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
-
-    if (!wallId) {
-      setError('Invalid wall link.');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
@@ -64,30 +42,23 @@ export const JoinWall = () => {
       formData.append('full_name', fullName);
       formData.append('contact_info', contact);
       formData.append('interests', interest);
-
       if (picture) {
         formData.append('photo', picture);
       }
 
-      await api.post(`/walls/${wallId}/join/`, formData);
-
-      // Optional reset before navigation
-      setFullName('');
-      setContact('');
-      setInterest('');
-      removeImage();
+      await api.post(
+        `/walls/${wallId}/join/`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
 
       navigate(`/knowme/wall/${wallId}`);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.message ||
-            err.response?.data?.detail ||
-            'Failed to join wall. Please try again.'
-        );
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.detail ||
+        'Failed to join wall. Please try again.';
+      setError(errorMessage);
       console.error('Join wall error:', err);
     } finally {
       setIsLoading(false);
@@ -108,100 +79,130 @@ export const JoinWall = () => {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {/* Full Name */}
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label
+              className="text-base font-semibold text-[#3a3a3a]"
+              htmlFor="fullName"
+            >
               Your Full Name:
             </label>
             <input
+              id="fullName"
+              name="fullName"
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#750015]"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015]"
               required
             />
           </div>
 
-          {/* Contact */}
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label
+              className="text-base font-semibold text-[#3a3a3a]"
+              htmlFor="contact"
+            >
               Contact:
             </label>
             <textarea
+              id="contact"
+              name="contact"
               rows={2}
+              placeholder="e.g WhatsApp number, email address or social media handles."
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="WhatsApp, email or social media handle"
-              className="border border-gray-300 rounded-xl px-4 py-3 resize-none focus:ring-2 focus:ring-[#750015]"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015] resize-none"
               required
             />
           </div>
 
-          {/* Interest */}
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label
+              className="text-base font-semibold text-[#3a3a3a]"
+              htmlFor="interest"
+            >
               About Me:
             </label>
             <textarea
+              id="interest"
+              name="interest"
               rows={4}
+              placeholder="I love to make new friends, play football and write codes..."
               value={interest}
               onChange={(e) => setInterest(e.target.value)}
-              placeholder="I love meeting people, football, coding..."
-              className="border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#750015]"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015]"
               required
             />
           </div>
 
-          {/* Image Upload */}
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label
+              className="text-base font-semibold text-[#3a3a3a]"
+              htmlFor="picture"
+            >
               Your Picture:
             </label>
-
-            <input
-              id="picture"
-              type="file"
-              accept="image/*"
-              onChange={handlePictureChange}
-              className="hidden"
-              aria-label="Upload profile picture"
-            />
-
-            <label
-              htmlFor="picture"
-              className="border border-gray-300 rounded-xl px-4 py-10 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition"
-            >
-              {picturePreview ? (
-                <img
-                  src={picturePreview}
-                  alt={`${fullName || 'User'} preview`}
-                  className="w-24 h-24 rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-gray-500 text-sm">
-                  Click to upload (max 10MB)
-                </span>
-              )}
-            </label>
-
-            {picturePreview && (
-              <button
-                type="button"
-                onClick={removeImage}
-                className="text-sm text-red-600 hover:underline self-center"
+            <div className="relative">
+              <input
+                id="picture"
+                name="picture"
+                type="file"
+                accept="image/*"
+                onChange={handlePictureChange}
+                className="hidden"
+              />
+              <label
+                htmlFor="picture"
+                className="w-full border border-gray-300 rounded-xl px-4 py-12 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
               >
-                Remove image
-              </button>
-            )}
+                {picturePreview ? (
+                  <img
+                    src={picturePreview}
+                    alt="Preview"
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
+                ) : (
+                  <svg
+                    width="64"
+                    height="64"
+                    viewBox="0 0 64 64"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M32 8C18.745 8 8 18.745 8 32C8 45.255 18.745 56 32 56C45.255 56 56 45.255 56 32C56 18.745 45.255 8 32 8Z"
+                      stroke="#9CA3AF"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M32 20V44"
+                      stroke="#9CA3AF"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M20 32H44"
+                      stroke="#9CA3AF"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+                <span className="text-sm text-gray-500 mt-2">
+                  {picture ? picture.name : 'Click to upload'}
+                </span>
+              </label>
+            </div>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
-            disabled={
-              isLoading || !fullName || !contact || !interest
-            }
-            className="bg-[#760016] text-white py-4 rounded-2xl font-semibold hover:bg-[#8a001c] transition disabled:bg-gray-400"
+            disabled={isLoading}
+            className="w-full bg-[#760016] text-white py-4 rounded-2xl text-lg font-semibold shadow-md hover:bg-[#8a001c] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Joining...' : 'Done'}
           </button>
@@ -210,3 +211,4 @@ export const JoinWall = () => {
     </div>
   );
 };
+                
