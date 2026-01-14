@@ -166,7 +166,7 @@ export const WallPage = () => {
             <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center gap-4">
               <button
                 onClick={() => {
-                  const wallLink = `${window.location.origin}/knowme/join/${wallId}`;
+                  const wallLink = `${window.location.origin}/knowme/wall/${wallId}`;
                   if (navigator.share) {
                     navigator.share({
                       title: wall.name,
