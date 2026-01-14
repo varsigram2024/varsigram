@@ -36,7 +36,7 @@ export const CreateWall = () => {
 
   const handleShareLink = () => {
     // Use actual wall ID from backend
-    const wallLink = `${window.location.origin}/knowme/join/${wallId}`;
+    const wallLink = `${window.location.origin}/knowme/wall/${wallId}`;
     if (navigator.share) {
       navigator.share({
         title: wallName,
