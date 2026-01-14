@@ -22,18 +22,12 @@ export const JoinWall = () => {
 
     setError('');
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file.');
-      return;
-    }
-
     if (file.size > MAX_SIZE) {
       setError('Image size must be less than 10MB.');
       return;
     }
 
     setPicture(file);
-
     const reader = new FileReader();
     reader.onloadend = () => {
       setPicturePreview(reader.result as string);
@@ -64,8 +58,16 @@ export const JoinWall = () => {
         formData.append('photo', picture);
       }
 
-      // 🚨 IMPORTANT FIX: DO NOT set Content-Type manually
-      await api.post(`/walls/${wallId}/join/`, formData);
+      await api.post(
+        `/walls/${wallId}/join/`,
+        formData,
+        {
+          // 🔑 IMPORTANT: remove JSON header, allow multipart
+          headers: {
+            'Content-Type': undefined,
+          },
+        }
+      );
 
       navigate(`/knowme/wall/${wallId}`);
     } catch (err: any) {
@@ -95,7 +97,7 @@ export const JoinWall = () => {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label className="text-base font-semibold text-[#3a3a3a]">
               Your Full Name:
             </label>
             <input
@@ -108,7 +110,7 @@ export const JoinWall = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label className="text-base font-semibold text-[#3a3a3a]">
               Contact:
             </label>
             <textarea
@@ -121,7 +123,7 @@ export const JoinWall = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label className="text-base font-semibold text-[#3a3a3a]">
               About Me:
             </label>
             <textarea
@@ -134,7 +136,7 @@ export const JoinWall = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-semibold text-[#3a3a3a]">
+            <label className="text-base font-semibold text-[#3a3a3a]">
               Your Picture:
             </label>
 
@@ -148,7 +150,7 @@ export const JoinWall = () => {
 
             <label
               htmlFor="picture"
-              className="w-full border border-gray-300 rounded-xl px-4 py-12 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition"
+              className="w-full border border-gray-300 rounded-xl px-4 py-12 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
             >
               {picturePreview ? (
                 <img
@@ -157,15 +159,36 @@ export const JoinWall = () => {
                   className="w-24 h-24 rounded-full object-cover"
                 />
               ) : (
-                <span className="text-gray-500 text-sm">
-                  Click to upload (max 10MB)
-                </span>
-              )}
-            </label>
-
-            <span className="text-xs text-gray-500 text-center">
-              Images up to 10MB supported
-            </span>
+                <svg
+                  width="64"
+                  height="64"
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M32 8C18.745 8 8 18.745 8 32C8 45.255 18.745 56 32 56C45.255 56 56 45.255 56 32C56 18.745 45.255 8 32 8Z"
+                    stroke="#9CA3AF"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M32 20V44"
+                    stroke="#9CA3AF"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M20 32H44"
+                    stroke="#9CA3AF"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+              </label>
           </div>
 
           <button
@@ -180,4 +203,4 @@ export const JoinWall = () => {
     </div>
   );
 };
-      
+        
