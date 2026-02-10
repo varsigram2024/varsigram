@@ -44,6 +44,7 @@ import LinksModal from './modals/LinksModal/index.tsx';
 import EditProfile from "./pages/Settings/EditProfile";
 import ChangePassword from "./pages/Settings/ChangePassword";
 import PrivacyPolicy from "./pages/Settings/PrivacyPolicy";
+import ChildSafety from "./pages/ChildSafety";
 import { EmailVerificationBanner } from "./components/EmailVerificationBanner";
 import { EmailVerification } from "./pages/EmailVerification.tsx";
 import MainLayout from "./components/MainLayout";
@@ -135,6 +136,7 @@ function AppContent() {
           <Route path="/knowme/create-wall" element={<CreateWall />} />
           <Route path="/knowme/wall/:wallId" element={<WallPage />} />
           <Route path="/knowme/join/:wallId" element={<JoinWall />} />
+          <Route path="/child-safety" element={<ChildSafety />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />

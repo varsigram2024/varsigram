@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/Button';
-import { Input } from '../components/Input';
+import { Text } from "../components/Text/index.tsx";
 import { FaLinkedinIn, FaInstagram, FaPaperPlane } from "react-icons/fa";
 import mockups from '../../public/images/mockups/mockups.svg';
 import featureMockup1 from '../../public/images/mockups/featureMockup1.svg';
@@ -509,9 +509,17 @@ useEffect(() => {
                 </div>
 
                 {/* Contact and Copyright */}
-                <div className="text-center text-sm text-gray-600 space-y-1">
+                <div className="flex justify-between text-center text-sm w-full text-gray-600 space-y-1">
 
                   <p>© 2024 Varsigram. All rights reserved.</p>
+
+                   <div>
+                    <button className="flex w-full text-sm hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => navigate("/child-safety")}
+                >
+                  <Text>Privacy Policy</Text>
+                </button>
+                   </div>
                 </div>
               </section>
 
