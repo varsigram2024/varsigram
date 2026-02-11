@@ -517,7 +517,7 @@ useEffect(() => {
                     <button className="flex w-full text-sm hover:bg-gray-50 rounded-lg transition-colors"
                 onClick={() => navigate("/child-safety")}
                 >
-                  <Text>Privacy Policy</Text>
+                  <Text>Safety Policy</Text>
                 </button>
                    </div>
                 </div>
