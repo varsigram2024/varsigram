@@ -141,6 +141,7 @@ function AppContent() {
           <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+          <Route path="settings/privacy-policy" element={<PublicRoute><PrivacyPolicy /></PublicRoute>} />
 
           {/* Multi-step Signup Routes */}
           <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
@@ -170,7 +171,7 @@ function AppContent() {
             <Route path="settings/edit-profile" element={<AuthRoute><EditProfile /></AuthRoute>} />
             <Route path="settings/change-password" element={<AuthRoute><ChangePassword /></AuthRoute>} />
             <Route path="settings/email-verification" element={<EmailVerification />} />
-            <Route path="settings/privacy-policy" element={<AuthRoute><PrivacyPolicy /></AuthRoute>} />
+
 
 
 
