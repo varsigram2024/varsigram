@@ -122,20 +122,41 @@ export default function Connectionspage() {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       console.log('Who to follow response:', usersResponse.data);
+
+      let departmentSuggestions: any[] = [];
+      if (user.account_type === 'student') {
+        try {
+          const departmentResponse = await axios.get(`${API_BASE_URL}/follow-department/`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          departmentSuggestions = departmentResponse.data?.results || [];
+        } catch (departmentError) {
+          console.error('Department suggestions unavailable:', departmentError);
+        }
+      }
+
+      const normalizeRecommendedUser = (item: any): User => ({
+        ...item,
+        account_type: item.type || item.account_type,
+        type: item.type || item.account_type,
+        user_id: item.user_id ?? item.id,
+      });
+
+      const whoToFollowUsers = usersResponse.data.map(normalizeRecommendedUser);
+      const departmentUsers = departmentSuggestions.map(normalizeRecommendedUser);
       
       // Separate organizations and students
-      const allUsers = usersResponse.data.map((item: any) => ({
-        ...item,
-        account_type: item.type,
-        type: item.type,
-        user_id: item.user_id,
-      }));
-      
-      const orgs = allUsers.filter((user: User) => user.type === 'organization');
-      const studs = allUsers.filter((user: User) => user.type === 'student');
+      const orgs = whoToFollowUsers.filter((recommendedUser: User) => recommendedUser.type === 'organization');
+
+      const mergedStudents = [...departmentUsers, ...whoToFollowUsers.filter((recommendedUser: User) => recommendedUser.type === 'student')];
+      const uniqueStudents = Array.from(
+        new Map(
+          mergedStudents.map((studentUser: User) => [`${studentUser.type}-${studentUser.user_id ?? studentUser.id}`, studentUser])
+        ).values()
+      );
       
       setOrganizations(orgs);
-      setStudents(studs);
+      setStudents(uniqueStudents);
     } catch (error) {
       console.error('Error fetching data:', error);
       setFollowing([]);
@@ -182,13 +203,14 @@ export default function Connectionspage() {
       const follower_type = user.account_type;
       const follower_id = user.id;
       const followee_type = userToFollow.type;
-      const followee_id = userToFollow.user_id;
+      const targetId = userToFollow.user_id ?? userToFollow.id;
+      const followee_id = targetId;
 
       // Optimistic UI update
       if (userToFollow.type === 'organization') {
-        setOrganizations(prev => prev.map(u => u.user_id === userToFollow.user_id ? { ...u, is_following: true } : u));
+        setOrganizations(prev => prev.map(u => (u.user_id ?? u.id) === targetId ? { ...u, is_following: true } : u));
       } else {
-        setStudents(prev => prev.map(u => u.user_id === userToFollow.user_id ? { ...u, is_following: true } : u));
+        setStudents(prev => prev.map(u => (u.user_id ?? u.id) === targetId ? { ...u, is_following: true } : u));
       }
 
       await axios.post(
@@ -200,23 +222,23 @@ export default function Connectionspage() {
       
       // Remove from respective list
       if (userToFollow.type === 'organization') {
-        setOrganizations(prev => prev.filter(u => u.user_id !== userToFollow.user_id));
+        setOrganizations(prev => prev.filter(u => (u.user_id ?? u.id) !== targetId));
       } else {
-        setStudents(prev => prev.filter(u => u.user_id !== userToFollow.user_id));
+        setStudents(prev => prev.filter(u => (u.user_id ?? u.id) !== targetId));
       }
       
       // Add to following list
       setFollowing(prev => [...prev, { 
         user: { email: userToFollow.email, profile_pic_url: userToFollow.profile_pic_url }, 
         followee_student: userToFollow.type === 'student' ? { 
-          id: userToFollow.user_id, 
+          id: targetId, 
           name: userToFollow.name, 
           display_name_slug: userToFollow.display_name_slug, 
           user: { email: userToFollow.email, profile_pic_url: userToFollow.profile_pic_url }, 
           bio: userToFollow.bio 
         } : undefined, 
         followee_organization: userToFollow.type === 'organization' ? { 
-          id: userToFollow.user_id, 
+          id: targetId, 
           organization_name: userToFollow.organization_name, 
           display_name_slug: userToFollow.display_name_slug, 
           user: { email: userToFollow.email, profile_pic_url: userToFollow.profile_pic_url }, 
@@ -227,9 +249,11 @@ export default function Connectionspage() {
       console.error('Follow error:', error?.response?.data || error);
       // Rollback optimistic update
       if (userToFollow.type === 'organization') {
-        setOrganizations(prev => prev.map(u => u.user_id === userToFollow.user_id ? { ...u, is_following: false } : u));
+        const targetId = userToFollow.user_id ?? userToFollow.id;
+        setOrganizations(prev => prev.map(u => (u.user_id ?? u.id) === targetId ? { ...u, is_following: false } : u));
       } else {
-        setStudents(prev => prev.map(u => u.user_id === userToFollow.user_id ? { ...u, is_following: false } : u));
+        const targetId = userToFollow.user_id ?? userToFollow.id;
+        setStudents(prev => prev.map(u => (u.user_id ?? u.id) === targetId ? { ...u, is_following: false } : u));
       }
       toast.error('Failed to follow');
     }
@@ -244,7 +268,8 @@ export default function Connectionspage() {
       const follower_type = user.account_type;
       const follower_id = user.id;
       const followee_type = userToUnfollow.type || userToUnfollow.account_type;
-      const followee_id = userToUnfollow.user_id;
+      const targetId = userToUnfollow.user_id ?? userToUnfollow.id;
+      const followee_id = targetId;
 
       await axios.post(
         `${API_BASE_URL}/users/unfollow/`,
@@ -259,15 +284,15 @@ export default function Connectionspage() {
           const followeeOrg = f.followee_organization;
           const followeeStudent = f.followee_student;
           const followeeId = followeeOrg?.id ?? followeeStudent?.id;
-          return followeeId !== userToUnfollow.user_id;
+          return followeeId !== targetId;
         })
       );
 
       // Optimistic: mark user in respective list as not following
       if (userToUnfollow.type === 'organization') {
-        setOrganizations(prev => prev.map(u => u.user_id === userToUnfollow.user_id ? { ...u, is_following: false } : u));
+        setOrganizations(prev => prev.map(u => (u.user_id ?? u.id) === targetId ? { ...u, is_following: false } : u));
       } else {
-        setStudents(prev => prev.map(u => u.user_id === userToUnfollow.user_id ? { ...u, is_following: false } : u));
+        setStudents(prev => prev.map(u => (u.user_id ?? u.id) === targetId ? { ...u, is_following: false } : u));
       }
     } catch (error: any) {
       console.error('Unfollow error:', error?.response?.data || error);

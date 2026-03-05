@@ -18,9 +18,16 @@ export interface Faculty {
 
 export const faculties: Faculty[] = [
   {
-    name: "Faculty of Arts",
+    name: "Architecture",
     departments: [
-      "Creative Arts",
+      "Architecture",
+      "Landscape Architecture and Urban Design",
+      "Interior Architecture and Design"
+    ]
+  },
+  {
+    name: "Arts",
+    departments: [
       "English",
       "French",
       "Russian",
@@ -32,25 +39,77 @@ export const faculties: Faculty[] = [
       "Chinese",
       "Philosophy",
       "Christian Religious Studies",
-      "Islamic Religious Studies",
-    ],
+      "Islamic Religious Studies"
+    ]
   },
   {
-    name: "College of Medicine",
+    name: "Basic Clinical Sciences",
     departments: [
-      "Medicine and Surgery",
-      "Physiotherapy",
-      "Radiography",
-      "Anatomy",
-      "Medical Laboratory Science",
-      "Pharmacology",
-      "Physiology",
-      "Dentistry",
-      "Nursing Science",
-    ],
+      "Anatomic & Molecular Pathology",
+      "Haematology & Blood Transfusion",
+      "Medical Microbiology & Parasitology",
+      "Clinical Pathology",
+      "Clinical Pharmacology"
+    ]
   },
   {
-    name: "Faculty of Education",
+    name: "Basic Medical Sciences",
+    departments: [
+      "Anatomy",
+      "Physiology",
+      "Medical Biochemistry",
+      "Pharmacology, Therapeutics & Toxicology"
+    ]
+  },
+  {
+    name: "Clinical Sciences",
+    departments: [
+      "Anaesthesia",
+      "Community Health & Primary Care",
+      "Medicine",
+      "Obstetrics & Gynaecology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Psychiatry",
+      "Radiation Biology, Radiotherapy & Radiodiagnosis"
+    ]
+  },
+  {
+    name: "Communication & Media Studies",
+    departments: [
+      "Mass Communication",
+      "Public Relations & Advertising",
+      "Journalism, Broadcasting & Media Studies"
+    ]
+  },
+  {
+    name: "Computing & Informatics",
+    departments: [
+      "Computer Science",
+      "Intelligent Systems & Robotics",
+      "Cybersecurity & Software Engineering"
+    ]
+  },
+  {
+    name: "Creative Arts",
+    departments: [
+      "Music & Sound Production",
+      "Theatre Arts & Film Studies",
+      "Fine & Applied Arts"
+    ]
+  },
+  {
+    name: "Dental Sciences",
+    departments: [
+      "Child Dental Health",
+      "Oral & Maxillofacial Pathology/Biology",
+      "Oral & Maxillofacial Surgery",
+      "Preventive Dentistry",
+      "Restorative Dentistry"
+    ]
+  },
+  {
+    name: "Education",
     departments: [
       "Adult Education",
       "Education Economics",
@@ -64,8 +123,8 @@ export const faculties: Faculty[] = [
       "Education History",
       "Education Christian Religious Studies",
       "Education Geography",
-      "Education Administration",
-      "Education Foundations",
+      "Educational Administration",
+      "Educational Foundations",
       "Health Education",
       "Human Kinetics Education",
       "Education Biology",
@@ -75,93 +134,116 @@ export const faculties: Faculty[] = [
       "Education Mathematics",
       "Education Physics",
       "Technology Education",
-      "Special Education",
-    ],
+      "Special Education"
+    ]
   },
   {
-    name: "Faculty of Engineering",
+    name: "Engineering",
     departments: [
       "Biomedical Engineering",
       "Chemical Engineering",
-      "Civil Engineering",
-      "Computer Engineering",
+      "Petroleum & Gas Engineering",
+      "Civil & Environmental Engineering",
       "Electrical & Electronics Engineering",
       "Mechanical Engineering",
       "Metallurgical & Materials Engineering",
-      "Petroleum & Gas Engineering",
-      "Surveying & Geoinformatics Engineering",
+      "Surveying & Geoinformatics",
       "Systems Engineering",
-    ],
+      "Computer Engineering"
+    ]
   },
   {
-    name: "Faculty of Environmental Science",
+    name: "Environmental Sciences",
     departments: [
-      "Architecture",
       "Building",
       "Estate Management",
       "Quantity Surveying",
       "Urban & Regional Planning",
-    ],
+      "Architecture"
+    ]
   },
   {
-    name: "Faculty of Law",
-    departments: ["Law"],
-  },
-  {
-    name: "Faculty of Management Sciences",
+    name: "Health Professions",
     departments: [
-      "Accounting",
-      "Actuarial Science",
-      "Banking & Finance",
-      "Business Administration",
-      "IRPM",
-      "Insurance",
-      "Taxation",
-      "Procurement",
-    ],
+      "Medical Laboratory Science",
+      "Nursing Science",
+      "Physiotherapy",
+      "Radiography"
+    ]
   },
   {
-    name: "Faculty of Pharmacy",
-    departments: ["Pharmacy"],
+    name: "Law",
+    departments: [
+      "Law",
+      "Commercial & Industrial Law",
+      "Jurisprudence & International Law",
+      "Private & Property Law",
+      "Public Law"
+    ]
   },
   {
-    name: "Faculty of Science",
+    name: "Life Sciences",
     departments: [
       "Biochemistry",
-      "Biostatistics",
       "Botany",
       "Cell Biology & Genetics",
-      "Chemistry",
-      "Computer Science",
-      "Data Science",
-      "Environmental Standards",
-      "Geology",
-      "Geophysics",
-      "Marine Biology",
-      "Fishery",
-      "Mathematics",
-      "Industrial Mathematics",
-      "Statistics",
+      "Marine Science",
       "Microbiology",
-      "Physics",
       "Zoology",
-    ],
+      "Fisheries & Aquaculture",
+      "Environmental Standards",
+      "Fisheries"
+    ]
   },
   {
-    name: "Faculty of Social Sciences",
+    name: "Management Sciences",
+    departments: [
+      "Accounting",
+      "Actuarial Science & Insurance",
+      "Business Administration",
+      "Employment Relations & Human Resource Management",
+      "Finance",
+      "Industrial Relations & Personnel Management (IRPM)",
+      "Taxation",
+      "Procurement"
+    ]
+  },
+  {
+    name: "Pharmacy",
+    departments: [
+      "Pharmacy",
+      "Clinical Pharmacy & Biopharmacy",
+      "Pharmaceutical Chemistry",
+      "Pharmaceutical Microbiology & Biotechnology",
+      "Pharmaceutics & Pharmaceutical Technology",
+      "Pharmacognosy"
+    ]
+  },
+  {
+    name: "Physical & Earth Sciences",
+    departments: [
+      "Chemistry",
+      "Geology",
+      "Geophysics",
+      "Mathematics",
+      "Physics",
+      "Statistics"
+    ]
+  },
+  {
+    name: "Social Sciences",
     departments: [
       "Economics",
       "Economics & Development Studies",
       "Geography",
       "Meteorology & Climate Science",
-      "Mass Communication",
       "Library & Information Science",
       "Political Science",
       "Psychology",
-      "Public Administration",
       "Social Work",
       "Sociology",
-      "Social Standards",
-    ],
-  },
+      "Public Administration",
+      "Social Standard"
+    ]
+  }
 ];

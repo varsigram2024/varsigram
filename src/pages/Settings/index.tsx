@@ -1,5 +1,6 @@
-import React, { Suspense, ChangeEvent, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { Text } from "../../components/Text/index.tsx";
 import { Img } from "../../components/Img/index.tsx";
 import { useAuth } from '../../auth/AuthContext';
@@ -15,11 +16,12 @@ import { useNotification } from '../../context/NotificationContext';
 export default function Settings() {
   const navigate = useNavigate();
   const { logout, token } = useAuth();
-  const [notifications] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [darkMode] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
+  const [isSubmittingAccountAction, setIsSubmittingAccountAction] = useState(false);
   const { 
     isNotificationSupported, 
     isNotificationEnabled, 
@@ -48,9 +50,46 @@ export default function Settings() {
     navigate(`/${path}`);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success('Logged out successfully');
+  };
+
+  const runAccountAction = async (action: 'deactivate' | 'reactivate') => {
+    if (!token || isSubmittingAccountAction) return;
+
+    const actionLabel = action === 'deactivate' ? 'deactivate' : 'reactivate';
+    const password = window.prompt(`Enter your password to ${actionLabel} your account:`);
+
+    if (!password) {
+      return;
+    }
+
+    setIsSubmittingAccountAction(true);
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}/${action}/`,
+        { password },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (action === 'deactivate') {
+        toast.success('Account deactivated successfully');
+        await logout();
+      } else {
+        toast.success('Account reactivated successfully');
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || `Failed to ${actionLabel} account. Please try again.`);
+    } finally {
+      setIsSubmittingAccountAction(false);
+    }
   };
 
 // In Settings.tsx, fix the notification toggle section
@@ -257,10 +296,20 @@ const handleNotificationToggle = async () => {
             </button>
             {/* Deactivate Button */}
             <button
+              onClick={() => runAccountAction('deactivate')}
+              disabled={isSubmittingAccountAction}
               className="flex items-center gap-3 w-full p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors animate-slide-up"
             >
               <UserX size={20} />
-              <Text>Deactivate</Text>
+              <Text>{isSubmittingAccountAction ? 'Processing...' : 'Deactivate'}</Text>
+            </button>
+            <button
+              onClick={() => runAccountAction('reactivate')}
+              disabled={isSubmittingAccountAction}
+              className="flex items-center gap-3 w-full p-3 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors animate-slide-up"
+            >
+              <CheckCircle size={20} />
+              <Text>{isSubmittingAccountAction ? 'Processing...' : 'Reactivate'}</Text>
             </button>
           </div>
         </div>

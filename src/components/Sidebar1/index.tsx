@@ -1,18 +1,22 @@
 // ENHANCED: Collapsible Sidebar with toggle on logo click
 
-import React, { useState } from "react";
-import { Menu, Sidebar, sidebarClasses } from "react-pro-sidebar";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Sidebar } from "react-pro-sidebar";
 import { Img } from "../Img";
 import { Heading } from "../Heading";
 import { Text } from "../Text";
 import { useAuth } from "../../auth/AuthContext";
-import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Sidebar1() {
   const [collapsed, setCollapsed] = useState(true);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isVerifiedExclusiveOrg, setIsVerifiedExclusiveOrg] = useState(false);
 
   const handleNavigation = (path: string) => {
     navigate(`/${path}`);
@@ -21,8 +25,25 @@ export default function Sidebar1() {
   // Use location.pathname to determine current page
   const currentPage = location.pathname.replace('/', '');
 
-  // Check if user is a verified exclusive organization
-  const isVerifiedExclusiveOrg = user?.type === 'organization' && user?.exclusive && user?.is_verified;
+  useEffect(() => {
+    const fetchVerifiedOrgBadge = async () => {
+      if (!token || user?.account_type !== 'organization') {
+        setIsVerifiedExclusiveOrg(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/verified-org-badge/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setIsVerifiedExclusiveOrg(Boolean(response.data?.is_verified));
+      } catch (error) {
+        setIsVerifiedExclusiveOrg(false);
+      }
+    };
+
+    fetchVerifiedOrgBadge();
+  }, [token, user?.account_type]);
 
   return (
     <Sidebar

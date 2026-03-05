@@ -194,6 +194,16 @@ const handleLogin = async (e: React.FormEvent) => {
                 Sign Up
               </button>
             </p>
+
+            <p
+              className="text-center text-sm text-[#3A3A3A] animate-slide-up"
+              style={{ animationDelay: "700ms" }}>
+              By continuing, you agree to our{" "}
+              <Link to="/settings/privacy-policy" className="text-[#750015] hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </form>
         </div>
       </div>

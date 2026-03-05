@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { useSignUp } from '../auth/SignUpContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,6 +38,7 @@ const API = axios.create({
 
 // UNIFIED TOKEN STORAGE - Single source of truth
 const AUTH_TOKEN_KEY = 'auth_token';
+const AUTH_REFRESH_TOKEN_KEY = 'auth_refresh_token';
 
 function storeToken(token: string) {
   localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -46,10 +46,19 @@ function storeToken(token: string) {
 
 function clearToken() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
 }
 
 function getToken() {
   return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+function storeRefreshToken(refreshToken: string) {
+  localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+}
+
+function getRefreshToken() {
+  return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
 }
 
 // Request: Attach token
@@ -240,6 +249,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else if (access && refresh) {
         // JWT style - use access token
         finalToken = access;
+        storeRefreshToken(refresh);
       } else {
         throw new Error('No authentication token received');
       }
@@ -305,6 +315,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        await API.post('/token/logout/', { refresh: refreshToken });
+      }
+    } catch (error) {
+      console.error('Backend logout failed:', error);
+    }
+
     clearToken();
     setToken(null);
     setUser(null);

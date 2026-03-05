@@ -1,7 +1,15 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export const KnowMe = () => {
   const navigate = useNavigate();
+  const [wallCode, setWallCode] = useState('');
+
+  const handleOpenByCode = () => {
+    const normalizedCode = wallCode.trim().toUpperCase();
+    if (!normalizedCode) return;
+    navigate(`/knowme/wall/code/${normalizedCode}`);
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-between py-16 px-6">
@@ -22,6 +30,23 @@ export const KnowMe = () => {
         >
           Create A Wall
         </button>
+
+        <div className="mt-4 flex flex-col gap-3">
+          <input
+            type="text"
+            value={wallCode}
+            onChange={(e) => setWallCode(e.target.value.replace(/[^a-zA-Z]/g, '').slice(0, 8).toUpperCase())}
+            placeholder="Enter 8-letter wall code"
+            className="w-full border border-gray-300 rounded-2xl px-4 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#750015]"
+          />
+          <button
+            onClick={handleOpenByCode}
+            disabled={!wallCode.trim()}
+            className="w-full bg-white text-[#760016] border border-[#760016] py-3 rounded-2xl text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Open Wall By Code
+          </button>
+        </div>
       </div>
     </div>
   );

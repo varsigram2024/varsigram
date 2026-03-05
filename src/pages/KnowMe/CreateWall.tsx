@@ -11,6 +11,7 @@ export const CreateWall = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [wallId, setWallId] = useState('');
+  const [wallCode, setWallCode] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,6 +26,7 @@ export const CreateWall = () => {
       });
       
       setWallId(response.data.id);
+      setWallCode(response.data.code || '');
       setIsSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create wall. Please try again.');
@@ -35,8 +37,9 @@ export const CreateWall = () => {
   };
 
   const handleShareLink = () => {
-    // Use actual wall ID from backend
-    const wallLink = `${window.location.origin}/knowme/wall/${wallId}`;
+    const wallLink = wallCode
+      ? `${window.location.origin}/knowme/wall/code/${wallCode}`
+      : `${window.location.origin}/knowme/wall/${wallId}`;
     if (navigator.share) {
       navigator.share({
         title: wallName,
@@ -51,7 +54,10 @@ export const CreateWall = () => {
   };
 
   const handleGoToWall = () => {
-    // Navigate to wall using actual wall ID from backend
+    if (wallCode) {
+      navigate(`/knowme/wall/code/${wallCode}`);
+      return;
+    }
     navigate(`/knowme/wall/${wallId}`);
   };
 

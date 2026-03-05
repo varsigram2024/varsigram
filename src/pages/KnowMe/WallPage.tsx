@@ -23,7 +23,7 @@ interface Wall {
 
 export const WallPage = () => {
   const navigate = useNavigate();
-  const { wallId } = useParams();
+  const { wallId, code } = useParams();
   const [wall, setWall] = useState<Wall | null>(null);
   const [members, setMembers] = useState<WallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,12 +34,15 @@ export const WallPage = () => {
     const fetchWallData = async () => {
       try {
         setIsLoading(true);
+        const wallDetailsEndpoint = code ? `/walls/code/${code}/` : `/walls/${wallId}/`;
+        const membersEndpoint = code ? `/walls/code/${code}/members/` : `/walls/${wallId}/members/`;
+
         // Fetch wall details
-        const wallRes = await api.get(`/walls/${wallId}/`);
+        const wallRes = await api.get(wallDetailsEndpoint);
         setWall(wallRes.data);
 
         // Fetch members
-        const membersRes = await api.get(`/walls/${wallId}/members/`, {
+        const membersRes = await api.get(membersEndpoint, {
           params: { page: 1, page_size: 50 }
         });
         setMembers(membersRes.data.results);
@@ -52,10 +55,10 @@ export const WallPage = () => {
       }
     };
 
-    if (wallId) {
+    if (wallId || code) {
       fetchWallData();
     }
-  }, [wallId]);
+  }, [wallId, code]);
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] py-8 px-4">
@@ -166,7 +169,8 @@ export const WallPage = () => {
             <div className="fixed bottom-8 left-0 right-0 px-4 flex justify-center gap-4">
               <button
                 onClick={() => {
-                  const wallLink = `${window.location.origin}/knowme/wall/${wallId}`;
+                  const wallPath = code ? `/knowme/wall/code/${code}` : `/knowme/wall/${wallId}`;
+                  const wallLink = `${window.location.origin}${wallPath}`;
                   if (navigator.share) {
                     navigator.share({
                       title: wall.name,
@@ -191,7 +195,13 @@ export const WallPage = () => {
               </button>
 
               <button
-                onClick={() => navigate(`/knowme/join/${wallId}`)}
+                onClick={() => {
+                  if (code) {
+                    navigate(`/knowme/join/code/${code}`);
+                  } else {
+                    navigate(`/knowme/join/${wallId}`);
+                  }
+                }}
                 className="bg-[#760016] text-white px-8 py-4 rounded-full shadow-lg font-semibold text-lg hover:bg-[#8a001c] transition-colors"
               >
                 Join Wall

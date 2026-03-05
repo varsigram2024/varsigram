@@ -136,6 +136,7 @@ export default function Profile() {
   const [bioInput, setBioInput] = useState("");
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
   const isOwnProfile = user && userProfile && user.id === userProfile.id;
+  const [isVerifiedExclusiveOrg, setIsVerifiedExclusiveOrg] = useState<boolean | null>(null);
   
 
   
@@ -286,6 +287,27 @@ useEffect(() => {
     fetchUserPoints();
   }
 }, [userProfile, token]);
+
+useEffect(() => {
+  const fetchVerifiedOrgBadge = async () => {
+    if (!token || !userProfile || !isOwnProfile || userProfile.account_type !== 'organization') {
+      setIsVerifiedExclusiveOrg(null);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/verified-org-badge/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsVerifiedExclusiveOrg(Boolean(response.data?.is_verified));
+    } catch (error) {
+      console.error('Failed to fetch verified org badge:', error);
+      setIsVerifiedExclusiveOrg(false);
+    }
+  };
+
+  fetchVerifiedOrgBadge();
+}, [token, userProfile, isOwnProfile]);
 
 
 const fetchFollowers = async () => {
@@ -1285,8 +1307,8 @@ return (
                               userProfile.username}
                           </Heading>
                           {userProfile.account_type === "organization" &&
-                            userProfile.is_verified &&
-                            userProfile.exclusive && (
+                            ((isOwnProfile && isVerifiedExclusiveOrg === true) ||
+                              (!isOwnProfile && userProfile.is_verified && userProfile.exclusive)) && (
                               <Img
                                 src="/images/vectors/verified.svg"
                                 alt="Verified"

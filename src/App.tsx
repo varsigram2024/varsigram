@@ -135,12 +135,15 @@ function AppContent() {
           <Route path="/knowme" element={<KnowMe />} />
           <Route path="/knowme/create-wall" element={<CreateWall />} />
           <Route path="/knowme/wall/:wallId" element={<WallPage />} />
+          <Route path="/knowme/wall/code/:code" element={<WallPage />} />
           <Route path="/knowme/join/:wallId" element={<JoinWall />} />
+          <Route path="/knowme/join/code/:code" element={<JoinWall />} />
           <Route path="/child-safety" element={<ChildSafety />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+          <Route path="settings/privacy-policy" element={<PublicRoute><PrivacyPolicy /></PublicRoute>} />
 
           {/* Multi-step Signup Routes */}
           <Route path="/phone-verification" element={<PublicRoute><PhoneVerification /></PublicRoute>} />
@@ -170,7 +173,7 @@ function AppContent() {
             <Route path="settings/edit-profile" element={<AuthRoute><EditProfile /></AuthRoute>} />
             <Route path="settings/change-password" element={<AuthRoute><ChangePassword /></AuthRoute>} />
             <Route path="settings/email-verification" element={<EmailVerification />} />
-            <Route path="settings/privacy-policy" element={<AuthRoute><PrivacyPolicy /></AuthRoute>} />
+
 
 
 
