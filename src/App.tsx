@@ -135,7 +135,9 @@ function AppContent() {
           <Route path="/knowme" element={<KnowMe />} />
           <Route path="/knowme/create-wall" element={<CreateWall />} />
           <Route path="/knowme/wall/:wallId" element={<WallPage />} />
+          <Route path="/knowme/wall/code/:code" element={<WallPage />} />
           <Route path="/knowme/join/:wallId" element={<JoinWall />} />
+          <Route path="/knowme/join/code/:code" element={<JoinWall />} />
           <Route path="/child-safety" element={<ChildSafety />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><MultiStepSignUp /></PublicRoute>} />

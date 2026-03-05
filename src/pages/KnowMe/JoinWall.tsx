@@ -4,7 +4,7 @@ import api from '../../api/client';
 
 export const JoinWall = () => {
   const navigate = useNavigate();
-  const { wallId } = useParams();
+  const { wallId, code } = useParams();
   const [fullName, setFullName] = useState('');
   const [contact, setContact] = useState('');
   const [interest, setInterest] = useState('');
@@ -46,18 +46,21 @@ export const JoinWall = () => {
         formData.append('photo', picture);
       }
 
-      await api.post(
-  `/walls/${wallId}/join/`,
-  formData,
-  {
-    headers: {
-      'Content-Type': undefined,
-    },
-  }
-);
+      const joinEndpoint = code
+        ? `/walls/code/${code}/join/`
+        : `/walls/${wallId}/join/`;
 
+      await api.post(joinEndpoint, formData, {
+        headers: {
+          'Content-Type': undefined,
+        },
+      });
 
-      navigate(`/knowme/wall/${wallId}`);
+      if (code) {
+        navigate(`/knowme/wall/code/${code}`);
+      } else {
+        navigate(`/knowme/wall/${wallId}`);
+      }
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message ||
